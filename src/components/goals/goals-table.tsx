@@ -1,8 +1,10 @@
 "use client";
 
+import type { GoalStatus } from "@/components/goals/goal-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { GoalStatus } from "@/components/goals/goal-form";
+
+import type { ReactNode } from "react";
 
 export type GoalRecord = {
   id: string;
@@ -23,8 +25,9 @@ type GoalsTableProps = {
   isRefreshing: boolean;
   deletingGoalId: string | null;
   editingGoalId: string | null;
+  headerAction?: ReactNode;
   onEdit: (goal: GoalRecord) => void;
-  onDelete: (goal: GoalRecord) => Promise<void>;
+  onDelete: (goal: GoalRecord) => void;
 };
 
 const statusLabels: Record<GoalStatus, string> = {
@@ -39,14 +42,20 @@ export const GoalsTable = ({
   isRefreshing,
   deletingGoalId,
   editingGoalId,
+  headerAction,
   onEdit,
   onDelete,
 }: GoalsTableProps) => (
   <Card>
-    <CardHeader className="space-y-1">
-      <CardTitle>Goals</CardTitle>
+    <CardHeader className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <CardTitle>Goals</CardTitle>
+        {headerAction}
+      </div>
       <p className="text-sm text-muted-foreground">
-        {isRefreshing ? "Refreshing goals..." : "Manage your saving goals and statuses."}
+        {isRefreshing
+          ? "Refreshing goals..."
+          : "Manage your saving goals and statuses."}
       </p>
     </CardHeader>
     <CardContent>
@@ -122,21 +131,29 @@ type GoalRowProps = {
   deletingGoalId: string | null;
   editingGoalId: string | null;
   onEdit: (goal: GoalRecord) => void;
-  onDelete: (goal: GoalRecord) => Promise<void>;
+  onDelete: (goal: GoalRecord) => void;
 };
 
-const GoalRow = ({ goal, deletingGoalId, editingGoalId, onEdit, onDelete }: GoalRowProps) => (
+const GoalRow = ({
+  goal,
+  deletingGoalId,
+  editingGoalId,
+  onEdit,
+  onDelete,
+}: GoalRowProps) => (
   <tr className="border-b align-top">
     <td className="p-2">
       <p className="font-medium">{goal.name}</p>
-      {goal.notes ? <p className="text-xs text-muted-foreground">{goal.notes}</p> : null}
+      {goal.notes ? (
+        <p className="text-xs text-muted-foreground">{goal.notes}</p>
+      ) : null}
       {goal.last_sync_status === "error" ? (
         <p className="mt-1 inline-flex rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
           Unsynced
         </p>
       ) : null}
     </td>
-    <td className="p-2">{goal.target_amount.toFixed(2)}</td>
+    <td className="p-2">{goal.target_amount.toFixed(0)}</td>
     <td className="p-2">{goal.deadline}</td>
     <td className="p-2">{statusLabels[goal.status]}</td>
     <td className="p-2">{goal.ynab_category_id ?? "—"}</td>
@@ -155,7 +172,7 @@ const GoalRow = ({ goal, deletingGoalId, editingGoalId, onEdit, onDelete }: Goal
           type="button"
           variant="destructive"
           size="sm"
-          onClick={() => void onDelete(goal)}
+          onClick={() => onDelete(goal)}
           disabled={deletingGoalId === goal.id}
         >
           {deletingGoalId === goal.id ? "Deleting..." : "Delete"}

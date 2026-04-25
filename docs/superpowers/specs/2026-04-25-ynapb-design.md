@@ -30,7 +30,7 @@ YNAB при работе с несколькими разовыми целями
 2. Подключение к YNAB через Personal Access Token, выбор бюджета — на странице `/settings`.
 3. Импорт из YNAB: список категорий (с их `goal_type`, `goal_target`, `goal_under_funded`, `balance`), история транзакций (для подсказки "среднее за N месяцев").
 4. CRUD разовых целей: имя, сумма, дедлайн, привязка к YNAB-категории, статус, заметки. Привязка категории к YNAPB-цели делает категорию **«долгосрочной»** — она появляется в таймлайне.
-5. Автоматический расчёт **obligations** = сумма `goal_under_funded` всех YNAB-категорий, **не** привязанных к активным YNAPB-целям. Категории без YNAB-goal'а игнорируются (вклад 0).
+5. Автоматический расчёт **obligations** = `Average Assigned (3m)` для всех YNAB-категорий с `goal_type != null`, **не** привязанных к активным YNAPB-целям. Категории без YNAB-goal'а и архивные категории игнорируются (вклад 0).
 6. Конфигурация месячного бюджета: одно поле «Planned monthly income» (ручной ввод) + кнопка «Use N-month average from YNAB» (заполняет поле подсчитанным средним из истории; `baseline_months` настраивается, по умолчанию 6).
 7. Greedy-алгоритм распределения с учётом стартовых балансов целей.
 8. Визуализация плана: drag-and-drop таймлайн, помесячная таблица, график накопления.
@@ -152,7 +152,7 @@ goals (
 ynab_cache (
   user_id          uuid PK
   synced_at        timestamptz
-  categories       jsonb            -- [{id, name, group, balance, goal_type, goal_target, goal_under_funded, goal_target_month}, ...]
+  categories       jsonb            -- [{id, name, group, balance, goal_type, goal_cadence, goal_target, goal_under_funded, hidden, deleted, goal_target_month, assigned_history[]}, ...]
   income_history   jsonb            -- [{month: '2026-01', net_income: 350000}, ...]
 )
 
@@ -181,11 +181,11 @@ type Goal = {
   id: string;
   name: string;
   targetAmount: number;
-  currentBalance: number;        // из YNAB на момент расчёта, не хранится в БД
-  deadline: Date;                // нормализован к 1-му числу месяца
-  status: 'active' | 'frozen' | 'completed';
+  currentBalance: number; // из YNAB на момент расчёта, не хранится в БД
+  deadline: Date; // нормализован к 1-му числу месяца
+  status: "active" | "frozen" | "completed";
   ynabCategoryId: string | null;
-  createdAt: Date;               // используется как стабильный тай-брейк
+  createdAt: Date; // используется как стабильный тай-брейк
 };
 
 type YnabCategory = {
@@ -193,17 +193,18 @@ type YnabCategory = {
   name: string;
   group: string;
   balance: number;
-  goalType: 'TB' | 'TBD' | 'MF' | 'NEED' | 'DEBT' | null;
+  goalType: "TB" | "TBD" | "MF" | "NEED" | "DEBT" | null;
   goalTarget: number | null;
-  goalUnderFunded: number | null;  // YNAB: сколько ещё нужно в текущем месяце
+  goalUnderFunded: number | null; // YNAB: сколько ещё нужно в текущем месяце
   goalTargetMonth: string | null;
 };
 
 type MonthlyBudget = {
-  plannedIncome: number;           // ручное число пользователя
-  obligations: number;             // sum(c.goalUnderFunded) для регулярных категорий
-  available: number;               // plannedIncome - obligations
-  obligationBreakdown: Array<{    // для tooltip в UI
+  plannedIncome: number; // ручное число пользователя
+  obligations: number; // sum(avgAssigned3m) для регулярных категорий
+  available: number; // plannedIncome - obligations
+  obligationBreakdown: Array<{
+    // для tooltip в UI
     categoryId: string;
     categoryName: string;
     amount: number;
@@ -214,20 +215,20 @@ type PlanInput = {
   goals: Goal[];
   budget: MonthlyBudget;
   startMonth: Date;
-  horizonMonths: number;         // например 120 (10 лет)
+  horizonMonths: number; // например 120 (10 лет)
 };
 
 type MonthAllocation = {
   month: Date;
-  perGoal: Map<string, number>;  // goalId -> сумма пополнения
-  unallocated: number;           // если бюджет > потребности
+  perGoal: Map<string, number>; // goalId -> сумма пополнения
+  unallocated: number; // если бюджет > потребности
 };
 
 type PlanResult = {
   allocations: MonthAllocation[];
   conflicts: Array<{
     goalId: string;
-    type: 'unreachable' | 'tied_deadline';
+    type: "unreachable" | "tied_deadline";
     detail: string;
     earliestAchievable?: Date;
   }>;
@@ -248,16 +249,22 @@ type PlanResult = {
 
 **Долгосрочные категории** — те, у которых `goal.ynab_category_id` ссылается на категорию **и** этот goal в статусе `active`. Они управляются YNAPB через таймлайн; в YNAB на них пушится MF goal с рассчитанной нашим алгоритмом суммой.
 
-**Регулярные категории** — все остальные YNAB-категории. Они управляются пользователем в самом YNAB через его собственные goal'ы (любого типа); YNAPB их **не трогает**, только читает поле `goal_under_funded` для подсчёта obligations.
+**Регулярные категории** — все остальные YNAB-категории. Они управляются пользователем в самом YNAB через его собственные goal'ы (любого типа); YNAPB их **не трогает** и считает obligations по фактическому поведению:
+- из последних 3 месяцев берётся `assigned` по каждой категории,
+- считается среднее `avgAssigned3m`,
+- в obligations идёт округлённое `avgAssigned3m`.
 
 ### Расчёт месячного бюджета (Available)
 
 ```
 plannedIncome   = income_settings.planned_income            (ручное число)
-obligations     = Σ category.goal_under_funded
+obligations     = Σ round(avgAssigned3m(category))
                   для category ∈ ynab_cache.categories,
                   где category.id ∉ {goal.ynab_category_id для goal.status='active'}
                   И category.goal_type IS NOT NULL
+                  И category.hidden = false
+                  И category.deleted = false
+                  где avgAssigned3m(category) = average(assigned_history последних 3 месяцев)
 available       = plannedIncome − obligations
 ```
 
@@ -362,12 +369,12 @@ O(N × M), где N — число активных целей, M — гориз
 
 ### Структура страниц
 
-| Путь | Назначение | Заголовок UI |
-|------|------------|--------------|
-| `/login` | Вход через Supabase Auth (magic link). Незалогиненных редиректим сюда. | "Sign in" |
-| `/settings` | YNAB token, выбор бюджета, planned monthly income (с кнопкой «Use N-month average»), `baseline_months`, выход. | "Settings" |
-| `/goals` | CRUD долгосрочных целей. Привязка цели к YNAB-категории делает категорию долгосрочной. | "Goals" |
-| `/plan` | Главный экран планировщика. | "Plan" |
+| Путь        | Назначение                                                                                                     | Заголовок UI |
+| ----------- | -------------------------------------------------------------------------------------------------------------- | ------------ |
+| `/login`    | Вход через Supabase Auth (magic link). Незалогиненных редиректим сюда.                                         | "Sign in"    |
+| `/settings` | YNAB token, выбор бюджета, planned monthly income (с кнопкой «Use N-month average»), `baseline_months`, выход. | "Settings"   |
+| `/goals`    | CRUD долгосрочных целей. Привязка цели к YNAB-категории делает категорию долгосрочной.                         | "Goals"      |
+| `/plan`     | Главный экран планировщика.                                                                                    | "Plan"       |
 
 Если YNAB не подключён, `/goals` и `/plan` показывают баннер «Connect your YNAB account» с кнопкой → `/settings`. Отдельной страницы onboarding нет.
 
@@ -462,14 +469,14 @@ O(N × M), где N — число активных целей, M — гориз
 
 Конфиг `.dependency-cruiser.cjs` фиксирует слоистую архитектуру из §4 как машинно-проверяемые правила:
 
-| Правило | Что запрещает |
-|---------|---------------|
-| `domain-pure` | `/lib/planner` и `/lib/income` не импортируют из `next`, `react`, `@supabase/*`, `ynab`, `/app/*`, `/components/*`. |
-| `no-ui-in-api` | `/app/api/*` не импортирует `/components/*` и `react`. |
-| `no-api-in-ui` | `/components/*` не импортирует из `/app/api/*` (общение только через TanStack Query / server actions). |
-| `no-cross-page` | `/app/<page-a>/*` не импортирует из `/app/<page-b>/*`. Общий код выносится в `/lib` или `/components`. |
-| `no-circular` | Циклические зависимости запрещены полностью. |
-| `no-orphans` | Файлы без импортёров (кроме `page.tsx`, `layout.tsx`, `route.ts`, тест-файлов) — ошибка. |
+| Правило         | Что запрещает                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `domain-pure`   | `/lib/planner` и `/lib/income` не импортируют из `next`, `react`, `@supabase/*`, `ynab`, `/app/*`, `/components/*`. |
+| `no-ui-in-api`  | `/app/api/*` не импортирует `/components/*` и `react`.                                                              |
+| `no-api-in-ui`  | `/components/*` не импортирует из `/app/api/*` (общение только через TanStack Query / server actions).              |
+| `no-cross-page` | `/app/<page-a>/*` не импортирует из `/app/<page-b>/*`. Общий код выносится в `/lib` или `/components`.              |
+| `no-circular`   | Циклические зависимости запрещены полностью.                                                                        |
+| `no-orphans`    | Файлы без импортёров (кроме `page.tsx`, `layout.tsx`, `route.ts`, тест-файлов) — ошибка.                            |
 
 Запуск: `npm run test:arch` (`depcruise --config .dependency-cruiser.cjs src/`).
 
@@ -523,14 +530,14 @@ CI выполняет `npm run check` на каждом PR. Локальный p
 
 ## 9. Решения по ранее открытым вопросам
 
-| № | Вопрос | Решение |
-|---|--------|---------|
-| 1 | Шифрование YNAB-токена | **AES-GCM** на уровне приложения, ключ из env (`ENCRYPTION_KEY`). Шифрование в Route Handler перед записью в Postgres. |
-| 2 | Стратегия обновления `ynab_cache` | Ручной `[Sync YNAB]` всегда + **auto-refresh** при открытии `/plan`, если `synced_at` старше **24 часов**. |
-| 3 | UX выбора месяца для записи | **Только текущий месяц** YNAB. Будущие/прошлые — недоступны в MVP. |
-| 3a | Что именно пишем в YNAB | **Monthly Funding Goal (MF)**: `goal_type='MF'`, `goal_target=наша_рассчитанная_сумма_месяца`. `budgeted` (assigned) не трогаем. Если у категории был другой goal — перезаписываем с явным варнингом и при привязке цели к категории, и в финальном diff'е перед push'ем. |
-| 4 | Хранение `plan_snapshots` в MVP | Таблица пишется **автоматически при каждом успешном push в YNAB**. UI для просмотра истории в MVP отсутствует. Retention: **100 последних snapshot'ов на пользователя**, чистка ленивая (на запись). |
-| 5 | Локализация интерфейса | **Только английский UI**, без i18n-инфраструктуры. Все строки — литералы в коде. Источник кода, комментарии, БД, коммиты — тоже английский. Миграция на next-intl возможна позже без потери данных. |
+| №   | Вопрос                            | Решение                                                                                                                                                                                                                                                                   |
+| --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Шифрование YNAB-токена            | **AES-GCM** на уровне приложения, ключ из env (`ENCRYPTION_KEY`). Шифрование в Route Handler перед записью в Postgres.                                                                                                                                                    |
+| 2   | Стратегия обновления `ynab_cache` | Ручной `[Sync YNAB]` всегда + **auto-refresh** при открытии `/plan`, если `synced_at` старше **24 часов**.                                                                                                                                                                |
+| 3   | UX выбора месяца для записи       | **Только текущий месяц** YNAB. Будущие/прошлые — недоступны в MVP.                                                                                                                                                                                                        |
+| 3a  | Что именно пишем в YNAB           | **Monthly Funding Goal (MF)**: `goal_type='MF'`, `goal_target=наша_рассчитанная_сумма_месяца`. `budgeted` (assigned) не трогаем. Если у категории был другой goal — перезаписываем с явным варнингом и при привязке цели к категории, и в финальном diff'е перед push'ем. |
+| 4   | Хранение `plan_snapshots` в MVP   | Таблица пишется **автоматически при каждом успешном push в YNAB**. UI для просмотра истории в MVP отсутствует. Retention: **100 последних snapshot'ов на пользователя**, чистка ленивая (на запись).                                                                      |
+| 5   | Локализация интерфейса            | **Только английский UI**, без i18n-инфраструктуры. Все строки — литералы в коде. Источник кода, комментарии, БД, коммиты — тоже английский. Миграция на next-intl возможна позже без потери данных.                                                                       |
 
 ## 10. Что считаем «готовым MVP»
 

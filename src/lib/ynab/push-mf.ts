@@ -10,11 +10,13 @@ type AllocationForMonth = Record<string, number>;
 
 type YnabCategoryForPush = {
   id: string;
+  name: string;
   goalTarget: number | null;
 };
 
 export type MonthlyFundingDiffItem = {
   categoryId: string;
+  categoryName: string;
   current: number;
   next: number;
 };
@@ -54,8 +56,12 @@ const monthStartFromString = (value: string): Date => {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 };
 
-const monthsDiffInclusive = (currentMonth: Date, deadlineMonth: Date): number => {
-  const yearDiff = deadlineMonth.getUTCFullYear() - currentMonth.getUTCFullYear();
+const monthsDiffInclusive = (
+  currentMonth: Date,
+  deadlineMonth: Date,
+): number => {
+  const yearDiff =
+    deadlineMonth.getUTCFullYear() - currentMonth.getUTCFullYear();
   const monthDiff = deadlineMonth.getUTCMonth() - currentMonth.getUTCMonth();
   return yearDiff * 12 + monthDiff + 1;
 };
@@ -125,7 +131,9 @@ const fetchYnabCategory = async ({
 export const sortMonthlyFundingDiff = (
   diff: MonthlyFundingDiffItem[],
 ): MonthlyFundingDiffItem[] =>
-  [...diff].sort((left, right) => left.categoryId.localeCompare(right.categoryId));
+  [...diff].sort((left, right) =>
+    left.categoryId.localeCompare(right.categoryId),
+  );
 
 export const buildPushDiff = ({
   goals,
@@ -143,10 +151,12 @@ export const buildPushDiff = ({
     .filter((category) => goalsByCategoryId.has(category.id))
     .map((category) => {
       const goal = goalsByCategoryId.get(category.id)!;
+      const current = toMilliunits(category.goalTarget ?? 0);
       const next = toMilliunits(allocationForMonth[goal.id] ?? 0);
       return {
         categoryId: category.id,
-        current: category.goalTarget ?? 0,
+        categoryName: category.name,
+        current,
         next,
       };
     })
@@ -192,7 +202,12 @@ export const pushImmediateMonthlyFundingGoal = async ({
   deadline,
   fetchImpl = fetch,
 }: PushImmediateMonthlyFundingGoalInput): Promise<"updated" | "unchanged"> => {
-  const category = await fetchYnabCategory({ token, budgetId, categoryId, fetchImpl });
+  const category = await fetchYnabCategory({
+    token,
+    budgetId,
+    categoryId,
+    fetchImpl,
+  });
   const nextTarget = computeImmediateMonthlyFunding({
     targetAmount,
     currentBalance: fromMilliunits(category.balance),
@@ -207,7 +222,9 @@ export const pushImmediateMonthlyFundingGoal = async ({
   await pushMonthlyFundingGoals({
     token,
     budgetId,
-    updates: [{ categoryId, current: category.goalTarget ?? 0, next: nextTarget }],
+    updates: [
+      { categoryId, current: category.goalTarget ?? 0, next: nextTarget },
+    ],
     fetchImpl,
   });
 

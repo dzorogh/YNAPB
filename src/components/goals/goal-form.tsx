@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,9 @@ export const GoalForm = ({
   variant = "card",
   formIdPrefix,
 }: GoalFormProps) => {
-  const [values, setValues] = useState<GoalFormValues>(initialValues ?? defaultValues);
+  const [values, setValues] = useState<GoalFormValues>(
+    initialValues ?? defaultValues,
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -109,7 +112,12 @@ export const GoalForm = ({
           {isSubmitting ? "Saving..." : submitLabel}
         </Button>
         {onCancel ? (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isDisabled}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isDisabled}
+          >
             Cancel
           </Button>
         ) : null}
@@ -141,7 +149,12 @@ type GoalFormFieldsProps = {
   ) => void;
 };
 
-const GoalFormFields = ({ idPrefix, values, isDisabled, onChange }: GoalFormFieldsProps) => (
+const GoalFormFields = ({
+  idPrefix,
+  values,
+  isDisabled,
+  onChange,
+}: GoalFormFieldsProps) => (
   <>
     <div className="space-y-2">
       <Label htmlFor={`${idPrefix}-name`}>Name</Label>
@@ -160,7 +173,7 @@ const GoalFormFields = ({ idPrefix, values, isDisabled, onChange }: GoalFormFiel
         id={`${idPrefix}-target-amount`}
         type="number"
         min={0}
-        step="0.01"
+        step={1}
         value={values.targetAmount}
         onChange={(event) => onChange("targetAmount", event.target.value)}
         disabled={isDisabled}
@@ -186,7 +199,9 @@ const GoalFormFields = ({ idPrefix, values, isDisabled, onChange }: GoalFormFiel
         id={`${idPrefix}-status`}
         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         value={values.status}
-        onChange={(event) => onChange("status", event.target.value as GoalStatus)}
+        onChange={(event) =>
+          onChange("status", event.target.value as GoalStatus)
+        }
         disabled={isDisabled}
       >
         <option value="active">Active</option>

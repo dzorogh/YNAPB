@@ -22,20 +22,9 @@ test.describe("settings and goals smoke with e2e auth bypass", () => {
     await expect(page.getByText(/connect your ynab budget/i)).toBeVisible();
   });
 
-  test("goals page renders empty state", async ({ page }) => {
-    await page.route("**/api/goals", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ goals: [] }),
-      });
-    });
-
+  test("goals page redirects to plan", async ({ page }) => {
     await page.goto("/goals");
 
-    await expect(page).toHaveURL(/\/goals$/);
-    await expect(page.getByRole("heading", { name: "Goals" })).toBeVisible();
-    await expect(page.getByText("No goals yet")).toBeVisible();
-    await expect(page.getByText(/create your first goal/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/plan$/);
   });
 });

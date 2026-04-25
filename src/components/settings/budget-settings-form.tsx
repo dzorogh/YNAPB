@@ -2,17 +2,19 @@
 /* eslint-disable max-lines-per-function */
 
 import { useEffect, useState, type FormEvent } from "react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
 
 const DEFAULT_BASELINE_MONTHS = 6;
 const SETTINGS_ENDPOINT = "/api/settings";
 const SAVE_FAILED_TITLE = "Save failed";
 const LOAD_FAILED_TITLE = "Load failed";
-const UNEXPECTED_SAVE_ERROR_MESSAGE = "Unexpected network error while saving settings.";
+const UNEXPECTED_SAVE_ERROR_MESSAGE =
+  "Unexpected network error while saving settings.";
 const VALIDATION_ERROR_TITLE = "Validation error";
 
 type StatusTone = "success" | "error";
@@ -59,7 +61,10 @@ type SettingsResponse = {
   syncedAt: string | null;
 };
 
-const parseErrorMessage = async (response: Response, fallbackMessage: string): Promise<string> => {
+const parseErrorMessage = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> => {
   try {
     const data = (await response.json()) as ErrorResponse;
     if (typeof data.error === "string" && data.error.length > 0) {
@@ -117,7 +122,10 @@ export const BudgetSettingsForm = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(event) => void handleSaveYnabSettings(event)} className="space-y-4">
+          <form
+            onSubmit={(event) => void handleSaveYnabSettings(event)}
+            className="space-y-4"
+          >
             <YnabSettingsFields
               token={token}
               budgetId={budgetId}
@@ -150,7 +158,10 @@ export const BudgetSettingsForm = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(event) => void handleSaveIncomeSettings(event)} className="space-y-4">
+          <form
+            onSubmit={(event) => void handleSaveIncomeSettings(event)}
+            className="space-y-4"
+          >
             <IncomeSettingsFields
               plannedIncome={plannedIncome}
               baselineMonths={baselineMonths}
@@ -166,7 +177,7 @@ export const BudgetSettingsForm = () => {
                 setPlannedIncome(
                   historicalAverageIncome === null
                     ? ""
-                    : String(Number(historicalAverageIncome.toFixed(2))),
+                    : String(Math.round(historicalAverageIncome)),
                 )
               }
             />
@@ -184,8 +195,12 @@ const useBudgetSettingsForm = () => {
   const [token, setToken] = useState("");
   const [budgetId, setBudgetId] = useState("");
   const [plannedIncome, setPlannedIncome] = useState("");
-  const [baselineMonths, setBaselineMonths] = useState(String(DEFAULT_BASELINE_MONTHS));
-  const [historicalAverageIncome, setHistoricalAverageIncome] = useState<number | null>(null);
+  const [baselineMonths, setBaselineMonths] = useState(
+    String(DEFAULT_BASELINE_MONTHS),
+  );
+  const [historicalAverageIncome, setHistoricalAverageIncome] = useState<
+    number | null
+  >(null);
   const [incomeHistoryMonths, setIncomeHistoryMonths] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -200,7 +215,10 @@ const useBudgetSettingsForm = () => {
     try {
       const response = await fetch(SETTINGS_ENDPOINT, { method: "GET" });
       if (!response.ok) {
-        const message = await parseErrorMessage(response, "Failed to load settings.");
+        const message = await parseErrorMessage(
+          response,
+          "Failed to load settings.",
+        );
         setStatus({ tone: "error", title: LOAD_FAILED_TITLE, message });
         return;
       }
@@ -208,7 +226,9 @@ const useBudgetSettingsForm = () => {
       setBudgetId(data.budgetId);
       setHasYnabConnection(data.hasYnabConnection);
       setBaselineMonths(String(data.baselineMonths));
-      setPlannedIncome(data.plannedIncome === null ? "" : String(data.plannedIncome));
+      setPlannedIncome(
+        data.plannedIncome === null ? "" : String(data.plannedIncome),
+      );
       setIncomeHistoryMonths(data.incomeHistory.length);
       setHistoricalAverageIncome(data.historicalAverageIncome);
     } catch {
@@ -250,7 +270,9 @@ const useBudgetSettingsForm = () => {
     });
   };
 
-  const handleSaveIncomeSettings = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSaveIncomeSettings = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     await submitIncomeSettings({
       plannedIncome,
@@ -309,7 +331,7 @@ const HistoricalIncomeSection = ({
     <p className="mt-1 text-sm text-muted-foreground">
       {historicalAverageIncome === null
         ? "No synced income history yet. Run Sync YNAB first."
-        : `Average for last ${incomeHistoryMonths} month(s): ${historicalAverageIncome.toFixed(2)}`}
+        : `Average for last ${incomeHistoryMonths} month(s): ${Math.round(historicalAverageIncome)}`}
     </p>
     <Button
       type="button"
@@ -386,7 +408,7 @@ const IncomeSettingsFields = ({
         id="planned-income"
         type="number"
         min={0}
-        step="0.01"
+        step={1}
         value={plannedIncome}
         onChange={(event) => onPlannedIncomeChange(event.target.value)}
         required
@@ -460,7 +482,10 @@ const submitYnabSettings = async ({
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      const message = await parseErrorMessage(response, "Failed to save settings.");
+      const message = await parseErrorMessage(
+        response,
+        "Failed to save settings.",
+      );
       setStatus({ tone: "error", title: SAVE_FAILED_TITLE, message });
       return;
     }
@@ -495,7 +520,10 @@ const submitIncomeSettings = async ({
 }: SubmitIncomeSettingsParams) => {
   setStatus(null);
   const parsedPlannedIncome = parseNonNegativeNumber(plannedIncome);
-  const parsedBaselineMonths = parsePositiveInteger(baselineMonths, DEFAULT_BASELINE_MONTHS);
+  const parsedBaselineMonths = parsePositiveInteger(
+    baselineMonths,
+    DEFAULT_BASELINE_MONTHS,
+  );
 
   if (parsedPlannedIncome === null) {
     setStatus({
@@ -518,7 +546,10 @@ const submitIncomeSettings = async ({
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      const message = await parseErrorMessage(response, "Failed to save income settings.");
+      const message = await parseErrorMessage(
+        response,
+        "Failed to save income settings.",
+      );
       setStatus({ tone: "error", title: SAVE_FAILED_TITLE, message });
       return;
     }
@@ -544,10 +575,17 @@ type SyncYnabParams = {
   setIsSyncing: (isSyncing: boolean) => void;
 };
 
-const syncYnab = async ({ baselineMonths, setStatus, setIsSyncing }: SyncYnabParams) => {
+const syncYnab = async ({
+  baselineMonths,
+  setStatus,
+  setIsSyncing,
+}: SyncYnabParams) => {
   setStatus(null);
   const payload: SyncPayload = {
-    baselineMonths: parsePositiveInteger(baselineMonths, DEFAULT_BASELINE_MONTHS),
+    baselineMonths: parsePositiveInteger(
+      baselineMonths,
+      DEFAULT_BASELINE_MONTHS,
+    ),
   };
 
   setIsSyncing(true);
@@ -558,7 +596,10 @@ const syncYnab = async ({ baselineMonths, setStatus, setIsSyncing }: SyncYnabPar
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
-      const message = await parseErrorMessage(response, "Failed to sync YNAB data.");
+      const message = await parseErrorMessage(
+        response,
+        "Failed to sync YNAB data.",
+      );
       setStatus({ tone: "error", title: "Sync failed", message });
       return;
     }

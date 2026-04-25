@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+
 import type { PlanResult } from "@/lib/planner/types";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Json, Tables } from "@/types/supabase";
 
 type PlanSnapshotRow = Tables<"plan_snapshots">;
@@ -69,7 +70,9 @@ export const trimPlanSnapshots = async (
     return 0;
   }
 
-  const snapshotIdsToDelete = data.slice(parsedKeep).map((snapshot) => snapshot.id);
+  const snapshotIdsToDelete = data
+    .slice(parsedKeep)
+    .map((snapshot) => snapshot.id);
   if (snapshotIdsToDelete.length === 0) {
     return 0;
   }

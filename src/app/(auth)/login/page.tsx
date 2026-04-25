@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -33,11 +36,14 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-            <h1 className="text-base font-medium leading-snug">Sign in</h1>
-            <p className="text-sm text-muted-foreground">Magic link via email.</p>
+          <h1 className="text-base font-medium leading-snug">Sign in</h1>
+          <p className="text-sm text-muted-foreground">Magic link via email.</p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
+          <form
+            onSubmit={(event) => void handleSubmit(event)}
+            className="space-y-4"
+          >
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -49,8 +55,16 @@ export default function LoginPage() {
                 disabled={status === "sending" || status === "sent"}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={status === "sending" || status === "sent"}>
-              {status === "sending" ? "Sending..." : status === "sent" ? "Check your inbox" : "Send magic link"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={status === "sending" || status === "sent"}
+            >
+              {status === "sending"
+                ? "Sending..."
+                : status === "sent"
+                  ? "Check your inbox"
+                  : "Send magic link"}
             </Button>
             {error ? <p className="text-sm text-red-500">{error}</p> : null}
           </form>

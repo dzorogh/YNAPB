@@ -58,8 +58,18 @@ export type Allocation = {
 };
 
 export type Conflict =
-  | { type: "unreachable"; goalId: string; earliestAchievable: Date | null; detail: string }
-  | { type: "tied_deadline"; goalIds: string[]; deadline: Date; detail: string };
+  | {
+      type: "unreachable";
+      goalId: string;
+      earliestAchievable: Date | null;
+      detail: string;
+    }
+  | {
+      type: "tied_deadline";
+      goalIds: string[];
+      deadline: Date;
+      detail: string;
+    };
 
 export type PlanResult = {
   allocations: Allocation[];

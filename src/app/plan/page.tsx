@@ -1,15 +1,26 @@
 "use client";
+/* eslint-disable max-lines-per-function */
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { GoalDialog } from "@/components/goals/goal-dialog";
+import type { GoalFormValues } from "@/components/goals/goal-form";
+import type { GoalRecord } from "@/components/goals/goals-table";
 import { PlanConflicts } from "@/components/plan/plan-conflicts";
 import { PlanHeader } from "@/components/plan/plan-header";
 import { PlanTable } from "@/components/plan/plan-table";
 import { PlanTimeline } from "@/components/plan/plan-timeline";
-import { PushDiffDialog, type PushDiffRow } from "@/components/plan/push-diff-dialog";
+import {
+  PushDiffDialog,
+  type PushDiffRow,
+} from "@/components/plan/push-diff-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { computePlan } from "@/lib/planner/planner";
+import type { PlanResult as DomainPlanResult } from "@/lib/planner/types";
 
 type ApiPlanConflict =
   | {
@@ -26,10 +37,28 @@ type ApiPlanConflict =
     };
 
 type ApiPlanResponse = {
+  goals: Array<{
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentBalance: number;
+    deadline: string;
+    status: "active" | "frozen" | "completed";
+    ynabCategoryId: string | null;
+    createdAt: string;
+  }>;
+  startMonth: string;
+  horizonMonths: number;
+  currencyCode: string;
   budget: {
     plannedIncome: number;
     obligations: number;
     available: number;
+    obligationBreakdown: Array<{
+      categoryId: string;
+      categoryName: string;
+      amount: number;
+    }>;
   };
   planResult: {
     allocations: Array<{
@@ -63,19 +92,23 @@ type PushApplyResponse = {
 
 type LoadState = "loading" | "ready" | "error";
 type RefreshHandler = () => Promise<void>;
-type DeadlineShiftMap = Record<string, number>;
+type DeadlineDraftMap = Record<string, string>;
 type PushStatus = {
   tone: "success" | "error";
   title: string;
   message: string;
 } | null;
+type UnreachableByGoalId = Record<string, string | null>;
 
 const currentMonthKey = (): string => {
   const now = new Date();
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 };
 
-const parseErrorMessage = async (response: Response, fallbackMessage: string): Promise<string> => {
+const parseErrorMessage = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> => {
   try {
     const data = (await response.json()) as ApiErrorResponse;
     if (typeof data.error === "string" && data.error.trim().length > 0) {
@@ -87,32 +120,10 @@ const parseErrorMessage = async (response: Response, fallbackMessage: string): P
   }
 };
 
-const extractGoalIds = (payload: ApiPlanResponse): string[] => {
-  const ids = new Set<string>();
-
-  Object.keys(payload.planResult.completionMap).forEach((goalId) => {
-    ids.add(goalId);
-  });
-
-  payload.planResult.allocations.forEach((allocation) => {
-    Object.keys(allocation.perGoal).forEach((goalId) => {
-      ids.add(goalId);
-    });
-  });
-
-  payload.planResult.conflicts.forEach((conflict) => {
-    if (conflict.type === "unreachable") {
-      ids.add(conflict.goalId);
-      return;
-    }
-    conflict.goalIds.forEach((goalId) => ids.add(goalId));
-  });
-
-  return [...ids].sort((leftId, rightId) => leftId.localeCompare(rightId));
-};
+const toMonthStartIso = (value: string): string => `${value.slice(0, 7)}-01`;
 
 const isLikelyMissingYnabConnection = (payload: ApiPlanResponse): boolean => {
-  const hasAnyGoalSignals = extractGoalIds(payload).length > 0;
+  const hasAnyGoalSignals = payload.goals.length > 0;
   if (hasAnyGoalSignals) {
     return false;
   }
@@ -152,9 +163,16 @@ const ErrorPlanState = ({
   <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
     <Alert variant="destructive">
       <AlertTitle>Failed to load plan</AlertTitle>
-      <AlertDescription>{statusMessage ?? "Try again in a minute."}</AlertDescription>
+      <AlertDescription>
+        {statusMessage ?? "Try again in a minute."}
+      </AlertDescription>
     </Alert>
-    <Button type="button" variant="outline" onClick={() => void onRetry()} aria-label="Retry loading plan">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => void onRetry()}
+      aria-label="Retry loading plan"
+    >
       Retry
     </Button>
   </main>
@@ -168,7 +186,8 @@ const MissingConnectionPlanState = () => (
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Plan requires YNAB connection and synced data before calculation can start.
+          Plan requires YNAB connection and synced data before calculation can
+          start.
         </p>
         <Button render={<Link href="/settings" />} aria-label="Go to settings">
           Open settings
@@ -178,47 +197,23 @@ const MissingConnectionPlanState = () => (
   </main>
 );
 
-const EmptyGoalsPlanState = ({
-  planData,
-  isRefreshing,
-  onRefresh,
-}: {
-  planData: ApiPlanResponse;
-  isRefreshing: boolean;
-  onRefresh: RefreshHandler;
-}) => (
-  <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
-    <PlanHeader
-      budget={planData.budget}
-      needsSync={planData.needsSync}
-      isRefreshing={isRefreshing}
-      onRefresh={onRefresh}
-    />
-    <Card>
-      <CardHeader>
-        <CardTitle>No goals yet</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Create at least one active goal to see a monthly plan.
-        </p>
-        <Button render={<Link href="/goals" />} aria-label="Go to goals">
-          Create goals
-        </Button>
-      </CardContent>
-    </Card>
-  </main>
-);
-
 type MainPlanViewProps = {
   planData: ApiPlanResponse;
-  goalIds: string[];
-  unreachableGoalIds: Set<string>;
+  unreachableByGoalId: UnreachableByGoalId;
+  completionByGoalId: Record<string, string | null>;
+  allocations: ApiPlanResponse["planResult"]["allocations"];
+  activeGoals: ApiPlanResponse["goals"];
+  deadlineDrafts: DeadlineDraftMap;
   isRefreshing: boolean;
   onRefresh: RefreshHandler;
-  deadlineShifts: DeadlineShiftMap;
-  onShiftDeadline: (goalId: string, deltaMonths: number) => void;
-  pushStatus: PushStatus;
+  onDragStartSnapshot: () => void;
+  onDeadlinePreview: (goalId: string, nextDeadline: string) => void;
+  onDeadlineCommit: (goalId: string, nextDeadline: string) => Promise<void>;
+  onCancelPreview: () => void;
+  onOpenCreateGoal: () => void;
+  onOpenEditGoal: (goalId: string) => void;
+  onOpenDeleteGoal: (goalId: string) => void;
+  areGoalActionsDisabled: boolean;
   isPreviewLoading: boolean;
   onOpenPushPreview: () => Promise<void>;
   isPushDialogOpen: boolean;
@@ -230,13 +225,21 @@ type MainPlanViewProps = {
 
 const MainPlanView = ({
   planData,
-  goalIds,
-  unreachableGoalIds,
+  unreachableByGoalId,
+  completionByGoalId,
+  allocations,
+  activeGoals,
+  deadlineDrafts,
   isRefreshing,
   onRefresh,
-  deadlineShifts,
-  onShiftDeadline,
-  pushStatus,
+  onDragStartSnapshot,
+  onDeadlinePreview,
+  onDeadlineCommit,
+  onCancelPreview,
+  onOpenCreateGoal,
+  onOpenEditGoal,
+  onOpenDeleteGoal,
+  areGoalActionsDisabled,
   isPreviewLoading,
   onOpenPushPreview,
   isPushDialogOpen,
@@ -245,50 +248,62 @@ const MainPlanView = ({
   onClosePushDialog,
   onApplyPushDiff,
 }: MainPlanViewProps) => (
-  <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
-    <header className="space-y-1">
-      <h1 className="text-2xl font-semibold">Plan</h1>
+  <main className="mx-auto flex w-full max-w-6xl flex-col gap-3 p-4 md:p-8">
+    <header className="space-y-0.5">
+      <h1 className="text-xl font-semibold md:text-2xl">Plan</h1>
       <p className="text-sm text-muted-foreground">
         Review calculated allocations, timeline, and conflict warnings.
       </p>
     </header>
     <PlanHeader
       budget={planData.budget}
+      currencyCode={planData.currencyCode}
       needsSync={planData.needsSync}
       isRefreshing={isRefreshing}
+      isPreviewLoading={isPreviewLoading}
+      isApplyingPush={isApplyingPush}
       onRefresh={onRefresh}
+      onOpenPushPreview={onOpenPushPreview}
     />
-    {pushStatus ? (
-      <Alert variant={pushStatus.tone === "error" ? "destructive" : "default"}>
-        <AlertTitle>{pushStatus.title}</AlertTitle>
-        <AlertDescription>{pushStatus.message}</AlertDescription>
-      </Alert>
-    ) : null}
-    <div>
-      <Button
-        type="button"
-        disabled={isPreviewLoading || isApplyingPush}
-        aria-label="Push goals to YNAB for current month"
-        onClick={() => void onOpenPushPreview()}
-      >
-        {isPreviewLoading ? "Preparing preview..." : "Push goals to YNAB for current month"}
-      </Button>
-    </div>
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
-      <PlanTable allocations={planData.planResult.allocations} goalIds={goalIds} />
+    <div className="space-y-4">
       <PlanTimeline
-        goalIds={goalIds}
-        completionMap={planData.planResult.completionMap}
-        unreachableGoalIds={unreachableGoalIds}
-        deadlineShifts={deadlineShifts}
+        goals={activeGoals}
+        startMonthIso={planData.startMonth}
+        horizonMonths={planData.horizonMonths}
+        unreachableByGoalId={unreachableByGoalId}
+        completionByGoalId={completionByGoalId}
+        draftDeadlines={deadlineDrafts}
         isRecalculating={isRefreshing}
-        onShiftDeadline={onShiftDeadline}
+        currencyCode={planData.currencyCode}
+        onOpenCreateGoal={onOpenCreateGoal}
+        onOpenEditGoal={onOpenEditGoal}
+        onOpenDeleteGoal={onOpenDeleteGoal}
+        areGoalActionsDisabled={areGoalActionsDisabled}
+        onDragStartSnapshot={onDragStartSnapshot}
+        onDeadlinePreview={onDeadlinePreview}
+        onDeadlineCommit={(goalId, nextDeadline) =>
+          void onDeadlineCommit(goalId, nextDeadline)
+        }
+        onCancelPreview={onCancelPreview}
+      />
+      <PlanTable
+        allocations={allocations}
+        goals={activeGoals.map((goal) => ({
+          id: goal.id,
+          name: goal.name,
+          deadline: goal.deadline,
+        }))}
+        currencyCode={planData.currencyCode}
       />
     </div>
-    <PlanConflicts conflicts={planData.planResult.conflicts} tbdWarnings={planData.tbdWarnings} />
+    <PlanConflicts
+      conflicts={planData.planResult.conflicts}
+      tbdWarnings={planData.tbdWarnings}
+    />
     <PushDiffDialog
       isOpen={isPushDialogOpen}
       diffRows={pushDiffRows}
+      currencyCode={planData.currencyCode}
       onCancel={onClosePushDialog}
       onConfirm={onApplyPushDiff}
       isApplying={isApplyingPush}
@@ -298,16 +313,48 @@ const MainPlanView = ({
 
 const APPLY_FAILED_TITLE = "Apply failed";
 
+const toPlannerResult = (
+  result: DomainPlanResult,
+): ApiPlanResponse["planResult"] => ({
+  allocations: result.allocations.map((allocation) => ({
+    month: allocation.month.toISOString(),
+    perGoal: allocation.perGoal,
+    unallocated: allocation.unallocated,
+  })),
+  conflicts: result.conflicts.map((conflict) =>
+    conflict.type === "unreachable"
+      ? {
+          type: "unreachable",
+          goalId: conflict.goalId,
+          earliestAchievable:
+            conflict.earliestAchievable?.toISOString() ?? null,
+          detail: conflict.detail,
+        }
+      : {
+          type: "tied_deadline",
+          goalIds: conflict.goalIds,
+          deadline: conflict.deadline.toISOString(),
+          detail: conflict.detail,
+        },
+  ),
+  completionMap: Object.fromEntries(
+    Object.entries(result.completionMap).map(([goalId, value]) => [
+      goalId,
+      value?.toISOString() ?? null,
+    ]),
+  ),
+  autoFrozenGoalIds: result.autoFrozenGoalIds,
+});
+
 const usePlanData = () => {
   const [state, setState] = useState<LoadState>("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [planData, setPlanData] = useState<ApiPlanResponse | null>(null);
-  const [deadlineShifts, setDeadlineShifts] = useState<DeadlineShiftMap>({});
-  const deadlineShiftsRef = useRef<DeadlineShiftMap>({});
+  const [deadlineDrafts, setDeadlineDrafts] = useState<DeadlineDraftMap>({});
+  const snapshotDeadlinesRef = useRef<DeadlineDraftMap | null>(null);
 
-  const loadPlan = useCallback(async (showRefreshing = false, shiftsOverride?: DeadlineShiftMap) => {
-    const effectiveShifts = shiftsOverride ?? deadlineShiftsRef.current;
+  const loadPlan = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) {
       setIsRefreshing(true);
     } else {
@@ -319,10 +366,12 @@ const usePlanData = () => {
       const response = await fetch("/api/plan/calculate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ deadlineShifts: effectiveShifts }),
+        body: JSON.stringify({}),
       });
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as ApiErrorResponse | null;
+        const data = (await response
+          .json()
+          .catch(() => null)) as ApiErrorResponse | null;
         setState("error");
         setStatusMessage(data?.error ?? "Failed to load plan calculation.");
         return;
@@ -343,46 +392,132 @@ const usePlanData = () => {
     void loadPlan(false);
   }, [loadPlan]);
 
-  const goalIds = useMemo(() => (planData ? extractGoalIds(planData) : []), [planData]);
-  const unreachableGoalIds = useMemo(
-    () =>
-      new Set(
-        (planData?.planResult.conflicts ?? [])
-          .filter((entry): entry is Extract<ApiPlanConflict, { type: "unreachable" }> =>
-            entry.type === "unreachable")
-          .map((entry) => entry.goalId),
-      ),
+  const activeGoals = useMemo(
+    () => (planData?.goals ?? []).filter((goal) => goal.status === "active"),
     [planData],
   );
+  const plannerInputGoals = useMemo(
+    () =>
+      activeGoals.map((goal) => ({
+        id: goal.id,
+        name: goal.name,
+        targetAmount: goal.targetAmount,
+        currentBalance: goal.currentBalance,
+        deadline: new Date(
+          `${(deadlineDrafts[goal.id] ?? goal.deadline).slice(0, 7)}-01T00:00:00.000Z`,
+        ),
+        status: goal.status,
+        ynabCategoryId: goal.ynabCategoryId,
+        createdAt: new Date(goal.createdAt),
+      })),
+    [activeGoals, deadlineDrafts],
+  );
+  const previewPlanResult = useMemo(() => {
+    if (!planData) {
+      return null;
+    }
+    return toPlannerResult(
+      computePlan({
+        goals: plannerInputGoals,
+        budget: planData.budget,
+        startMonth: new Date(planData.startMonth),
+        horizonMonths: planData.horizonMonths,
+      }),
+    );
+  }, [planData, plannerInputGoals]);
+  const unreachableByGoalId = useMemo(() => {
+    const conflicts = previewPlanResult?.conflicts ?? [];
+    return conflicts
+      .filter(
+        (entry): entry is Extract<ApiPlanConflict, { type: "unreachable" }> =>
+          entry.type === "unreachable",
+      )
+      .reduce<UnreachableByGoalId>((acc, entry) => {
+        acc[entry.goalId] = entry.earliestAchievable;
+        return acc;
+      }, {});
+  }, [previewPlanResult]);
   const handleRefresh = useCallback(async () => {
-    await loadPlan(true);
+    setIsRefreshing(true);
+    try {
+      const syncResponse = await fetch("/api/ynab/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!syncResponse.ok) {
+        const message = await parseErrorMessage(
+          syncResponse,
+          "Failed to sync YNAB data before refresh.",
+        );
+        setState("error");
+        setStatusMessage(message);
+        return;
+      }
+      await loadPlan(true);
+    } catch {
+      setState("error");
+      setStatusMessage(
+        "Unexpected network error while syncing YNAB before refresh.",
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [loadPlan]);
   const handleRetry = useCallback(async () => {
     await loadPlan(false);
   }, [loadPlan]);
-  const handleShiftDeadline = useCallback((goalId: string, deltaMonths: number) => {
-    const nextShifts = {
-      ...deadlineShiftsRef.current,
-      [goalId]: (deadlineShiftsRef.current[goalId] ?? 0) + deltaMonths,
-    };
-
-    deadlineShiftsRef.current = nextShifts;
-    setDeadlineShifts(nextShifts);
-    void loadPlan(true, nextShifts);
-  }, [loadPlan]);
+  const handleDragStartSnapshot = useCallback(() => {
+    snapshotDeadlinesRef.current = { ...deadlineDrafts };
+  }, [deadlineDrafts]);
+  const handleDeadlinePreview = useCallback(
+    (goalId: string, nextDeadline: string) => {
+      setDeadlineDrafts((current) => ({
+        ...current,
+        [goalId]: toMonthStartIso(nextDeadline),
+      }));
+    },
+    [],
+  );
+  const handleCancelPreview = useCallback(() => {
+    const snapshot = snapshotDeadlinesRef.current;
+    if (!snapshot) {
+      return;
+    }
+    setDeadlineDrafts(snapshot);
+    snapshotDeadlinesRef.current = null;
+  }, []);
+  const handleCommitDeadline = useCallback(
+    async (goalId: string, nextDeadline: string) => {
+      await fetch("/api/plan/deadlines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deadlines: [{ goalId, deadline: toMonthStartIso(nextDeadline) }],
+        }),
+      });
+      snapshotDeadlinesRef.current = null;
+      await loadPlan(true);
+    },
+    [loadPlan],
+  );
 
   return {
     state,
     isRefreshing,
     statusMessage,
     planData,
-    goalIds,
-    unreachableGoalIds,
-    deadlineShifts,
+    activeGoals,
+    unreachableByGoalId,
+    deadlineDrafts,
+    previewPlanResult,
     loadPlan,
     handleRefresh,
     handleRetry,
-    handleShiftDeadline,
+    handleDragStartSnapshot,
+    handleDeadlinePreview,
+    handleCommitDeadline,
+    handleCancelPreview,
   };
 };
 
@@ -411,7 +546,10 @@ const usePushPreview = ({
         body: JSON.stringify({ mode: "preview", month: monthKey }),
       });
       if (!response.ok) {
-        const message = await parseErrorMessage(response, "Failed to prepare YNAB push preview.");
+        const message = await parseErrorMessage(
+          response,
+          "Failed to prepare YNAB push preview.",
+        );
         setPushStatus({ tone: "error", title: "Preview failed", message });
         return;
       }
@@ -428,7 +566,13 @@ const usePushPreview = ({
     } finally {
       setIsPreviewLoading(false);
     }
-  }, [monthKey, setIsPushDialogOpen, setPreviewDiffHash, setPushDiffRows, setPushStatus]);
+  }, [
+    monthKey,
+    setIsPushDialogOpen,
+    setPreviewDiffHash,
+    setPushDiffRows,
+    setPushStatus,
+  ]);
 
   return { isPreviewLoading, handleOpenPushPreview };
 };
@@ -441,7 +585,7 @@ const usePushApply = ({
   setPreviewDiffHash,
   setIsPushDialogOpen,
 }: {
-  loadPlan: (showRefreshing?: boolean, shiftsOverride?: DeadlineShiftMap) => Promise<void>;
+  loadPlan: (showRefreshing?: boolean) => Promise<void>;
   monthKey: string;
   previewDiffHash: string | null;
   setPushStatus: (status: PushStatus) => void;
@@ -452,7 +596,11 @@ const usePushApply = ({
 
   const handleApplyPushDiff = useCallback(async () => {
     if (!previewDiffHash) {
-      setPushStatus({ tone: "error", title: APPLY_FAILED_TITLE, message: "Preview hash is missing. Run preview again." });
+      setPushStatus({
+        tone: "error",
+        title: APPLY_FAILED_TITLE,
+        message: "Preview hash is missing. Run preview again.",
+      });
       setIsPushDialogOpen(false);
       return;
     }
@@ -463,10 +611,17 @@ const usePushApply = ({
       const response = await fetch("/api/plan/push", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "apply", month: monthKey, acceptedDiffHash: previewDiffHash }),
+        body: JSON.stringify({
+          mode: "apply",
+          month: monthKey,
+          acceptedDiffHash: previewDiffHash,
+        }),
       });
       if (!response.ok) {
-        const message = await parseErrorMessage(response, "Failed to apply YNAB push.");
+        const message = await parseErrorMessage(
+          response,
+          "Failed to apply YNAB push.",
+        );
         setPushStatus({ tone: "error", title: APPLY_FAILED_TITLE, message });
         return;
       }
@@ -474,9 +629,10 @@ const usePushApply = ({
       setPushStatus({
         tone: "success",
         title: "Push completed",
-        message: payload.applied > 0
-          ? `Applied ${payload.applied} YNAB goal update(s) and refreshed plan data.`
-          : "No YNAB updates were needed. Plan data was refreshed.",
+        message:
+          payload.applied > 0
+            ? `Applied ${payload.applied} YNAB goal update(s) and refreshed plan data.`
+            : "No YNAB updates were needed. Plan data was refreshed.",
       });
       setIsPushDialogOpen(false);
       setPreviewDiffHash(null);
@@ -490,7 +646,14 @@ const usePushApply = ({
     } finally {
       setIsApplyingPush(false);
     }
-  }, [loadPlan, monthKey, previewDiffHash, setIsPushDialogOpen, setPreviewDiffHash, setPushStatus]);
+  }, [
+    loadPlan,
+    monthKey,
+    previewDiffHash,
+    setIsPushDialogOpen,
+    setPreviewDiffHash,
+    setPushStatus,
+  ]);
 
   return { isApplyingPush, handleApplyPushDiff };
 };
@@ -502,18 +665,29 @@ export default function PlanPage() {
     isRefreshing,
     statusMessage,
     planData,
-    goalIds,
-    unreachableGoalIds,
-    deadlineShifts,
+    activeGoals,
+    unreachableByGoalId,
+    deadlineDrafts,
+    previewPlanResult,
     loadPlan,
     handleRefresh,
     handleRetry,
-    handleShiftDeadline,
+    handleDragStartSnapshot,
+    handleDeadlinePreview,
+    handleCommitDeadline,
+    handleCancelPreview,
   } = usePlanData();
+  const goalsCrud = useGoalsCrud({
+    onAfterMutation: async () => {
+      await loadPlan(true);
+    },
+  });
   const [pushStatus, setPushStatus] = useState<PushStatus>(null);
   const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
   const [pushDiffRows, setPushDiffRows] = useState<PushDiffRow[]>([]);
   const [previewDiffHash, setPreviewDiffHash] = useState<string | null>(null);
+  const goalsCrudStatus = goalsCrud.status;
+  const clearGoalsCrudStatus = goalsCrud.clearStatus;
   const { isPreviewLoading, handleOpenPushPreview } = usePushPreview({
     monthKey,
     setPushStatus,
@@ -536,45 +710,407 @@ export default function PlanPage() {
     setIsPushDialogOpen(false);
   }, [isApplyingPush]);
 
+  useEffect(() => {
+    if (!pushStatus) {
+      return;
+    }
+    if (pushStatus.tone === "error") {
+      toast.error(pushStatus.title, { description: pushStatus.message });
+    } else {
+      toast.success(pushStatus.title, { description: pushStatus.message });
+    }
+    setPushStatus(null);
+  }, [pushStatus]);
+
+  useEffect(() => {
+    if (!goalsCrudStatus) {
+      return;
+    }
+    if (goalsCrudStatus.tone === "error") {
+      toast.error(goalsCrudStatus.title, {
+        description: goalsCrudStatus.message,
+      });
+    } else {
+      toast.success(goalsCrudStatus.title, {
+        description: goalsCrudStatus.message,
+      });
+    }
+    clearGoalsCrudStatus();
+  }, [clearGoalsCrudStatus, goalsCrudStatus]);
+
   if (state === "loading") {
     return <LoadingPlanState />;
   }
 
-  if (state === "error" || !planData) {
-    return <ErrorPlanState statusMessage={statusMessage} onRetry={handleRetry} />;
+  if (state === "error" || !planData || !previewPlanResult) {
+    return (
+      <ErrorPlanState statusMessage={statusMessage} onRetry={handleRetry} />
+    );
   }
 
   if (isLikelyMissingYnabConnection(planData)) {
     return <MissingConnectionPlanState />;
   }
 
-  if (goalIds.length === 0) {
-    return (
-      <EmptyGoalsPlanState
-        planData={planData}
+  const allocations = previewPlanResult.allocations;
+  return (
+    <>
+      <MainPlanView
+        planData={{ ...planData, planResult: previewPlanResult }}
+        activeGoals={activeGoals}
+        unreachableByGoalId={unreachableByGoalId}
+        completionByGoalId={previewPlanResult.completionMap}
+        allocations={allocations}
+        deadlineDrafts={deadlineDrafts}
         isRefreshing={isRefreshing}
+        onOpenCreateGoal={goalsCrud.openCreateGoalModal}
+        onOpenEditGoal={goalsCrud.openEditGoalById}
+        onOpenDeleteGoal={goalsCrud.openDeleteGoalById}
+        areGoalActionsDisabled={goalsCrud.areGoalActionsDisabled}
         onRefresh={handleRefresh}
+        onDragStartSnapshot={handleDragStartSnapshot}
+        onDeadlinePreview={handleDeadlinePreview}
+        onDeadlineCommit={handleCommitDeadline}
+        onCancelPreview={handleCancelPreview}
+        isPreviewLoading={isPreviewLoading}
+        onOpenPushPreview={handleOpenPushPreview}
+        isPushDialogOpen={isPushDialogOpen}
+        pushDiffRows={pushDiffRows}
+        isApplyingPush={isApplyingPush}
+        onClosePushDialog={handleClosePushDialog}
+        onApplyPushDiff={handleApplyPushDiff}
       />
-    );
+      {goalsCrud.createDialog}
+      {goalsCrud.editDialog}
+      {goalsCrud.deleteDialog}
+    </>
+  );
+}
+
+type ErrorResponse = { error?: string };
+
+type GoalsResponse = { goals: GoalRecord[] };
+type GoalResponse = { goal: GoalRecord };
+
+const normalizeGoalPayload = (values: GoalFormValues) => ({
+  name: values.name.trim(),
+  targetAmount: Number(values.targetAmount),
+  deadline: values.deadline,
+  status: values.status,
+  notes: values.notes.trim() ? values.notes.trim() : null,
+  ynabCategoryId: values.ynabCategoryId.trim()
+    ? values.ynabCategoryId.trim()
+    : null,
+});
+
+const parseGoalsError = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> => {
+  try {
+    const data = (await response.json()) as ErrorResponse;
+    if (typeof data.error === "string" && data.error.length > 0) {
+      return data.error;
+    }
+    return fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+};
+
+const mapGoalToFormValues = (goal: GoalRecord): GoalFormValues => ({
+  name: goal.name,
+  targetAmount: String(goal.target_amount),
+  deadline: goal.deadline,
+  status: goal.status,
+  notes: goal.notes ?? "",
+  ynabCategoryId: goal.ynab_category_id ?? "",
+});
+
+const DeleteGoalDialog = ({
+  goal,
+  isDeleting,
+  onCancel,
+  onConfirm,
+}: {
+  goal: GoalRecord | null;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => Promise<void>;
+}) => {
+  if (!goal) {
+    return null;
   }
 
   return (
-    <MainPlanView
-      planData={planData}
-      goalIds={goalIds}
-      unreachableGoalIds={unreachableGoalIds}
-      isRefreshing={isRefreshing}
-      onRefresh={handleRefresh}
-      deadlineShifts={deadlineShifts}
-      onShiftDeadline={handleShiftDeadline}
-      pushStatus={pushStatus}
-      isPreviewLoading={isPreviewLoading}
-      onOpenPushPreview={handleOpenPushPreview}
-      isPushDialogOpen={isPushDialogOpen}
-      pushDiffRows={pushDiffRows}
-      isApplyingPush={isApplyingPush}
-      onClosePushDialog={handleClosePushDialog}
-      onApplyPushDiff={handleApplyPushDiff}
-    />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Delete goal confirmation"
+      tabIndex={-1}
+      onClick={onCancel}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          onCancel();
+        }
+      }}
+    >
+      <Card
+        className="w-full max-w-md"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <CardHeader>
+          <CardTitle>Delete goal</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Delete goal{" "}
+            <span className="font-medium text-foreground">{goal.name}</span>?
+            This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void onConfirm()}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
-}
+};
+
+const useGoalsCrud = ({
+  onAfterMutation,
+}: {
+  onAfterMutation: () => Promise<void>;
+}) => {
+  const [status, setStatus] = useState<PushStatus>(null);
+  const [goals, setGoals] = useState<GoalRecord[]>([]);
+  const [isLoadingGoals, setIsLoadingGoals] = useState(true);
+  const [isRefreshingGoals, setIsRefreshingGoals] = useState(false);
+  const [isCreateGoalModalOpen, setIsCreateGoalModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<GoalRecord | null>(null);
+  const [deletingGoal, setDeletingGoal] = useState<GoalRecord | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+
+  const fetchGoals = useCallback(async (refresh = false) => {
+    if (refresh) {
+      setIsRefreshingGoals(true);
+    } else {
+      setIsLoadingGoals(true);
+    }
+    try {
+      const response = await fetch("/api/goals");
+      if (!response.ok) {
+        setStatus({
+          tone: "error",
+          title: "Load failed",
+          message: await parseGoalsError(response, "Failed to load goals."),
+        });
+        return;
+      }
+      const data = (await response.json()) as GoalsResponse;
+      setGoals(data.goals);
+    } finally {
+      setIsLoadingGoals(false);
+      setIsRefreshingGoals(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchGoals(false);
+  }, [fetchGoals]);
+
+  const handleCreateGoal = useCallback(
+    async (values: GoalFormValues) => {
+      setIsCreating(true);
+      setStatus(null);
+      try {
+        const response = await fetch("/api/goals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(normalizeGoalPayload(values)),
+        });
+        if (!response.ok) {
+          setStatus({
+            tone: "error",
+            title: "Create failed",
+            message: await parseGoalsError(response, "Failed to create goal."),
+          });
+          return;
+        }
+        const data = (await response.json()) as GoalResponse;
+        setGoals((current) => [data.goal, ...current]);
+        setStatus({
+          tone: "success",
+          title: "Goal created",
+          message: "Goal added successfully.",
+        });
+        setIsCreateGoalModalOpen(false);
+        await fetchGoals(true);
+        await onAfterMutation();
+      } finally {
+        setIsCreating(false);
+      }
+    },
+    [fetchGoals, onAfterMutation],
+  );
+
+  const handleUpdateGoal = useCallback(
+    async (values: GoalFormValues) => {
+      if (!editingGoal) {
+        return;
+      }
+      setIsUpdating(true);
+      setStatus(null);
+      try {
+        const response = await fetch(`/api/goals/${editingGoal.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(normalizeGoalPayload(values)),
+        });
+        if (!response.ok) {
+          setStatus({
+            tone: "error",
+            title: "Update failed",
+            message: await parseGoalsError(response, "Failed to update goal."),
+          });
+          return;
+        }
+        const data = (await response.json()) as GoalResponse;
+        setGoals((current) =>
+          current.map((goal) => (goal.id === data.goal.id ? data.goal : goal)),
+        );
+        setEditingGoal(null);
+        setStatus({
+          tone: "success",
+          title: "Goal updated",
+          message: "Goal updated successfully.",
+        });
+        await fetchGoals(true);
+        await onAfterMutation();
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [editingGoal, fetchGoals, onAfterMutation],
+  );
+
+  const handleDeleteGoal = useCallback(async () => {
+    if (!deletingGoal) {
+      return;
+    }
+    setDeletingGoalId(deletingGoal.id);
+    setStatus(null);
+    try {
+      const response = await fetch(`/api/goals/${deletingGoal.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        setStatus({
+          tone: "error",
+          title: "Delete failed",
+          message: await parseGoalsError(response, "Failed to delete goal."),
+        });
+        return;
+      }
+      setGoals((current) =>
+        current.filter((item) => item.id !== deletingGoal.id),
+      );
+      if (editingGoal?.id === deletingGoal.id) {
+        setEditingGoal(null);
+      }
+      setDeletingGoal(null);
+      setStatus({
+        tone: "success",
+        title: "Goal deleted",
+        message: "Goal removed successfully.",
+      });
+      await onAfterMutation();
+    } finally {
+      setDeletingGoalId(null);
+    }
+  }, [deletingGoal, editingGoal?.id, onAfterMutation]);
+
+  const goalsById = useMemo(
+    () => new Map(goals.map((goal) => [goal.id, goal])),
+    [goals],
+  );
+
+  const clearStatus = useCallback(() => {
+    setStatus(null);
+  }, []);
+
+  return {
+    status,
+    clearStatus,
+    isLoadingGoals,
+    isRefreshingGoals,
+    areGoalActionsDisabled:
+      isLoadingGoals ||
+      isRefreshingGoals ||
+      isCreating ||
+      isUpdating ||
+      deletingGoalId !== null,
+    openCreateGoalModal: () => setIsCreateGoalModalOpen(true),
+    openEditGoalById: (goalId: string) => {
+      const goal = goalsById.get(goalId);
+      if (goal) {
+        setEditingGoal(goal);
+      }
+    },
+    openDeleteGoalById: (goalId: string) => {
+      const goal = goalsById.get(goalId);
+      if (goal) {
+        setDeletingGoal(goal);
+      }
+    },
+    createDialog: (
+      <GoalDialog
+        mode="create"
+        isOpen={isCreateGoalModalOpen}
+        isSubmitting={isCreating}
+        disabled={isUpdating || deletingGoalId !== null}
+        onClose={() => setIsCreateGoalModalOpen(false)}
+        onSubmit={handleCreateGoal}
+      />
+    ),
+    editDialog: (
+      <GoalDialog
+        mode="edit"
+        isOpen={Boolean(editingGoal)}
+        isSubmitting={isUpdating}
+        initialValues={
+          editingGoal ? mapGoalToFormValues(editingGoal) : undefined
+        }
+        disabled={isCreating || deletingGoalId !== null}
+        onClose={() => setEditingGoal(null)}
+        onSubmit={handleUpdateGoal}
+      />
+    ),
+    deleteDialog: (
+      <DeleteGoalDialog
+        goal={deletingGoal}
+        isDeleting={deletingGoalId !== null}
+        onCancel={() => setDeletingGoal(null)}
+        onConfirm={handleDeleteGoal}
+      />
+    ),
+  };
+};

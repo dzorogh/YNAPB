@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/supabase";
 
@@ -13,7 +14,9 @@ export class GoalNotFoundError extends Error {
 
 const userIdSchema = z.uuid();
 const goalIdSchema = z.uuid();
-const deadlineSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid YYYY-MM-DD date");
+const deadlineSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid YYYY-MM-DD date");
 
 const createGoalSchema = z.object({
   name: z.string().trim().min(1),
@@ -24,12 +27,11 @@ const createGoalSchema = z.object({
   ynabCategoryId: z.string().trim().min(1).nullable().optional(),
 });
 
-const updateGoalSchema = createGoalSchema.partial().refine(
-  (value) => Object.keys(value).length > 0,
-  {
+const updateGoalSchema = createGoalSchema
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, {
     message: "At least one field must be provided to update goal",
-  },
-);
+  });
 
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
 export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
@@ -99,7 +101,9 @@ export const updateGoal = async (
     ...(parsedInput.targetAmount !== undefined
       ? { target_amount: parsedInput.targetAmount }
       : {}),
-    ...(parsedInput.deadline !== undefined ? { deadline: parsedInput.deadline } : {}),
+    ...(parsedInput.deadline !== undefined
+      ? { deadline: parsedInput.deadline }
+      : {}),
     ...(parsedInput.status !== undefined ? { status: parsedInput.status } : {}),
     ...(parsedInput.notes !== undefined ? { notes: parsedInput.notes } : {}),
     ...(parsedInput.ynabCategoryId !== undefined
@@ -126,7 +130,10 @@ export const updateGoal = async (
   return data;
 };
 
-export const deleteGoal = async (userId: string, goalId: string): Promise<void> => {
+export const deleteGoal = async (
+  userId: string,
+  goalId: string,
+): Promise<void> => {
   const parsedUserId = assertUserId(userId);
   const parsedGoalId = assertGoalId(goalId);
   const supabase = await getSupabaseServerClient();
@@ -168,7 +175,9 @@ export const setGoalSyncState = async (
     .update({
       last_sync_status: input.status,
       last_sync_error: input.error,
-      last_synced_at: input.syncedAt ?? (input.status === "synced" ? new Date().toISOString() : null),
+      last_synced_at:
+        input.syncedAt ??
+        (input.status === "synced" ? new Date().toISOString() : null),
     })
     .eq("id", parsedGoalId)
     .eq("user_id", parsedUserId)
@@ -177,6 +186,36 @@ export const setGoalSyncState = async (
 
   if (error) {
     throw new Error(`Failed to update goal sync state: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new GoalNotFoundError();
+  }
+
+  return data;
+};
+
+export const setGoalYnabCategoryId = async (
+  userId: string,
+  goalId: string,
+  ynabCategoryId: string,
+): Promise<GoalRow> => {
+  const parsedUserId = assertUserId(userId);
+  const parsedGoalId = assertGoalId(goalId);
+  const supabase = await getSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("goals")
+    .update({
+      ynab_category_id: ynabCategoryId,
+    })
+    .eq("id", parsedGoalId)
+    .eq("user_id", parsedUserId)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to update goal YNAB category id: ${error.message}`);
   }
 
   if (!data) {

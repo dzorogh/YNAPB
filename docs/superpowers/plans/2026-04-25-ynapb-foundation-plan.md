@@ -74,6 +74,7 @@
 ## Task 1: Initialize Next.js 16 project
 
 **Files:**
+
 - Create: `package.json`, `next.config.ts`, `tsconfig.json`, `.gitignore`, `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/globals.css`, `postcss.config.mjs`
 
 - [ ] **Step 1: Init Next.js with the official scaffolder**
@@ -90,6 +91,7 @@ Expected: Next.js boots on `http://localhost:3000` showing the default page. Sto
 - [ ] **Step 3: Pin Next.js and React to spec versions**
 
 Open `package.json` and confirm:
+
 ```json
 "dependencies": {
   "next": "16.2.4",
@@ -97,11 +99,13 @@ Open `package.json` and confirm:
   "react-dom": "19.2.5"
 }
 ```
+
 If versions differ, run: `npm install next@16.2.4 react@19.2.5 react-dom@19.2.5`
 
 - [ ] **Step 4: Set TypeScript to strict and target ES2024**
 
 Replace `tsconfig.json` with:
+
 ```json
 {
   "compilerOptions": {
@@ -146,11 +150,13 @@ git commit -m "chore: scaffold Next.js 16 app with strict TypeScript"
 ## Task 2: Install full stack dependencies
 
 **Files:**
+
 - Modify: `package.json`
 
 - [ ] **Step 1: Install runtime deps**
 
 Run:
+
 ```bash
 npm install \
   @supabase/supabase-js@2.104.1 \
@@ -169,6 +175,7 @@ npm install \
 - [ ] **Step 2: Install dev deps**
 
 Run:
+
 ```bash
 npm install -D \
   vitest@4.1.5 \
@@ -210,11 +217,13 @@ git commit -m "chore: install runtime and dev dependencies, init shadcn"
 ## Task 3: Configure ESLint flat config with sonarjs
 
 **Files:**
+
 - Replace: `eslint.config.mjs`
 
 - [ ] **Step 1: Write the flat config**
 
 Replace `eslint.config.mjs` with:
+
 ```js
 import nextPlugin from "@next/eslint-plugin-next";
 import sonarjs from "eslint-plugin-sonarjs";
@@ -249,9 +258,15 @@ export default tseslint.config(
       "sonarjs/no-identical-functions": "error",
       "sonarjs/no-collapsible-if": "error",
       "sonarjs/no-redundant-jump": "error",
-      "complexity": ["error", 10],
-      "max-lines-per-function": ["error", { max: 80, skipBlankLines: true, skipComments: true }],
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      complexity: ["error", 10],
+      "max-lines-per-function": [
+        "error",
+        { max: 80, skipBlankLines: true, skipComments: true },
+      ],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
     },
   },
 );
@@ -274,11 +289,13 @@ git commit -m "chore: configure ESLint flat config with sonarjs and complexity l
 ## Task 4: Configure Vitest
 
 **Files:**
+
 - Create: `vitest.config.ts`, `src/test-setup.ts`
 
 - [ ] **Step 1: Write vitest config**
 
 Create `vitest.config.ts`:
+
 ```ts
 import { defineConfig } from "vitest/config";
 import path from "node:path";
@@ -305,6 +322,7 @@ export default defineConfig({
 - [ ] **Step 2: Write setup file**
 
 Create `src/test-setup.ts`:
+
 ```ts
 import "@testing-library/jest-dom/vitest";
 ```
@@ -312,6 +330,7 @@ import "@testing-library/jest-dom/vitest";
 - [ ] **Step 3: Add a smoke test**
 
 Create `src/lib/smoke.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 
@@ -343,6 +362,7 @@ git commit -m "chore: configure Vitest with jsdom environment"
 ## Task 5: Configure Playwright
 
 **Files:**
+
 - Create: `playwright.config.ts`, `tests/e2e/login.spec.ts`
 
 - [ ] **Step 1: Init Playwright**
@@ -352,6 +372,7 @@ Run: `npx playwright install chromium`
 - [ ] **Step 2: Write Playwright config**
 
 Create `playwright.config.ts`:
+
 ```ts
 import { defineConfig, devices } from "@playwright/test";
 
@@ -366,9 +387,7 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     trace: "retain-on-failure",
   },
-  projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-  ],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
@@ -381,6 +400,7 @@ export default defineConfig({
 - [ ] **Step 3: Write a smoke e2e test**
 
 Create `tests/e2e/login.spec.ts`:
+
 ```ts
 import { test, expect } from "@playwright/test";
 
@@ -405,11 +425,13 @@ git commit -m "chore: configure Playwright e2e harness"
 ## Task 6: Configure dependency-cruiser
 
 **Files:**
+
 - Create: `.dependency-cruiser.cjs`
 
 - [ ] **Step 1: Write the config with layer rules**
 
 Create `.dependency-cruiser.cjs`:
+
 ```js
 module.exports = {
   forbidden: [
@@ -422,7 +444,8 @@ module.exports = {
     {
       name: "domain-pure",
       severity: "error",
-      comment: "/lib/planner must remain pure: no React, no Supabase, no Next, no YNAB SDK",
+      comment:
+        "/lib/planner must remain pure: no React, no Supabase, no Next, no YNAB SDK",
       from: { path: "^src/lib/planner" },
       to: {
         path: [
@@ -499,11 +522,13 @@ git commit -m "chore: add dependency-cruiser config enforcing layered architectu
 ## Task 7: Add unified npm scripts
 
 **Files:**
+
 - Modify: `package.json`
 
 - [ ] **Step 1: Replace the `scripts` block**
 
 Edit `package.json`. Replace `scripts` with:
+
 ```json
 "scripts": {
   "dev": "next dev --turbopack",
@@ -539,12 +564,14 @@ git commit -m "chore: unified check script (lint + typecheck + arch + unit)"
 ## Task 8: Document env vars
 
 **Files:**
+
 - Create: `.env.example`
 - Modify: `.gitignore` (verify `.env*.local` ignored)
 
 - [ ] **Step 1: Write the example file**
 
 Create `.env.example`:
+
 ```env
 # Supabase project (cloud)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -560,6 +587,7 @@ ENCRYPTION_KEY=replace_with_base64_32_bytes
 - [ ] **Step 2: Verify `.gitignore` covers env files**
 
 `.gitignore` should already contain `.env*.local` (default Next scaffolding). If not, append:
+
 ```
 .env*.local
 ```
@@ -576,6 +604,7 @@ git commit -m "chore: document required env vars in .env.example"
 ## Task 9: Supabase initial schema migration
 
 **Files:**
+
 - Create: `supabase/migrations/00000000000000_init.sql`
 - Create: `supabase/config.toml` (via CLI)
 
@@ -587,6 +616,7 @@ Expected: creates `supabase/config.toml`. Accept default settings.
 - [ ] **Step 2: Write the schema migration**
 
 Create `supabase/migrations/00000000000000_init.sql`:
+
 ```sql
 -- profiles: one row per auth.users entry
 create table public.profiles (
@@ -700,15 +730,18 @@ git commit -m "feat(db): initial schema with RLS, profile auto-create trigger"
 ## Task 10: Generate Supabase TypeScript types
 
 **Files:**
+
 - Create: `src/types/supabase.ts`
 - Modify: `package.json` (script)
 
 - [ ] **Step 1: Add the generation script**
 
 Edit `package.json` `scripts` block, add:
+
 ```json
 "db:types": "supabase gen types typescript --project-id <project-ref> > src/types/supabase.ts"
 ```
+
 Replace `<project-ref>` with the actual project ref. Commit hint at the end: do NOT commit secrets, but project ref is public-ish; storing it in `package.json` is fine.
 
 - [ ] **Step 2: Generate types**
@@ -733,11 +766,13 @@ git commit -m "chore(db): generate Supabase TypeScript types"
 ## Task 11: AES-GCM encryption helpers (TDD)
 
 **Files:**
+
 - Create: `src/lib/crypto.ts`, `src/lib/crypto.test.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
 Create `src/lib/crypto.test.ts`:
+
 ```ts
 import { describe, it, expect, beforeAll } from "vitest";
 import { encryptToken, decryptToken } from "./crypto";
@@ -793,6 +828,7 @@ Expected: FAIL — `Cannot find module './crypto'`.
 - [ ] **Step 3: Implement `crypto.ts`**
 
 Create `src/lib/crypto.ts`:
+
 ```ts
 import { webcrypto } from "node:crypto";
 
@@ -871,11 +907,13 @@ git commit -m "feat(crypto): AES-GCM encrypt/decrypt for YNAB token storage"
 ## Task 12: Domain types for the planner
 
 **Files:**
+
 - Create: `src/lib/planner/types.ts`
 
 - [ ] **Step 1: Write the types module**
 
 Create `src/lib/planner/types.ts`:
+
 ```ts
 export type GoalStatus = "active" | "frozen" | "completed";
 
@@ -937,8 +975,18 @@ export type Allocation = {
 };
 
 export type Conflict =
-  | { type: "unreachable"; goalId: string; earliestAchievable: Date | null; detail: string }
-  | { type: "tied_deadline"; goalIds: string[]; deadline: Date; detail: string };
+  | {
+      type: "unreachable";
+      goalId: string;
+      earliestAchievable: Date | null;
+      detail: string;
+    }
+  | {
+      type: "tied_deadline";
+      goalIds: string[];
+      deadline: Date;
+      detail: string;
+    };
 
 export type PlanResult = {
   allocations: Allocation[];
@@ -967,11 +1015,13 @@ git commit -m "feat(planner): domain types for goals, budget, plan result"
 ## Task 13: Planner — basic distribution (TDD start)
 
 **Files:**
+
 - Create: `src/lib/planner/fixtures.ts`, `src/lib/planner/planner.ts`, `src/lib/planner/planner.test.ts`
 
 - [ ] **Step 1: Write shared test fixtures**
 
 Create `src/lib/planner/fixtures.ts`:
+
 ```ts
 import type { Goal, MonthlyBudget } from "./types";
 
@@ -989,7 +1039,10 @@ export const goal = (overrides: Partial<Goal> & { id: string }): Goal => ({
   ...overrides,
 });
 
-export const budget = (available: number, plannedIncome = available): MonthlyBudget => ({
+export const budget = (
+  available: number,
+  plannedIncome = available,
+): MonthlyBudget => ({
   plannedIncome,
   obligations: plannedIncome - available,
   available,
@@ -1000,6 +1053,7 @@ export const budget = (available: number, plannedIncome = available): MonthlyBud
 - [ ] **Step 2: Write the failing basic-distribution test**
 
 Create `src/lib/planner/planner.test.ts`:
+
 ```ts
 import { describe, it, expect } from "vitest";
 import { computePlan } from "./planner";
@@ -1009,7 +1063,7 @@ describe("planner — basic distribution (spec §6 example)", () => {
   it("two goals with different deadlines: closer is funded first", () => {
     const goals = [
       goal({ id: "renovation", targetAmount: 1_000_000, deadline: M(2026, 9) }),
-      goal({ id: "car",        targetAmount: 5_000_000, deadline: M(2027, 12) }),
+      goal({ id: "car", targetAmount: 5_000_000, deadline: M(2027, 12) }),
     ];
     const result = computePlan({
       goals,
@@ -1042,6 +1096,7 @@ Expected: FAIL — `Cannot find module './planner'`.
 - [ ] **Step 4: Implement minimal planner**
 
 Create `src/lib/planner/planner.ts`:
+
 ```ts
 import type {
   Allocation,
@@ -1062,19 +1117,24 @@ const addMonths = (d: Date, n: number): Date =>
 
 const isBeforeMonth = (a: Date, b: Date): boolean =>
   a.getUTCFullYear() < b.getUTCFullYear() ||
-  (a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() < b.getUTCMonth());
+  (a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() < b.getUTCMonth());
 
 type Working = Goal & { remaining: number };
 
 const initialQueue = (goals: Goal[], startMonth: Date): Working[] =>
   goals
     .filter((g) => g.status === "active")
-    .map((g) => ({ ...g, remaining: Math.max(0, g.targetAmount - g.currentBalance) }))
+    .map((g) => ({
+      ...g,
+      remaining: Math.max(0, g.targetAmount - g.currentBalance),
+    }))
     .filter((g) => g.remaining > 0)
     .filter((g) => !isBeforeMonth(g.deadline, startMonth))
-    .sort((a, b) =>
-      a.deadline.getTime() - b.deadline.getTime() ||
-      a.createdAt.getTime() - b.createdAt.getTime(),
+    .sort(
+      (a, b) =>
+        a.deadline.getTime() - b.deadline.getTime() ||
+        a.createdAt.getTime() - b.createdAt.getTime(),
     );
 
 export function computePlan(input: PlanInput): PlanResult {
@@ -1095,7 +1155,11 @@ export function computePlan(input: PlanInput): PlanResult {
 
       const monthsLeft = monthsBetweenInclusive(month, g.deadline);
       const neededPerMonth = g.remaining / monthsLeft;
-      const contribution = Math.min(neededPerMonth, remainingBudget, g.remaining);
+      const contribution = Math.min(
+        neededPerMonth,
+        remainingBudget,
+        g.remaining,
+      );
 
       perGoal[g.id] = (perGoal[g.id] ?? 0) + contribution;
       g.remaining -= contribution;
@@ -1136,16 +1200,23 @@ git commit -m "feat(planner): greedy distribution by deadline (basic case)"
 ## Task 14: Planner — non-zero starting balances
 
 **Files:**
+
 - Modify: `src/lib/planner/planner.test.ts`
 
 - [ ] **Step 1: Append the test**
 
 Add to `src/lib/planner/planner.test.ts`:
+
 ```ts
 describe("planner — starting balances", () => {
   it("does not over-fund a goal with existing balance", () => {
     const goals = [
-      goal({ id: "phone", targetAmount: 100_000, currentBalance: 80_000, deadline: M(2026, 6) }),
+      goal({
+        id: "phone",
+        targetAmount: 100_000,
+        currentBalance: 80_000,
+        deadline: M(2026, 6),
+      }),
     ];
     const result = computePlan({
       goals,
@@ -1161,7 +1232,12 @@ describe("planner — starting balances", () => {
 
   it("treats already-completed goals as completed (zero remaining)", () => {
     const goals = [
-      goal({ id: "done", targetAmount: 100_000, currentBalance: 100_000, deadline: M(2026, 6) }),
+      goal({
+        id: "done",
+        targetAmount: 100_000,
+        currentBalance: 100_000,
+        deadline: M(2026, 6),
+      }),
     ];
     const result = computePlan({
       goals,
@@ -1193,11 +1269,13 @@ git commit -m "test(planner): cover non-zero starting balances"
 ## Task 15: Planner — unallocated budget
 
 **Files:**
+
 - Modify: `src/lib/planner/planner.test.ts`
 
 - [ ] **Step 1: Append the test**
 
 Add:
+
 ```ts
 describe("planner — unallocated budget", () => {
   it("reports remaining budget as unallocated when goals are fully funded", () => {
@@ -1237,11 +1315,13 @@ git commit -m "test(planner): cover unallocated budget reporting"
 ## Task 16: Planner — unreachable goals + earliestAchievable
 
 **Files:**
+
 - Modify: `src/lib/planner/planner.test.ts`, `src/lib/planner/planner.ts`
 
 - [ ] **Step 1: Add the failing test**
 
 Append to `planner.test.ts`:
+
 ```ts
 describe("planner — unreachable goals", () => {
   it("flags a goal that cannot be funded by its deadline at current budget", () => {
@@ -1287,6 +1367,7 @@ Expected: FAIL on "flags a goal that cannot be funded".
 - [ ] **Step 3: Extend the planner with conflict detection**
 
 Replace the `computePlan` function in `src/lib/planner/planner.ts` with:
+
 ```ts
 export function computePlan(input: PlanInput): PlanResult {
   const queue = initialQueue(input.goals, input.startMonth);
@@ -1306,7 +1387,11 @@ export function computePlan(input: PlanInput): PlanResult {
 
       const monthsLeft = monthsBetweenInclusive(month, g.deadline);
       const neededPerMonth = g.remaining / monthsLeft;
-      const contribution = Math.min(neededPerMonth, remainingBudget, g.remaining);
+      const contribution = Math.min(
+        neededPerMonth,
+        remainingBudget,
+        g.remaining,
+      );
 
       perGoal[g.id] = (perGoal[g.id] ?? 0) + contribution;
       g.remaining -= contribution;
@@ -1325,7 +1410,12 @@ export function computePlan(input: PlanInput): PlanResult {
   const conflicts: Conflict[] = [];
   for (const g of queue) {
     if (g.remaining <= 0) continue;
-    if (!isBeforeMonth(g.deadline, addMonths(input.startMonth, input.horizonMonths))) {
+    if (
+      !isBeforeMonth(
+        g.deadline,
+        addMonths(input.startMonth, input.horizonMonths),
+      )
+    ) {
       // still within horizon but unfunded — also unreachable at current budget
     }
     const earliest = computeEarliestAchievable(g, input);
@@ -1373,17 +1463,29 @@ git commit -m "feat(planner): unreachable goal detection with earliestAchievable
 ## Task 17: Planner — tied deadlines conflict
 
 **Files:**
+
 - Modify: `src/lib/planner/planner.test.ts`, `src/lib/planner/planner.ts`
 
 - [ ] **Step 1: Add the failing test**
 
 Append:
+
 ```ts
 describe("planner — tied deadlines", () => {
   it("flags two goals sharing the same month deadline when budget cannot cover both", () => {
     const goals = [
-      goal({ id: "a", targetAmount: 600_000, deadline: M(2026, 8), createdAt: M(2026, 1) }),
-      goal({ id: "b", targetAmount: 600_000, deadline: M(2026, 8), createdAt: M(2026, 2) }),
+      goal({
+        id: "a",
+        targetAmount: 600_000,
+        deadline: M(2026, 8),
+        createdAt: M(2026, 1),
+      }),
+      goal({
+        id: "b",
+        targetAmount: 600_000,
+        deadline: M(2026, 8),
+        createdAt: M(2026, 2),
+      }),
     ];
     const result = computePlan({
       goals,
@@ -1425,6 +1527,7 @@ Expected: FAIL on "flags two goals sharing".
 - [ ] **Step 3: Add tied-deadline detection**
 
 In `src/lib/planner/planner.ts`, add this helper near the bottom and call it before returning:
+
 ```ts
 function detectTiedDeadlines(input: PlanInput): Conflict[] {
   const buckets = new Map<string, Goal[]>();
@@ -1460,9 +1563,11 @@ function detectTiedDeadlines(input: PlanInput): Conflict[] {
 ```
 
 In `computePlan`, change the conflicts assembly to:
+
 ```ts
 const conflicts: Conflict[] = [...detectTiedDeadlines(input)];
 ```
+
 …then continue pushing the existing `unreachable` conflicts.
 
 - [ ] **Step 4: Run — verify all tests pass**
@@ -1482,17 +1587,24 @@ git commit -m "feat(planner): tied-deadline conflict detection"
 ## Task 18: Planner — frozen goals
 
 **Files:**
+
 - Modify: `src/lib/planner/planner.test.ts`
 
 - [ ] **Step 1: Add the test**
 
 Append:
+
 ```ts
 describe("planner — frozen goals", () => {
   it("does not allocate to frozen goals", () => {
     const goals = [
       goal({ id: "active", targetAmount: 100_000, deadline: M(2026, 8) }),
-      goal({ id: "frozen", targetAmount: 100_000, deadline: M(2026, 8), status: "frozen" }),
+      goal({
+        id: "frozen",
+        targetAmount: 100_000,
+        deadline: M(2026, 8),
+        status: "frozen",
+      }),
     ];
     const result = computePlan({
       goals,
@@ -1524,11 +1636,13 @@ git commit -m "test(planner): cover frozen-goal exclusion"
 ## Task 19: Planner — auto-freeze overdue, deterministic tie-break
 
 **Files:**
+
 - Modify: `src/lib/planner/planner.ts`, `src/lib/planner/planner.test.ts`
 
 - [ ] **Step 1: Add the auto-freeze test**
 
 Append:
+
 ```ts
 describe("planner — auto-freeze overdue", () => {
   it("auto-freezes a goal whose deadline already passed before startMonth", () => {
@@ -1573,8 +1687,9 @@ describe("planner — deterministic tie-break", () => {
       startMonth: M(2026, 5),
       horizonMonths: 6,
     });
-    const earlierFirst = (result.allocations[0]?.perGoal["earlier"] ?? 0)
-      >= (result.allocations[0]?.perGoal["later"] ?? 0);
+    const earlierFirst =
+      (result.allocations[0]?.perGoal["earlier"] ?? 0) >=
+      (result.allocations[0]?.perGoal["later"] ?? 0);
     expect(earlierFirst).toBe(true);
   });
 });
@@ -1590,12 +1705,14 @@ Expected: tie-break passes (covered by sort), auto-freeze FAILS (`autoFrozenGoal
 In `src/lib/planner/planner.ts`, modify `computePlan` to compute and return `autoFrozenGoalIds` before the queue is built:
 
 Replace the body of `computePlan` to start with:
+
 ```ts
 const autoFrozenGoalIds = input.goals
-  .filter((g) =>
-    g.status === "active"
-    && Math.max(0, g.targetAmount - g.currentBalance) > 0
-    && isBeforeMonth(g.deadline, input.startMonth),
+  .filter(
+    (g) =>
+      g.status === "active" &&
+      Math.max(0, g.targetAmount - g.currentBalance) > 0 &&
+      isBeforeMonth(g.deadline, input.startMonth),
   )
   .map((g) => g.id);
 
@@ -1607,6 +1724,7 @@ const queue = initialQueue(liveGoals, input.startMonth);
 ```
 
 …and at the bottom, change the return to:
+
 ```ts
 return { allocations, conflicts, completionMap, autoFrozenGoalIds };
 ```
@@ -1633,11 +1751,13 @@ git commit -m "feat(planner): auto-freeze overdue goals with deterministic tie-b
 ## Task 20: Supabase clients (server, browser, middleware)
 
 **Files:**
+
 - Create: `src/lib/supabase/server.ts`, `src/lib/supabase/browser.ts`, `src/lib/supabase/middleware.ts`, `src/middleware.ts`
 
 - [ ] **Step 1: Server client**
 
 Create `src/lib/supabase/server.ts`:
+
 ```ts
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -1665,6 +1785,7 @@ export async function getSupabaseServerClient() {
 - [ ] **Step 2: Browser client**
 
 Create `src/lib/supabase/browser.ts`:
+
 ```ts
 "use client";
 import { createBrowserClient } from "@supabase/ssr";
@@ -1681,6 +1802,7 @@ export function getSupabaseBrowserClient() {
 - [ ] **Step 3: Middleware helper**
 
 Create `src/lib/supabase/middleware.ts`:
+
 ```ts
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -1711,6 +1833,7 @@ export async function refreshSession(req: NextRequest) {
 - [ ] **Step 4: Next middleware**
 
 Create `src/middleware.ts`:
+
 ```ts
 import { NextResponse, type NextRequest } from "next/server";
 import { refreshSession } from "@/lib/supabase/middleware";
@@ -1729,7 +1852,9 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
 ```
 
@@ -1750,23 +1875,33 @@ git commit -m "feat(auth): Supabase server/browser clients and session-refreshin
 ## Task 21: /login page + auth callback
 
 **Files:**
+
 - Create: `src/app/(auth)/login/page.tsx`, `src/app/auth/callback/route.ts`, `src/app/page.tsx`
 
 - [ ] **Step 1: Login page (magic link form)**
 
 Create `src/app/(auth)/login/page.tsx`:
+
 ```tsx
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
@@ -1806,8 +1941,16 @@ export default function LoginPage() {
                 disabled={status === "sending" || status === "sent"}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={status === "sending" || status === "sent"}>
-              {status === "sending" ? "Sending…" : status === "sent" ? "Check your inbox" : "Send magic link"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={status === "sending" || status === "sent"}
+            >
+              {status === "sending"
+                ? "Sending…"
+                : status === "sent"
+                  ? "Check your inbox"
+                  : "Send magic link"}
             </Button>
             {error && <p className="text-sm text-red-500">{error}</p>}
           </form>
@@ -1821,6 +1964,7 @@ export default function LoginPage() {
 - [ ] **Step 2: Auth callback route**
 
 Create `src/app/auth/callback/route.ts`:
+
 ```ts
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -1841,6 +1985,7 @@ export async function GET(req: NextRequest) {
 - [ ] **Step 3: Root page redirects to /plan (placeholder for plan 2)**
 
 Replace `src/app/page.tsx`:
+
 ```tsx
 import { redirect } from "next/navigation";
 
@@ -1864,6 +2009,7 @@ void redirect;
 (We import `redirect` to keep the file ready for plan 2; remove the `void redirect;` then.)
 
 Actually, simplify — remove unused import:
+
 ```tsx
 export default function HomePage() {
   return (
@@ -1906,11 +2052,13 @@ git commit -m "feat(auth): /login magic-link page and /auth/callback route"
 ## Task 22: README and final foundation polish
 
 **Files:**
+
 - Create: `README.md`
 
 - [ ] **Step 1: Write README**
 
 Create `README.md`:
+
 ```markdown
 # YNAPB — YNAB Planner & Budgeter
 
@@ -1941,16 +2089,16 @@ This codebase is implemented across multiple plans; see `docs/superpowers/plans/
 
 ## Scripts
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Start Next.js dev server |
-| `npm run build` | Production build |
-| `npm run lint` | ESLint (incl. cognitive-complexity) |
-| `npm run typecheck` | TypeScript check |
-| `npm run test:unit` | Vitest unit tests |
-| `npm run test:arch` | dependency-cruiser architecture tests |
-| `npm run test:e2e` | Playwright e2e |
-| `npm run check` | All non-e2e checks (lint + typecheck + arch + unit) |
+| Command             | Purpose                                             |
+| ------------------- | --------------------------------------------------- |
+| `npm run dev`       | Start Next.js dev server                            |
+| `npm run build`     | Production build                                    |
+| `npm run lint`      | ESLint (incl. cognitive-complexity)                 |
+| `npm run typecheck` | TypeScript check                                    |
+| `npm run test:unit` | Vitest unit tests                                   |
+| `npm run test:arch` | dependency-cruiser architecture tests               |
+| `npm run test:e2e`  | Playwright e2e                                      |
+| `npm run check`     | All non-e2e checks (lint + typecheck + arch + unit) |
 
 ## Architecture
 
@@ -1980,6 +2128,7 @@ git commit -m "docs: README with setup, scripts, and architecture overview"
 ## Self-review (run after all tasks complete)
 
 1. **Spec coverage check.** Spec sections covered by this plan:
+
    - §2 Architecture stack/layers — Tasks 1, 2, 3, 6, 7, 20
    - §5 Data model (schema + RLS) — Task 9, 10
    - §5 AES-GCM encryption — Task 11

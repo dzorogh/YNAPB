@@ -1,0 +1,27 @@
+version: "0.2"
+language: en,ru
+allowCompoundWords: true
+ignorePaths:
+  - node_modules/**
+  - .next/**
+  - coverage/**
+  - test-results/**
+  - package-lock.json
+  - .cursor/**
+  - docs/superpowers/plans/**
+  - docs/superpowers/specs/**
+  - src/types/supabase.ts
+words:
+  - YNAPB
+  - ynab
+  - supabase
+  - turbopack
+  - sonner
+  - sonarjs
+  - shadcn
+  - recharts
+  - milliunits
+  - Milliunits
+  - Postgrest
+  - fkey
+  - dzorogh

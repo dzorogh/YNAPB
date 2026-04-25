@@ -1,10 +1,28 @@
 import { expect, test } from "@playwright/test";
 
 type PlanCalculateResponse = {
+  goals: Array<{
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentBalance: number;
+    deadline: string;
+    status: "active" | "frozen" | "completed";
+    ynabCategoryId: string | null;
+    createdAt: string;
+  }>;
+  startMonth: string;
+  horizonMonths: number;
+  currencyCode: string;
   budget: {
     plannedIncome: number;
     obligations: number;
     available: number;
+    obligationBreakdown: Array<{
+      categoryId: string;
+      categoryName: string;
+      amount: number;
+    }>;
   };
   planResult: {
     allocations: Array<{
@@ -41,12 +59,22 @@ const AUTH_BYPASS_HEADERS = { "x-e2e-auth": "1" };
 const JSON_CONTENT_TYPE = "application/json";
 const PLAN_CALCULATE_API_PATTERN = "**/api/plan/calculate";
 const PLAN_PUSH_API_PATTERN = "**/api/plan/push";
+const DEFAULT_START_MONTH = "2026-05-01T00:00:00.000Z";
+const DEFAULT_HORIZON_MONTHS = 24;
+const DEFAULT_CURRENCY = "RUB";
+const VACATION_CATEGORY_ID = "cat-vacation";
+const EMERGENCY_CATEGORY_ID = "cat-emergency";
 
 const buildConnectState = (): PlanCalculateResponse => ({
+  goals: [],
+  startMonth: DEFAULT_START_MONTH,
+  horizonMonths: DEFAULT_HORIZON_MONTHS,
+  currencyCode: DEFAULT_CURRENCY,
   budget: {
     plannedIncome: 0,
     obligations: 0,
     available: 0,
+    obligationBreakdown: [],
   },
   planResult: {
     allocations: [],
@@ -59,10 +87,15 @@ const buildConnectState = (): PlanCalculateResponse => ({
 });
 
 const buildEmptyGoalsState = (): PlanCalculateResponse => ({
+  goals: [],
+  startMonth: DEFAULT_START_MONTH,
+  horizonMonths: DEFAULT_HORIZON_MONTHS,
+  currencyCode: DEFAULT_CURRENCY,
   budget: {
     plannedIncome: 5000,
     obligations: 1200,
     available: 3800,
+    obligationBreakdown: [],
   },
   planResult: {
     allocations: [],
@@ -75,10 +108,36 @@ const buildEmptyGoalsState = (): PlanCalculateResponse => ({
 });
 
 const buildCalculatedState = (): PlanCalculateResponse => ({
+  goals: [
+    {
+      id: "vacation",
+      name: "Vacation",
+      targetAmount: 300000,
+      currentBalance: 100000,
+      deadline: "2026-08-01",
+      status: "active",
+      ynabCategoryId: VACATION_CATEGORY_ID,
+      createdAt: "2026-01-10T00:00:00.000Z",
+    },
+    {
+      id: "emergency",
+      name: "Emergency",
+      targetAmount: 400000,
+      currentBalance: 250000,
+      deadline: "2026-08-01",
+      status: "active",
+      ynabCategoryId: EMERGENCY_CATEGORY_ID,
+      createdAt: "2026-01-15T00:00:00.000Z",
+    },
+  ],
+  startMonth: DEFAULT_START_MONTH,
+  horizonMonths: DEFAULT_HORIZON_MONTHS,
+  currencyCode: DEFAULT_CURRENCY,
   budget: {
     plannedIncome: 6000,
     obligations: 1500,
     available: 4500,
+    obligationBreakdown: [],
   },
   planResult: {
     allocations: [
@@ -145,7 +204,9 @@ test.describe("plan page states with e2e auth bypass", () => {
 
     await expect(page).toHaveURL(/\/plan$/);
     await expect(page.getByText("Connect YNAB first")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Go to settings" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Go to settings" }),
+    ).toBeVisible();
   });
 
   test("plan renders empty goals state", async ({ page }) => {
@@ -161,10 +222,8 @@ test.describe("plan page states with e2e auth bypass", () => {
 
     await expect(page).toHaveURL(/\/plan$/);
     await expect(page.getByText("Plan overview")).toBeVisible();
-    await expect(page.getByText("No goals yet")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Go to goals" })).toBeVisible();
+    await expect(page.getByText("No goals to display.")).toBeVisible();
   });
-
 });
 
 test.describe("plan calculated and push preview with e2e auth bypass", () => {
@@ -185,7 +244,14 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
 
     await expect(page).toHaveURL(/\/plan$/);
     await expect(page.getByText("Monthly allocation")).toBeVisible();
-    await expect(page.getByRole("columnheader", { name: "vacation" })).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: /vacation/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: "Apply earliest reachable date for Vacation",
+      }),
+    ).toBeVisible();
     await expect(page.getByText("Conflicts and warnings")).toBeVisible();
     await expect(page.getByText(/Unreachable goal: vacation/)).toBeVisible();
     await expect(page.getByText(/Tied deadline conflict/)).toBeVisible();
@@ -210,8 +276,16 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
           body: JSON.stringify({
             diffHash: "preview-hash-1",
             diff: [
-              { categoryId: "cat-vacation", current: 50000, next: 120000 },
-              { categoryId: "cat-emergency", current: 75000, next: 100000 },
+              {
+                categoryId: VACATION_CATEGORY_ID,
+                current: 50000,
+                next: 120000,
+              },
+              {
+                categoryId: EMERGENCY_CATEGORY_ID,
+                current: 75000,
+                next: 100000,
+              },
             ],
           }),
         });
@@ -227,7 +301,9 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
 
     await page.goto(PLAN_PATH);
 
-    await page.getByRole("button", { name: "Push goals to YNAB for current month" }).click();
+    await page
+      .getByRole("button", { name: "Push goals to YNAB for current month" })
+      .click();
 
     const dialog = page.getByRole("dialog", { name: "YNAB push confirmation" });
     await expect(dialog).toBeVisible();

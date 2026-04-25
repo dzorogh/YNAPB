@@ -14,7 +14,10 @@ export const goal = (overrides: Partial<Goal> & { id: string }): Goal => ({
   ...overrides,
 });
 
-export const budget = (available: number, plannedIncome = available): MonthlyBudget => ({
+export const budget = (
+  available: number,
+  plannedIncome = available,
+): MonthlyBudget => ({
   plannedIncome,
   obligations: plannedIncome - available,
   available,

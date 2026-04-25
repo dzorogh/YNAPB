@@ -1,0 +1,13 @@
+{
+  "threshold": 4.5,
+  "reporters": ["console", "json"],
+  "ignore": [
+    "**/.next/**",
+    "**/node_modules/**",
+    "**/coverage/**",
+    "**/test-results/**",
+    "**/src/types/supabase.ts"
+  ],
+  "formats": ["typescript", "tsx", "javascript", "jsx"],
+  "absolute": false
+}

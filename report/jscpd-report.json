@@ -1,0 +1,1681 @@
+{
+  "statistics": {
+    "detectionDate": "2026-04-25T20:34:51.543Z",
+    "formats": {
+      "typescript": {
+        "sources": {
+          "src/app/api/ynab/sync/route.ts": {
+            "lines": 110,
+            "tokens": 924,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 10,
+            "duplicatedTokens": 93,
+            "percentage": 9.09,
+            "percentageTokens": 10.06,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/plan/push/route.ts": {
+            "lines": 337,
+            "tokens": 3008,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 103,
+            "duplicatedTokens": 990,
+            "percentage": 30.56,
+            "percentageTokens": 32.91,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/plan/deadlines/route.ts": {
+            "lines": 52,
+            "tokens": 511,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 23,
+            "duplicatedTokens": 194,
+            "percentage": 44.23,
+            "percentageTokens": 37.96,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/plan/calculate/route.ts": {
+            "lines": 279,
+            "tokens": 2533,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 109,
+            "duplicatedTokens": 1013,
+            "percentage": 39.07,
+            "percentageTokens": 39.99,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/goals/[id]/route.ts": {
+            "lines": 217,
+            "tokens": 1948,
+            "sources": 1,
+            "clones": 8,
+            "duplicatedLines": 160,
+            "duplicatedTokens": 1360,
+            "percentage": 73.73,
+            "percentageTokens": 69.82,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/auth/callback/route.ts": {
+            "lines": 14,
+            "tokens": 154,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/settings/route.ts": {
+            "lines": 221,
+            "tokens": 1913,
+            "sources": 1,
+            "clones": 3,
+            "duplicatedLines": 32,
+            "duplicatedTokens": 283,
+            "percentage": 14.48,
+            "percentageTokens": 14.79,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/goals/route.ts": {
+            "lines": 181,
+            "tokens": 1590,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 112,
+            "duplicatedTokens": 926,
+            "percentage": 61.88,
+            "percentageTokens": 58.24,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/sync.ts": {
+            "lines": 62,
+            "tokens": 475,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/sync.test.ts": {
+            "lines": 103,
+            "tokens": 808,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/push-mf.ts": {
+            "lines": 228,
+            "tokens": 1877,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 5,
+            "duplicatedTokens": 71,
+            "percentage": 2.19,
+            "percentageTokens": 3.78,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/push-mf.test.ts": {
+            "lines": 87,
+            "tokens": 897,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/map.ts": {
+            "lines": 61,
+            "tokens": 535,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/goal-category-link.ts": {
+            "lines": 53,
+            "tokens": 448,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/goal-category-link.test.ts": {
+            "lines": 109,
+            "tokens": 893,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/client.ts": {
+            "lines": 179,
+            "tokens": 1385,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/supabase/server.ts": {
+            "lines": 23,
+            "tokens": 203,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/supabase/middleware.ts": {
+            "lines": 31,
+            "tokens": 347,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/supabase/env.ts": {
+            "lines": 25,
+            "tokens": 172,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/supabase/browser.ts": {
+            "lines": 12,
+            "tokens": 85,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/repositories/ynab-cache-repo.ts": {
+            "lines": 135,
+            "tokens": 1247,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/repositories/profile-repo.ts": {
+            "lines": 83,
+            "tokens": 769,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/repositories/plan-snapshots-repo.ts": {
+            "lines": 100,
+            "tokens": 904,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/repositories/income-settings-repo.ts": {
+            "lines": 63,
+            "tokens": 543,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/repositories/goals-repo.ts": {
+            "lines": 225,
+            "tokens": 2041,
+            "sources": 1,
+            "clones": 3,
+            "duplicatedLines": 24,
+            "duplicatedTokens": 264,
+            "percentage": 10.67,
+            "percentageTokens": 12.93,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/planner/types.ts": {
+            "lines": 82,
+            "tokens": 548,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/planner/planner.ts": {
+            "lines": 187,
+            "tokens": 2070,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/planner/planner.test.ts": {
+            "lines": 256,
+            "tokens": 2597,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/planner/fixtures.ts": {
+            "lines": 24,
+            "tokens": 244,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/formatting/currency.ts": {
+            "lines": 23,
+            "tokens": 215,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/budget/obligations.ts": {
+            "lines": 43,
+            "tokens": 342,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/budget/obligations.test.ts": {
+            "lines": 72,
+            "tokens": 483,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/utils.ts": {
+            "lines": 5,
+            "tokens": 61,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/crypto.ts": {
+            "lines": 52,
+            "tokens": 507,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/crypto.test.ts": {
+            "lines": 48,
+            "tokens": 530,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/proxy.ts": {
+            "lines": 33,
+            "tokens": 286,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 3815,
+          "tokens": 34093,
+          "sources": 36,
+          "clones": 18,
+          "duplicatedLines": 289,
+          "duplicatedTokens": 2597,
+          "percentage": 7.58,
+          "percentageTokens": 7.62,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "javascript": {
+        "sources": {
+          "src/app/(auth)/login/page.tsx": {
+            "lines": 17,
+            "tokens": 144,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/sonner.tsx": {
+            "lines": 7,
+            "tokens": 86,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/label.tsx": {
+            "lines": 3,
+            "tokens": 11,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/input.tsx": {
+            "lines": 5,
+            "tokens": 23,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/card.tsx": {
+            "lines": 76,
+            "tokens": 419,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/button.tsx": {
+            "lines": 0,
+            "tokens": 15,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/alert.tsx": {
+            "lines": 39,
+            "tokens": 216,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/settings/budget-settings-form.tsx": {
+            "lines": 303,
+            "tokens": 2215,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/push-diff-dialog.tsx": {
+            "lines": 116,
+            "tokens": 853,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-timeline.tsx": {
+            "lines": 137,
+            "tokens": 1009,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-table.tsx": {
+            "lines": 12,
+            "tokens": 154,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-header.tsx": {
+            "lines": 11,
+            "tokens": 89,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-conflicts.tsx": {
+            "lines": 26,
+            "tokens": 227,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/layout/app-shell.tsx": {
+            "lines": 9,
+            "tokens": 58,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/goals/goals-table.tsx": {
+            "lines": 113,
+            "tokens": 940,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/goals/goal-form.tsx": {
+            "lines": 134,
+            "tokens": 1013,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/goals/goal-dialog.tsx": {
+            "lines": 19,
+            "tokens": 142,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/layout.tsx": {
+            "lines": 0,
+            "tokens": 15,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 1027,
+          "tokens": 7629,
+          "sources": 18,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "tsx": {
+        "sources": {
+          "src/app/(auth)/login/page.tsx": {
+            "lines": 74,
+            "tokens": 668,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/sonner.tsx": {
+            "lines": 30,
+            "tokens": 234,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/label.tsx": {
+            "lines": 19,
+            "tokens": 107,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/input.tsx": {
+            "lines": 19,
+            "tokens": 129,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/card.tsx": {
+            "lines": 102,
+            "tokens": 563,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/button.tsx": {
+            "lines": 57,
+            "tokens": 339,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/alert.tsx": {
+            "lines": 75,
+            "tokens": 432,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/settings/budget-settings-form.tsx": {
+            "lines": 621,
+            "tokens": 4480,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/push-diff-dialog.tsx": {
+            "lines": 161,
+            "tokens": 1215,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-timeline.tsx": {
+            "lines": 385,
+            "tokens": 3311,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-table.tsx": {
+            "lines": 112,
+            "tokens": 1047,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 16,
+            "duplicatedTokens": 122,
+            "percentage": 14.29,
+            "percentageTokens": 11.65,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-header.tsx": {
+            "lines": 103,
+            "tokens": 797,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-conflicts.tsx": {
+            "lines": 110,
+            "tokens": 844,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 16,
+            "duplicatedTokens": 122,
+            "percentage": 14.55,
+            "percentageTokens": 14.45,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/layout/app-shell.tsx": {
+            "lines": 72,
+            "tokens": 525,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/goals/goals-table.tsx": {
+            "lines": 182,
+            "tokens": 1439,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/goals/goal-form.tsx": {
+            "lines": 233,
+            "tokens": 1791,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/goals/goal-dialog.tsx": {
+            "lines": 112,
+            "tokens": 801,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/settings/page.tsx": {
+            "lines": 14,
+            "tokens": 130,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/goals/page.tsx": {
+            "lines": 4,
+            "tokens": 33,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/page.tsx": {
+            "lines": 24,
+            "tokens": 218,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/layout.tsx": {
+            "lines": 39,
+            "tokens": 271,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 2548,
+          "tokens": 19374,
+          "sources": 21,
+          "clones": 1,
+          "duplicatedLines": 16,
+          "duplicatedTokens": 122,
+          "percentage": 0.63,
+          "percentageTokens": 0.63,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "css": {
+        "sources": {
+          "src/app/globals.css": {
+            "lines": 129,
+            "tokens": 1434,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 129,
+          "tokens": 1434,
+          "sources": 1,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      }
+    },
+    "total": {
+      "lines": 7519,
+      "tokens": 62530,
+      "sources": 76,
+      "clones": 19,
+      "duplicatedLines": 305,
+      "duplicatedTokens": 2719,
+      "percentage": 4.06,
+      "percentageTokens": 4.35,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": [
+    {
+      "format": "typescript",
+      "lines": 12,
+      "fragment": ",\n});\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n  return user?.id ?? null;\n};\n\nexport",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/deadlines/route.ts",
+        "start": 15,
+        "end": 26,
+        "startLoc": {
+          "line": 15,
+          "column": 2,
+          "position": 125
+        },
+        "endLoc": {
+          "line": 26,
+          "column": 7,
+          "position": 221
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 143,
+        "end": 155,
+        "startLoc": {
+          "line": 143,
+          "column": 11,
+          "position": 1436
+        },
+        "endLoc": {
+          "line": 155,
+          "column": 6,
+          "position": 1534
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 12,
+      "fragment": ";\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n\n  return user?.id ?? null;\n};\n\nconst normalizeToMonthStart",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 44,
+        "end": 55,
+        "startLoc": {
+          "line": 44,
+          "column": 2,
+          "position": 374
+        },
+        "endLoc": {
+          "line": 55,
+          "column": 22,
+          "position": 469
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 144,
+        "end": 155,
+        "startLoc": {
+          "line": 144,
+          "column": 2,
+          "position": 1441
+        },
+        "endLoc": {
+          "line": 155,
+          "column": 23,
+          "position": 1536
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 9,
+      "fragment": ";\n};\n\nconst normalizeToMonthStart = (value: string): Date => {\n  const date = new Date(`${value}T00:00:00.000Z`);\n  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));\n};\n\nconst addMonths",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 52,
+        "end": 60,
+        "startLoc": {
+          "line": 52,
+          "column": 5,
+          "position": 461
+        },
+        "endLoc": {
+          "line": 60,
+          "column": 10,
+          "position": 542
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 48,
+        "end": 56,
+        "startLoc": {
+          "line": 48,
+          "column": 2,
+          "position": 503
+        },
+        "endLoc": {
+          "line": 56,
+          "column": 18,
+          "position": 584
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 42,
+      "fragment": ";\n\nconst currentMonthStart = (): Date => {\n  const now = new Date();\n  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));\n};\n\nconst averageIncome = (values: number[]): number => {\n  if (values.length === 0) {\n    return 0;\n  }\n\n  const total = values.reduce((sum, value) => sum + value, 0);\n  return total / values.length;\n};\n\nconst resolveCurrentBalance = (\n  _goal: Awaited<ReturnType<typeof listGoals>>[number],\n  category: ReturnType<typeof parseCachedCategories>[number] | null,\n): number => {\n  if (!category) {\n    return 0;\n  }\n\n  if (typeof category.balance === \"number\") {\n    return Math.max(0, category.balance);\n  }\n\n  if (\n    typeof category.goal_target === \"number\" &&\n    typeof category.goal_under_funded === \"number\"\n  ) {\n    return Math.max(0, category.goal_target - category.goal_under_funded);\n  }\n\n  return 0;\n};\n\nconst mapGoalsToPlannerInput = (\n  goals: Awaited<ReturnType<typeof listGoals>>,\n  categories: ReturnType<typeof parseCachedCategories>,\n  deadlineShifts",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 61,
+        "end": 102,
+        "startLoc": {
+          "line": 61,
+          "column": 2,
+          "position": 594
+        },
+        "endLoc": {
+          "line": 102,
+          "column": 15,
+          "position": 970
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 54,
+        "end": 95,
+        "startLoc": {
+          "line": 54,
+          "column": 2,
+          "position": 579
+        },
+        "endLoc": {
+          "line": 95,
+          "column": 2,
+          "position": 954
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 19,
+      "fragment": ">,\n): PlannerGoal[] => {\n  const categoriesById = new Map(\n    categories.map((category) => [category.id, category]),\n  );\n\n  return goals\n    .filter((goal) => goal.status === \"active\")\n    .map((goal) => {\n      const linkedCategory = goal.ynab_category_id\n        ? (categoriesById.get(goal.ynab_category_id) ?? null)\n        : null;\n\n      return {\n        id: goal.id,\n        name: goal.name,\n        targetAmount: goal.target_amount,\n        currentBalance: resolveCurrentBalance(goal, linkedCategory),\n        deadline: addMonths",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 102,
+        "end": 120,
+        "startLoc": {
+          "line": 102,
+          "column": 7,
+          "position": 979
+        },
+        "endLoc": {
+          "line": 120,
+          "column": 10,
+          "position": 1154
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 94,
+        "end": 112,
+        "startLoc": {
+          "line": 94,
+          "column": 22,
+          "position": 951
+        },
+        "endLoc": {
+          "line": 112,
+          "column": 22,
+          "position": 1126
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 10,
+      "fragment": ".map((goal) => {\n    const linkedCategory = goal.ynab_category_id\n      ? (categoriesById.get(goal.ynab_category_id) ?? null)\n      : null;\n    return {\n      id: goal.id,\n      name: goal.name,\n      targetAmount: goal.target_amount,\n      currentBalance: resolveCurrentBalance(goal, linkedCategory),\n      deadline: goal",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 138,
+        "end": 147,
+        "startLoc": {
+          "line": 138,
+          "column": 6,
+          "position": 1316
+        },
+        "endLoc": {
+          "line": 147,
+          "column": 5,
+          "position": 1412
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 102,
+        "end": 112,
+        "startLoc": {
+          "line": 102,
+          "column": 5,
+          "position": 1029
+        },
+        "endLoc": {
+          "line": 112,
+          "column": 22,
+          "position": 1126
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 13,
+      "fragment": "),\n});\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n\n  return user?.id ?? null;\n};\n\ntype",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 35,
+        "end": 47,
+        "startLoc": {
+          "line": 35,
+          "column": 2,
+          "position": 366
+        },
+        "endLoc": {
+          "line": 47,
+          "column": 5,
+          "position": 464
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/deadlines/route.ts",
+        "start": 15,
+        "end": 155,
+        "startLoc": {
+          "line": 15,
+          "column": 2,
+          "position": 124
+        },
+        "endLoc": {
+          "line": 155,
+          "column": 6,
+          "position": 1534
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 12,
+      "fragment": ": Request,\n  context: { params: Promise<{ id: string }> },\n) {\n  try {\n    const userId = await getCurrentUserId();\n\n    if (!userId) {\n      return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 });\n    }\n\n    const { id } = paramsSchema.parse(await context.params);\n    await",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 187,
+        "end": 198,
+        "startLoc": {
+          "line": 187,
+          "column": 9,
+          "position": 1633
+        },
+        "endLoc": {
+          "line": 198,
+          "column": 6,
+          "position": 1752
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 130,
+        "end": 141,
+        "startLoc": {
+          "line": 130,
+          "column": 8,
+          "position": 1114
+        },
+        "endLoc": {
+          "line": 141,
+          "column": 6,
+          "position": 1233
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 11,
+      "fragment": ", issues: error.flatten() },\n        { status: 400 },\n      );\n    }\n\n    if (error instanceof GoalNotFoundError) {\n      return NextResponse.json({ error: error.message }, { status: 404 });\n    }\n\n    return NextResponse.json(\n      { error: \"Failed to delete goal\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 204,
+        "end": 214,
+        "startLoc": {
+          "line": 204,
+          "column": 18,
+          "position": 1831
+        },
+        "endLoc": {
+          "line": 214,
+          "column": 24,
+          "position": 1925
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 170,
+        "end": 180,
+        "startLoc": {
+          "line": 170,
+          "column": 18,
+          "position": 1502
+        },
+        "endLoc": {
+          "line": 180,
+          "column": 24,
+          "position": 1596
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 12,
+      "fragment": ";\n};\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n  return user?.id ?? null;\n};\n\nconst getLatestIncomeHistory",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/settings/route.ts",
+        "start": 55,
+        "end": 66,
+        "startLoc": {
+          "line": 55,
+          "column": 7,
+          "position": 517
+        },
+        "endLoc": {
+          "line": 66,
+          "column": 23,
+          "position": 614
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 43,
+        "end": 155,
+        "startLoc": {
+          "line": 43,
+          "column": 7,
+          "position": 371
+        },
+        "endLoc": {
+          "line": 155,
+          "column": 23,
+          "position": 1536
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 11,
+      "fragment": ");\n    const supabase = await getSupabaseServerClient();\n    const {\n      data: { user },\n    } = await supabase.auth.getUser();\n\n    if (!user) {\n      return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 });\n    }\n\n    await",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/settings/route.ts",
+        "start": 191,
+        "end": 201,
+        "startLoc": {
+          "line": 191,
+          "column": 2,
+          "position": 1652
+        },
+        "endLoc": {
+          "line": 201,
+          "column": 6,
+          "position": 1745
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/ynab/sync/route.ts",
+        "start": 46,
+        "end": 56,
+        "startLoc": {
+          "line": 46,
+          "column": 5,
+          "position": 405
+        },
+        "endLoc": {
+          "line": 56,
+          "column": 6,
+          "position": 498
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 12,
+      "fragment": ",\n    });\n  } catch (error) {\n    if (error instanceof ZodError) {\n      return NextResponse.json(\n        { error: \"Invalid payload\", issues: error.flatten() },\n        { status: 400 },\n      );\n    }\n\n    return NextResponse.json(\n      { error: \"Failed to save settings\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/settings/route.ts",
+        "start": 207,
+        "end": 218,
+        "startLoc": {
+          "line": 207,
+          "column": 5,
+          "position": 1797
+        },
+        "endLoc": {
+          "line": 218,
+          "column": 26,
+          "position": 1890
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/calculate/route.ts",
+        "start": 266,
+        "end": 276,
+        "startLoc": {
+          "line": 266,
+          "column": 13,
+          "position": 2418
+        },
+        "endLoc": {
+          "line": 276,
+          "column": 27,
+          "position": 2510
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 13,
+      "fragment": "(),\n});\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n\n  return user?.id ?? null;\n};\n\ntype GoalRow = Awaited<ReturnType<typeof createGoal",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/goals/route.ts",
+        "start": 23,
+        "end": 35,
+        "startLoc": {
+          "line": 23,
+          "column": 9,
+          "position": 276
+        },
+        "endLoc": {
+          "line": 35,
+          "column": 11,
+          "position": 387
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 35,
+        "end": 47,
+        "startLoc": {
+          "line": 35,
+          "column": 5,
+          "position": 365
+        },
+        "endLoc": {
+          "line": 47,
+          "column": 11,
+          "position": 476
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 83,
+      "fragment": ">>;\ntype GoalSyncResult = {\n  status: \"synced\" | \"error\" | \"skipped\";\n  message?: string;\n  goal?: GoalRow;\n};\n\nconst syncGoalWithYnab = async (\n  userId: string,\n  goal: GoalRow,\n): Promise<GoalSyncResult> => {\n  if (goal.status !== \"active\") {\n    return { status: \"skipped\" };\n  }\n\n  const profile = await getProfile(userId);\n  if (\n    !profile?.ynab_budget_id ||\n    !profile.ynab_token_ct ||\n    !profile.ynab_token_iv\n  ) {\n    return {\n      status: \"error\",\n      message: \"YNAB connection is not configured.\",\n    };\n  }\n\n  try {\n    const token = await decryptToken(\n      profile.ynab_token_ct,\n      profile.ynab_token_iv,\n    );\n    const ynabCategoryId = await ensureGoalCategoryLink({\n      token,\n      budgetId: profile.ynab_budget_id,\n      goal,\n    });\n    const linkedGoal =\n      ynabCategoryId === goal.ynab_category_id\n        ? goal\n        : await setGoalYnabCategoryId(userId, goal.id, ynabCategoryId);\n    await pushImmediateMonthlyFundingGoal({\n      token,\n      budgetId: profile.ynab_budget_id,\n      categoryId: ynabCategoryId,\n      targetAmount: linkedGoal.target_amount,\n      deadline: linkedGoal.deadline,\n    });\n    return { status: \"synced\", goal: linkedGoal };\n  } catch (error) {\n    const message =\n      error instanceof Error ? error.message : \"Failed to sync goal to YNAB.\";\n    return {\n      status: \"error\",\n      message,\n    };\n  }\n};\n\nconst applyGoalSyncState = async (\n  userId: string,\n  goal: GoalRow,\n  syncResult: GoalSyncResult,\n): Promise<GoalRow> => {\n  if (syncResult.status === \"skipped\") {\n    return syncResult.goal ?? goal;\n  }\n\n  const sourceGoal = syncResult.goal ?? goal;\n  const syncStatus: GoalSyncStatus =\n    syncResult.status === \"error\" ? \"error\" : \"synced\";\n  const syncedGoal = await setGoalSyncState(userId, sourceGoal.id, {\n    status: syncStatus,\n    error:\n      syncResult.status === \"error\"\n        ? (syncResult.message ?? \"Sync error.\")\n        : null,\n  });\n\n  return syncedGoal;\n};\n\nexport async function GET",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/goals/route.ts",
+        "start": 35,
+        "end": 117,
+        "startLoc": {
+          "line": 35,
+          "column": 11,
+          "position": 388
+        },
+        "endLoc": {
+          "line": 117,
+          "column": 4,
+          "position": 1020
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 47,
+        "end": 129,
+        "startLoc": {
+          "line": 47,
+          "column": 11,
+          "position": 477
+        },
+        "endLoc": {
+          "line": 129,
+          "column": 6,
+          "position": 1109
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 13,
+      "fragment": "},\n      );\n    } catch (syncStateError) {\n      console.error(\"Failed to persist goal sync state\", syncStateError);\n      return NextResponse.json(\n        {\n          goal: syncResult.goal ?? goal,\n          sync: {\n            status: \"error\" as const,\n            message: \"Goal saved, but sync state persistence failed.\",\n          },\n        },\n        { status: 201",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/goals/route.ts",
+        "start": 154,
+        "end": 166,
+        "startLoc": {
+          "line": 154,
+          "column": 2,
+          "position": 1376
+        },
+        "endLoc": {
+          "line": 166,
+          "column": 4,
+          "position": 1469
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/goals/[id]/route.ts",
+        "start": 152,
+        "end": 164,
+        "startLoc": {
+          "line": 152,
+          "column": 2,
+          "position": 1358
+        },
+        "endLoc": {
+          "line": 164,
+          "column": 4,
+          "position": 1451
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 6,
+      "fragment": "= (value: string): Date => {\n  const date = new Date(`${value}T00:00:00.000Z`);\n  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));\n};\n\nconst monthsDiffInclusive",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/lib/ynab/push-mf.ts",
+        "start": 52,
+        "end": 57,
+        "startLoc": {
+          "line": 52,
+          "column": 2,
+          "position": 392
+        },
+        "endLoc": {
+          "line": 57,
+          "column": 20,
+          "position": 463
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 51,
+        "end": 56,
+        "startLoc": {
+          "line": 51,
+          "column": 2,
+          "position": 513
+        },
+        "endLoc": {
+          "line": 56,
+          "column": 18,
+          "position": 584
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 7,
+      "fragment": ",\n  status: z.enum([\"active\", \"frozen\", \"completed\"]).default(\"active\"),\n  notes: z.string().trim().max(5000).nullable().optional(),\n  ynabCategoryId: z.string().trim().min(1).nullable().optional(),\n});\n\nconst updateGoalSchema",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/lib/repositories/goals-repo.ts",
+        "start": 24,
+        "end": 30,
+        "startLoc": {
+          "line": 24,
+          "column": 15,
+          "position": 211
+        },
+        "endLoc": {
+          "line": 30,
+          "column": 17,
+          "position": 301
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/goals/route.ts",
+        "start": 20,
+        "end": 26,
+        "startLoc": {
+          "line": 20,
+          "column": 2,
+          "position": 197
+        },
+        "endLoc": {
+          "line": 26,
+          "column": 17,
+          "position": 287
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 10,
+      "fragment": ",\n): Promise<GoalRow> => {\n  const parsedUserId = assertUserId(userId);\n  const parsedGoalId = assertGoalId(goalId);\n  const supabase = await getSupabaseServerClient();\n\n  const { data, error } = await supabase\n    .from(\"goals\")\n    .update({\n      ynab_category_id",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/lib/repositories/goals-repo.ts",
+        "start": 201,
+        "end": 210,
+        "startLoc": {
+          "line": 201,
+          "column": 7,
+          "position": 1848
+        },
+        "endLoc": {
+          "line": 210,
+          "column": 17,
+          "position": 1935
+        }
+      },
+      "secondFile": {
+        "name": "src/lib/repositories/goals-repo.ts",
+        "start": 167,
+        "end": 176,
+        "startLoc": {
+          "line": 167,
+          "column": 22,
+          "position": 1570
+        },
+        "endLoc": {
+          "line": 176,
+          "column": 17,
+          "position": 1657
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 17,
+      "fragment": ";\n};\n\nconst formatMonth = (value: string): string => {\n  const parsed = new Date(value);\n  if (Number.isNaN(parsed.getTime())) {\n    return value;\n  }\n\n  return new Intl.DateTimeFormat(\"en-US\", {\n    month: \"short\",\n    year: \"numeric\",\n    timeZone: \"UTC\",\n  }).format(parsed);\n};\n\nexport const PlanConflicts",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/components/plan/plan-conflicts.tsx",
+        "start": 29,
+        "end": 45,
+        "startLoc": {
+          "line": 29,
+          "column": 2,
+          "position": 196
+        },
+        "endLoc": {
+          "line": 45,
+          "column": 14,
+          "position": 318
+        }
+      },
+      "secondFile": {
+        "name": "src/components/plan/plan-table.tsx",
+        "start": 15,
+        "end": 31,
+        "startLoc": {
+          "line": 15,
+          "column": 7,
+          "position": 130
+        },
+        "endLoc": {
+          "line": 31,
+          "column": 10,
+          "position": 252
+        }
+      }
+    }
+  ]
+}

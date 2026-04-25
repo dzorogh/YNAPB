@@ -42,7 +42,10 @@ const formatMonth = (value: string): string => {
   }).format(parsed);
 };
 
-export const PlanConflicts = ({ conflicts, tbdWarnings }: PlanConflictsProps) => {
+export const PlanConflicts = ({
+  conflicts,
+  tbdWarnings,
+}: PlanConflictsProps) => {
   if (conflicts.length === 0 && tbdWarnings.length === 0) {
     return (
       <Card>
@@ -50,7 +53,9 @@ export const PlanConflicts = ({ conflicts, tbdWarnings }: PlanConflictsProps) =>
           <CardTitle>Conflicts and warnings</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No conflicts detected.</p>
+          <p className="text-sm text-muted-foreground">
+            No conflicts detected.
+          </p>
         </CardContent>
       </Card>
     );
@@ -65,7 +70,10 @@ export const PlanConflicts = ({ conflicts, tbdWarnings }: PlanConflictsProps) =>
         {conflicts.map((conflict) => {
           if (conflict.type === "unreachable") {
             return (
-              <Alert key={`unreachable-${conflict.goalId}`} variant="destructive">
+              <Alert
+                key={`unreachable-${conflict.goalId}`}
+                variant="destructive"
+              >
                 <AlertTitle>Unreachable goal: {conflict.goalId}</AlertTitle>
                 <AlertDescription>
                   {conflict.earliestAchievable
@@ -81,8 +89,8 @@ export const PlanConflicts = ({ conflicts, tbdWarnings }: PlanConflictsProps) =>
             <Alert key={`tied-deadline-${conflict.goalIds.join("-")}`}>
               <AlertTitle>Tied deadline conflict</AlertTitle>
               <AlertDescription>
-                Goals {conflict.goalIds.join(", ")} share deadline {formatMonth(conflict.deadline)}.{" "}
-                {conflict.detail}
+                Goals {conflict.goalIds.join(", ")} share deadline{" "}
+                {formatMonth(conflict.deadline)}. {conflict.detail}
               </AlertDescription>
             </Alert>
           );
@@ -92,7 +100,8 @@ export const PlanConflicts = ({ conflicts, tbdWarnings }: PlanConflictsProps) =>
           <Alert key={`tbd-${warning.categoryId}`}>
             <AlertTitle>TBD category is not linked</AlertTitle>
             <AlertDescription>
-              Category "{warning.categoryName}" has TBD goal type but is not linked to an active goal.
+              Category "{warning.categoryName}" has TBD goal type but is not
+              linked to an active goal.
             </AlertDescription>
           </Alert>
         ))}

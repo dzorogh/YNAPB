@@ -49,11 +49,13 @@ tests/
 ## Task 1: Plan snapshots repository + retention
 
 **Files:**
+
 - Create: `src/lib/repositories/plan-snapshots-repo.ts`
 
 - [ ] **Step 1: Add repository methods**
 
 Implement:
+
 - `createPlanSnapshot(userId, { inputsHash, result })`
 - `trimPlanSnapshots(userId, keep = 100)`
 - `createAndTrimPlanSnapshot(...)` helper
@@ -75,11 +77,13 @@ git commit -m "feat(data): add plan snapshots repository with retention helper"
 ## Task 2: Extend YNAB push service for MF goal writes (TDD)
 
 **Files:**
+
 - Create: `src/lib/ynab/push-mf.ts`, `src/lib/ynab/push-mf.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 Cover:
+
 - converts human currency to YNAB milliunits
 - updates only active linked goals
 - prepares diff payload (`current` vs `next`)
@@ -93,6 +97,7 @@ Expected: FAIL.
 - [ ] **Step 3: Implement minimal service**
 
 Implement:
+
 - `buildPushDiff({ goals, allocationForMonth, categories })`
 - `pushMonthlyFundingGoals({ token, budgetId, updates })`
 
@@ -113,12 +118,14 @@ git commit -m "feat(ynab): add monthly funding diff and push service"
 ## Task 3: Plan calculate API orchestration
 
 **Files:**
+
 - Create: `src/app/api/plan/calculate/route.ts`
 - Modify: `src/lib/repositories/goals-repo.ts`, `src/lib/repositories/ynab-cache-repo.ts`, `src/lib/budget/obligations.ts`
 
 - [ ] **Step 1: Implement `POST /api/plan/calculate`**
 
 Endpoint flow:
+
 - auth user
 - load active goals
 - load ynab cache and income settings
@@ -148,12 +155,14 @@ git commit -m "feat(api): add plan calculation endpoint with budget and warnings
 ## Task 4: Plan push API with confirmation + snapshot write
 
 **Files:**
+
 - Create: `src/app/api/plan/push/route.ts`
 - Modify: `src/lib/repositories/plan-snapshots-repo.ts`, `src/lib/ynab/push-mf.ts`
 
 - [ ] **Step 1: Implement dry-run diff mode**
 
 `POST /api/plan/push` with `{ mode: "preview", month }`:
+
 - recompute canonical plan
 - build YNAB push diff for requested month
 - return diff only (no writes)
@@ -161,6 +170,7 @@ git commit -m "feat(api): add plan calculation endpoint with budget and warnings
 - [ ] **Step 2: Implement apply mode**
 
 `POST /api/plan/push` with `{ mode: "apply", month, acceptedDiffHash }`:
+
 - recompute diff
 - verify hash matches accepted preview
 - perform YNAB updates via push service
@@ -183,7 +193,9 @@ git commit -m "feat(api): add preview and apply push endpoints with snapshot per
 ## Task 5: Build `/plan` page shell and data fetch flow
 
 **Files:**
+
 - Create:
+
   - `src/app/plan/page.tsx`
   - `src/components/plan/plan-header.tsx`
   - `src/components/plan/plan-conflicts.tsx`
@@ -193,6 +205,7 @@ git commit -m "feat(api): add preview and apply push endpoints with snapshot per
 - [ ] **Step 1: Render plan screen states**
 
 States:
+
 - loading
 - missing YNAB connection CTA to `/settings`
 - needs sync warning
@@ -206,6 +219,7 @@ Load data from `/api/plan/calculate` and pass to subcomponents.
 - [ ] **Step 3: Show conflicts and warnings**
 
 Display:
+
 - `unreachable` conflicts with earliest achievable date
 - `tied_deadline` conflict groups
 - TBD-not-linked warnings
@@ -227,6 +241,7 @@ git commit -m "feat(plan): add plan page shell with calculation and conflict ren
 ## Task 6: Push diff dialog and apply action
 
 **Files:**
+
 - Create: `src/components/plan/push-diff-dialog.tsx`
 - Modify: `src/app/plan/page.tsx`
 
@@ -234,12 +249,14 @@ git commit -m "feat(plan): add plan page shell with calculation and conflict ren
 
 Button: `Push goals to YNAB for current month`  
 On click:
+
 - call `/api/plan/push` preview
 - open dialog with row-by-row changes
 
 - [ ] **Step 2: Add confirm apply flow**
 
 On confirm:
+
 - call `/api/plan/push` apply with accepted diff hash
 - show success/failure feedback
 - refresh plan data
@@ -261,6 +278,7 @@ git commit -m "feat(plan): add ynab push diff confirmation flow"
 ## Task 7: Timeline interactions (phase 1: deadline editing without full DnD physics)
 
 **Files:**
+
 - Modify: `src/components/plan/plan-timeline.tsx`, `src/app/plan/page.tsx`
 
 - [ ] **Step 1: Add month-shift controls per goal**
@@ -288,12 +306,14 @@ git commit -m "feat(plan): add interactive deadline shifts with live recalculati
 ## Task 8: E2E coverage for plan flow
 
 **Files:**
+
 - Create: `tests/e2e/plan.spec.ts`
 - Modify: `playwright.config.ts` (if required)
 
 - [ ] **Step 1: Add e2e scenarios**
 
 Scenarios:
+
 - unauth `/plan` redirect to `/login`
 - `/plan` empty/connect states render
 - mocked calculated plan renders table + conflicts
@@ -321,6 +341,7 @@ git commit -m "test(e2e): add plan page and push preview flow coverage"
 ## Self-review (run after all tasks complete)
 
 1. **Spec coverage check**
+
    - `/plan` header, conflicts, allocation table: Tasks 3 + 5
    - push MF diff + confirm: Tasks 2 + 4 + 6
    - snapshot writes + retention 100: Tasks 1 + 4
@@ -328,6 +349,7 @@ git commit -m "test(e2e): add plan page and push preview flow coverage"
    - e2e plan scenarios: Task 8
 
 2. **Placeholder scan**
+
    - No TODO/TBD placeholders in implementation steps.
    - Every task has file paths, commands, and expected outcomes.
 

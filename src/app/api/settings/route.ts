@@ -1,40 +1,49 @@
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
+
 import { encryptToken } from "@/lib/crypto";
 import {
   getIncomeSettings,
   upsertIncomeSettings,
 } from "@/lib/repositories/income-settings-repo";
-import { getProfile, updateYnabConnection } from "@/lib/repositories/profile-repo";
+import {
+  getProfile,
+  updateYnabConnection,
+} from "@/lib/repositories/profile-repo";
 import {
   getCache,
   parseCachedIncomeHistory,
 } from "@/lib/repositories/ynab-cache-repo";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-const settingsPayloadSchema = z.object({
-  token: z.string().trim().min(1).optional(),
-  budgetId: z.string().trim().min(1).optional(),
-  plannedIncome: z.number().finite().nonnegative().optional(),
-  baselineMonths: z.number().int().min(1).max(36).optional(),
-}).superRefine((payload, context) => {
-  const hasYnabFields = payload.token !== undefined || payload.budgetId !== undefined;
-  const hasIncomeFields = payload.plannedIncome !== undefined || payload.baselineMonths !== undefined;
+const settingsPayloadSchema = z
+  .object({
+    token: z.string().trim().min(1).optional(),
+    budgetId: z.string().trim().min(1).optional(),
+    plannedIncome: z.number().finite().nonnegative().optional(),
+    baselineMonths: z.number().int().min(1).max(36).optional(),
+  })
+  .superRefine((payload, context) => {
+    const hasYnabFields =
+      payload.token !== undefined || payload.budgetId !== undefined;
+    const hasIncomeFields =
+      payload.plannedIncome !== undefined ||
+      payload.baselineMonths !== undefined;
 
-  if (!hasYnabFields && !hasIncomeFields) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "At least one settings section must be provided",
-    });
-  }
+    if (!hasYnabFields && !hasIncomeFields) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one settings section must be provided",
+      });
+    }
 
-  if (payload.token !== undefined && payload.budgetId === undefined) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "budgetId is required when token is provided",
-    });
-  }
-});
+    if (payload.token !== undefined && payload.budgetId === undefined) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "budgetId is required when token is provided",
+      });
+    }
+  });
 
 const DEFAULT_BASELINE_MONTHS = 6;
 
@@ -64,17 +73,27 @@ const getLatestIncomeHistory = (
 
 const hasYnabConnection = (
   profile: Awaited<ReturnType<typeof getProfile>>,
-): boolean => Boolean(profile?.ynab_budget_id && profile.ynab_token_ct && profile.ynab_token_iv);
+): boolean =>
+  Boolean(
+    profile?.ynab_budget_id && profile.ynab_token_ct && profile.ynab_token_iv,
+  );
 
 const buildIncomeDetails = (
   cache: Awaited<ReturnType<typeof getCache>>,
   baselineMonths: number,
 ) => {
-  const incomeHistory = cache ? parseCachedIncomeHistory(cache.income_history) : [];
-  const latestIncomeHistory = getLatestIncomeHistory(incomeHistory, baselineMonths);
+  const incomeHistory = cache
+    ? parseCachedIncomeHistory(cache.income_history)
+    : [];
+  const latestIncomeHistory = getLatestIncomeHistory(
+    incomeHistory,
+    baselineMonths,
+  );
   return {
     incomeHistory: latestIncomeHistory,
-    historicalAverageIncome: averageIncome(latestIncomeHistory.map((item) => item.income)),
+    historicalAverageIncome: averageIncome(
+      latestIncomeHistory.map((item) => item.income),
+    ),
   };
 };
 
@@ -85,7 +104,8 @@ const buildSettingsResponse = async (userId: string) => {
     getCache(userId),
   ]);
 
-  const baselineMonths = incomeSettings?.baseline_months ?? DEFAULT_BASELINE_MONTHS;
+  const baselineMonths =
+    incomeSettings?.baseline_months ?? DEFAULT_BASELINE_MONTHS;
   const incomeDetails = buildIncomeDetails(cache, baselineMonths);
 
   return {
@@ -133,16 +153,21 @@ const applyIncomeSettingsUpdate = async (
   userId: string,
   payload: z.infer<typeof settingsPayloadSchema>,
 ) => {
-  if (payload.plannedIncome === undefined && payload.baselineMonths === undefined) {
+  if (
+    payload.plannedIncome === undefined &&
+    payload.baselineMonths === undefined
+  ) {
     return;
   }
 
   const existingIncomeSettings = await getIncomeSettings(userId);
   await upsertIncomeSettings(userId, {
-    plannedIncome: payload.plannedIncome ?? existingIncomeSettings?.planned_income ?? null,
-    baselineMonths: payload.baselineMonths
-      ?? existingIncomeSettings?.baseline_months
-      ?? DEFAULT_BASELINE_MONTHS,
+    plannedIncome:
+      payload.plannedIncome ?? existingIncomeSettings?.planned_income ?? null,
+    baselineMonths:
+      payload.baselineMonths ??
+      existingIncomeSettings?.baseline_months ??
+      DEFAULT_BASELINE_MONTHS,
   });
 };
 

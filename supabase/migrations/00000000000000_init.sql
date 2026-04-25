@@ -4,6 +4,7 @@ create table public.profiles (
   ynab_token_ct   text,                       -- AES-GCM ciphertext, base64
   ynab_token_iv   text,                       -- IV (nonce), base64
   ynab_budget_id  text,
+  ynab_currency_code text,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );

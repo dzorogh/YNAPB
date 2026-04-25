@@ -52,18 +52,21 @@ src/
 ## Task 1: Stabilize env contract and helper accessors
 
 **Files:**
+
 - Create: `src/lib/supabase/env.ts`
 - Modify: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/middleware.ts`, `.env.example`, `README.md`
 
 - [ ] **Step 1: Add env accessor module**
 
 Create `src/lib/supabase/env.ts` with `getSupabaseUrl()` and `getSupabasePublishableKey()` that support:
+
 - primary: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - fallback: `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 - [ ] **Step 2: Refactor clients to use accessors**
 
 Replace direct `process.env.*` reads in:
+
 - `src/lib/supabase/browser.ts`
 - `src/lib/supabase/server.ts`
 - `src/lib/supabase/middleware.ts`
@@ -89,11 +92,13 @@ git commit -m "chore(env): centralize Supabase env access with publishable key s
 ## Task 2: Budget obligations calculator (pure domain + tests)
 
 **Files:**
+
 - Create: `src/lib/budget/obligations.ts`, `src/lib/budget/obligations.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 Cover:
+
 - excludes categories linked to active goals
 - excludes categories with `goal_type = null`
 - sums `goal_under_funded` as `obligations`
@@ -126,7 +131,9 @@ git commit -m "feat(budget): compute obligations and available budget from ynab 
 ## Task 3: Repositories for profile/settings/goals/cache
 
 **Files:**
+
 - Create:
+
   - `src/lib/repositories/profile-repo.ts`
   - `src/lib/repositories/income-settings-repo.ts`
   - `src/lib/repositories/goals-repo.ts`
@@ -135,6 +142,7 @@ git commit -m "feat(budget): compute obligations and available budget from ynab 
 - [ ] **Step 1: Add repository interfaces and Zod guards**
 
 Each repo should expose focused functions (no broad query builders), e.g.:
+
 - profile: `getProfile`, `updateYnabConnection`
 - income: `getIncomeSettings`, `upsertIncomeSettings`
 - goals: `listGoals`, `createGoal`, `updateGoal`, `deleteGoal`
@@ -161,7 +169,9 @@ git commit -m "feat(data): add focused repositories for profile, income, goals, 
 ## Task 4: YNAB sync service (SDK wrapper + mapping)
 
 **Files:**
+
 - Create:
+
   - `src/lib/ynab/client.ts`
   - `src/lib/ynab/map.ts`
   - `src/lib/ynab/sync.ts`
@@ -170,6 +180,7 @@ git commit -m "feat(data): add focused repositories for profile, income, goals, 
 - [ ] **Step 1: Write failing sync unit tests**
 
 Cover:
+
 - missing token => typed error
 - categories mapping includes goal fields (`goal_type`, `goal_target`, `goal_under_funded`)
 - income history from latest N months
@@ -182,6 +193,7 @@ Expected: FAIL.
 - [ ] **Step 3: Implement YNAB service**
 
 `syncYnabData({ token, budgetId, baselineMonths })` should return:
+
 - normalized categories
 - normalized income history
 - sync timestamp
@@ -203,6 +215,7 @@ git commit -m "feat(ynab): add sync service with category and income normalizati
 ## Task 5: Settings API + sync API
 
 **Files:**
+
 - Create:
   - `src/app/api/settings/route.ts`
   - `src/app/api/ynab/sync/route.ts`
@@ -211,6 +224,7 @@ git commit -m "feat(ynab): add sync service with category and income normalizati
 - [ ] **Step 1: Implement `POST /api/settings`**
 
 Responsibilities:
+
 - validate payload (`token`, `budgetId`, `plannedIncome`, `baselineMonths`)
 - encrypt token using `encryptToken`
 - persist connection + income settings via repositories
@@ -218,6 +232,7 @@ Responsibilities:
 - [ ] **Step 2: Implement `POST /api/ynab/sync`**
 
 Responsibilities:
+
 - load and decrypt stored token
 - call `syncYnabData`
 - persist cache
@@ -240,6 +255,7 @@ git commit -m "feat(api): add settings and ynab sync endpoints"
 ## Task 6: Goals CRUD API
 
 **Files:**
+
 - Create:
   - `src/app/api/goals/route.ts`
   - `src/app/api/goals/[id]/route.ts`
@@ -272,19 +288,23 @@ git commit -m "feat(api): implement goals CRUD endpoints"
 ## Task 7: `/settings` UI for connection and sync
 
 **Files:**
+
 - Create:
+
   - `src/app/settings/page.tsx`
   - `src/components/settings/budget-settings-form.tsx`
 
 - [ ] **Step 1: Build settings form component**
 
 Fields:
+
 - YNAB token
 - budget id
 - planned monthly income
 - baseline months (default 6)
 
 Actions:
+
 - Save settings (`/api/settings`)
 - Sync YNAB (`/api/ynab/sync`)
 
@@ -309,7 +329,9 @@ git commit -m "feat(settings): add ynab connection and sync controls"
 ## Task 8: `/goals` UI for CRUD
 
 **Files:**
+
 - Create:
+
   - `src/app/goals/page.tsx`
   - `src/components/goals/goal-form.tsx`
   - `src/components/goals/goals-table.tsx`
@@ -339,12 +361,14 @@ git commit -m "feat(goals): add goals management page with CRUD interactions"
 ## Task 9: E2E smoke for settings + goals core flow
 
 **Files:**
+
 - Create: `tests/e2e/settings-goals.spec.ts`
 - Modify: `playwright.config.ts` (only if routing/mocks need update)
 
 - [ ] **Step 1: Add e2e test scenarios**
 
 Scenarios:
+
 - unauth -> redirect to `/login`
 - settings page renders
 - goals page renders empty state
@@ -371,6 +395,7 @@ git commit -m "test(e2e): cover settings and goals core navigation flow"
 ## Self-review (run after all tasks complete)
 
 1. **Spec coverage check**
+
    - `/settings` with YNAB connect and baseline income: Tasks 5 + 7
    - sync and cached categories/income: Tasks 4 + 5
    - obligations/available computation: Task 2
@@ -378,6 +403,7 @@ git commit -m "test(e2e): cover settings and goals core navigation flow"
    - quality checks and e2e smoke: Task 9
 
 2. **Placeholder scan**
+
    - No TODO/TBD placeholders in tasks.
    - Every task has concrete files, commands, and expected outcomes.
 

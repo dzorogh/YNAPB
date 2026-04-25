@@ -1,3 +1,5 @@
+import { PLANNER_TYPES_MODULE } from "./types";
+
 import type {
   Allocation,
   Conflict,
@@ -5,7 +7,6 @@ import type {
   PlanInput,
   PlanResult,
 } from "./types";
-import { PLANNER_TYPES_MODULE } from "./types";
 
 const monthsBetweenInclusive = (from: Date, to: Date): number => {
   const yDiff = to.getUTCFullYear() - from.getUTCFullYear();
@@ -18,7 +19,8 @@ const addMonths = (d: Date, n: number): Date =>
 
 const isBeforeMonth = (a: Date, b: Date): boolean =>
   a.getUTCFullYear() < b.getUTCFullYear() ||
-  (a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() < b.getUTCMonth());
+  (a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() < b.getUTCMonth());
 
 const monthKey = (value: Date): string =>
   `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -28,12 +30,16 @@ type Working = Goal & { remaining: number };
 const initialQueue = (goals: Goal[], startMonth: Date): Working[] =>
   goals
     .filter((g) => g.status === "active")
-    .map((g) => ({ ...g, remaining: Math.max(0, g.targetAmount - g.currentBalance) }))
+    .map((g) => ({
+      ...g,
+      remaining: Math.max(0, g.targetAmount - g.currentBalance),
+    }))
     .filter((g) => g.remaining > 0)
     .filter((g) => !isBeforeMonth(g.deadline, startMonth))
-    .sort((a, b) =>
-      a.deadline.getTime() - b.deadline.getTime() ||
-      a.createdAt.getTime() - b.createdAt.getTime(),
+    .sort(
+      (a, b) =>
+        a.deadline.getTime() - b.deadline.getTime() ||
+        a.createdAt.getTime() - b.createdAt.getTime(),
     );
 
 // The monthly allocator intentionally keeps explicit branch logic for readability.
@@ -41,33 +47,56 @@ const initialQueue = (goals: Goal[], startMonth: Date): Working[] =>
 export function computePlan(input: PlanInput): PlanResult {
   void PLANNER_TYPES_MODULE;
   const autoFrozenGoalIds = input.goals
-    .filter((goalItem) =>
-      goalItem.status === "active"
-      && Math.max(0, goalItem.targetAmount - goalItem.currentBalance) > 0
-      && isBeforeMonth(goalItem.deadline, input.startMonth))
+    .filter(
+      (goalItem) =>
+        goalItem.status === "active" &&
+        Math.max(0, goalItem.targetAmount - goalItem.currentBalance) > 0 &&
+        isBeforeMonth(goalItem.deadline, input.startMonth),
+    )
     .map((goalItem) => goalItem.id);
 
   const liveGoals = input.goals.map((goalItem) =>
-    autoFrozenGoalIds.includes(goalItem.id) ? { ...goalItem, status: "frozen" as const } : goalItem);
+    autoFrozenGoalIds.includes(goalItem.id)
+      ? { ...goalItem, status: "frozen" as const }
+      : goalItem,
+  );
 
   const queue = initialQueue(liveGoals, input.startMonth);
   const allocations: Allocation[] = [];
   const completionMap: Record<string, Date | null> = {};
   for (const g of liveGoals) completionMap[g.id] = null;
+  const activeQueueGoals = queue.filter(
+    (goalItem) => goalItem.status === "active",
+  );
+  const maxDeadlineSimulationMonths =
+    activeQueueGoals.length > 0
+      ? Math.max(
+          ...activeQueueGoals.map((goalItem) =>
+            monthsBetweenInclusive(input.startMonth, goalItem.deadline),
+          ),
+        )
+      : 0;
+  const simulationMonths = Math.max(
+    input.horizonMonths,
+    maxDeadlineSimulationMonths,
+  );
 
-  for (let i = 0; i < input.horizonMonths; i++) {
+  for (let i = 0; i < simulationMonths; i++) {
     const month = addMonths(input.startMonth, i);
     let remainingBudget = input.budget.available;
     const perGoal: Record<string, number> = {};
 
     for (const g of queue) {
       if (g.remaining <= 0) continue;
-      if (isBeforeMonth(g.deadline, month)) continue;
       if (remainingBudget <= 0) break;
 
-      const monthsLeft = monthsBetweenInclusive(month, g.deadline);
+      const monthsLeft = Math.max(1, monthsBetweenInclusive(month, g.deadline));
       const neededPerMonth = g.remaining / monthsLeft;
-      const contribution = Math.min(neededPerMonth, remainingBudget, g.remaining);
+      const contribution = Math.min(
+        neededPerMonth,
+        remainingBudget,
+        g.remaining,
+      );
 
       perGoal[g.id] = (perGoal[g.id] ?? 0) + contribution;
       g.remaining -= contribution;
@@ -78,13 +107,23 @@ export function computePlan(input: PlanInput): PlanResult {
       }
     }
 
-    allocations.push({ month, perGoal, unallocated: remainingBudget });
+    if (i < input.horizonMonths) {
+      allocations.push({ month, perGoal, unallocated: remainingBudget });
+    }
   }
 
   const conflicts: Conflict[] = [...detectTiedDeadlines(liveGoals, input)];
   for (const goalItem of queue) {
-    if (goalItem.remaining <= 0) continue;
-    const earliestAchievable = computeEarliestAchievable(goalItem.remaining, input);
+    const completedAt: Date | null = completionMap[goalItem.id] ?? null;
+    const completedAfterDeadline =
+      completedAt !== null && isBeforeMonth(goalItem.deadline, completedAt);
+    if (!completedAfterDeadline && goalItem.remaining <= 0) {
+      continue;
+    }
+
+    const earliestAchievable = completedAfterDeadline
+      ? completedAt
+      : computeEarliestAchievable(goalItem.remaining, input, simulationMonths);
     conflicts.push({
       type: "unreachable",
       goalId: goalItem.id,
@@ -102,7 +141,10 @@ function detectTiedDeadlines(goals: Goal[], input: PlanInput): Conflict[] {
   const buckets = new Map<string, Goal[]>();
   for (const goalItem of goals) {
     if (goalItem.status !== "active") continue;
-    const remaining = Math.max(0, goalItem.targetAmount - goalItem.currentBalance);
+    const remaining = Math.max(
+      0,
+      goalItem.targetAmount - goalItem.currentBalance,
+    );
     if (remaining <= 0) continue;
     const key = monthKey(goalItem.deadline);
     const existing = buckets.get(key) ?? [];
@@ -114,7 +156,8 @@ function detectTiedDeadlines(goals: Goal[], input: PlanInput): Conflict[] {
   for (const list of buckets.values()) {
     if (list.length < 2) continue;
     const totalRemaining = list.reduce(
-      (sum, goalItem) => sum + Math.max(0, goalItem.targetAmount - goalItem.currentBalance),
+      (sum, goalItem) =>
+        sum + Math.max(0, goalItem.targetAmount - goalItem.currentBalance),
       0,
     );
     const months = monthsBetweenInclusive(input.startMonth, list[0]!.deadline);
@@ -132,9 +175,14 @@ function detectTiedDeadlines(goals: Goal[], input: PlanInput): Conflict[] {
   return result;
 }
 
-function computeEarliestAchievable(remaining: number, input: PlanInput): Date | null {
+function computeEarliestAchievable(
+  remaining: number,
+  input: PlanInput,
+  elapsedMonths: number,
+): Date | null {
   if (input.budget.available <= 0) return null;
   const monthsNeeded = Math.ceil(remaining / input.budget.available);
-  if (monthsNeeded > 1_200) return null;
-  return addMonths(input.startMonth, monthsNeeded - 1);
+  const monthsFromStart = elapsedMonths + monthsNeeded - 1;
+  if (monthsFromStart > 1_200) return null;
+  return addMonths(input.startMonth, monthsFromStart);
 }

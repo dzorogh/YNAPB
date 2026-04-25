@@ -1,16 +1,17 @@
-import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { ZodError, z } from "zod";
-import { decryptToken } from "@/lib/crypto";
+
 import { computeMonthlyBudget } from "@/lib/budget/obligations";
+import { decryptToken } from "@/lib/crypto";
 import { computePlan } from "@/lib/planner/planner";
 import type { Goal as PlannerGoal, PlanResult } from "@/lib/planner/types";
+import { listGoals, setGoalYnabCategoryId } from "@/lib/repositories/goals-repo";
+import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
 import {
   createAndTrimPlanSnapshot,
   DEFAULT_PLAN_SNAPSHOT_KEEP,
 } from "@/lib/repositories/plan-snapshots-repo";
-import { listGoals } from "@/lib/repositories/goals-repo";
-import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
 import { getProfile } from "@/lib/repositories/profile-repo";
 import {
   getCache,
@@ -19,6 +20,7 @@ import {
   parseCachedIncomeHistory,
 } from "@/lib/repositories/ynab-cache-repo";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
 import {
   buildPushDiff,
   pushMonthlyFundingGoals,
@@ -79,8 +81,8 @@ const resolveCurrentBalance = (
   }
 
   if (
-    typeof category.goal_target === "number"
-    && typeof category.goal_under_funded === "number"
+    typeof category.goal_target === "number" &&
+    typeof category.goal_under_funded === "number"
   ) {
     return Math.max(0, category.goal_target - category.goal_under_funded);
   }
@@ -92,7 +94,9 @@ const mapGoalsToPlannerInput = (
   goals: Awaited<ReturnType<typeof listGoals>>,
   categories: ReturnType<typeof parseCachedCategories>,
 ): PlannerGoal[] => {
-  const categoriesById = new Map(categories.map((category) => [category.id, category]));
+  const categoriesById = new Map(
+    categories.map((category) => [category.id, category]),
+  );
 
   return goals
     .filter((goal) => goal.status === "active")
@@ -171,7 +175,10 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
   if (!cache || isCacheStale(cache)) {
     return {
       errorResponse: NextResponse.json(
-        { error: "YNAB cache is missing or stale, run sync first", needsSync: true },
+        {
+          error: "YNAB cache is missing or stale, run sync first",
+          needsSync: true,
+        },
         { status: 409 },
       ),
     } as const;
@@ -183,8 +190,9 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     .map((goal) => goal.ynabCategoryId)
     .filter((categoryId): categoryId is string => Boolean(categoryId));
   const incomeHistory = parseCachedIncomeHistory(cache.income_history);
-  const plannedIncome = incomeSettings?.planned_income
-    ?? averageIncome(incomeHistory.map((item) => item.income));
+  const plannedIncome =
+    incomeSettings?.planned_income ??
+    averageIncome(incomeHistory.map((item) => item.income));
   const budget = computeMonthlyBudget({
     categories,
     activeGoalCategoryIds,
@@ -199,7 +207,8 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
 
   const targetMonth = monthStartFromKey(month);
   const allocationForMonth = planResult.allocations.find(
-    (allocation) => monthKeyFromDate(allocation.month) === monthKeyFromDate(targetMonth),
+    (allocation) =>
+      monthKeyFromDate(allocation.month) === monthKeyFromDate(targetMonth),
   );
   if (!allocationForMonth) {
     return {
@@ -219,6 +228,7 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     allocationForMonth: allocationForMonth.perGoal,
     categories: categories.map((category) => ({
       id: category.id,
+      name: category.name,
       goalTarget: category.goal_target,
     })),
   });
@@ -256,19 +266,53 @@ const applyDiffAndPersistSnapshot = async (params: {
 
   const profile = await getProfile(userId);
   if (
-    !profile?.ynab_budget_id
-    || !profile.ynab_token_ct
-    || !profile.ynab_token_iv
+    !profile?.ynab_budget_id ||
+    !profile.ynab_token_ct ||
+    !profile.ynab_token_iv
   ) {
     return invalidConnectionResponse();
   }
 
-  const token = await decryptToken(profile.ynab_token_ct, profile.ynab_token_iv);
-  if (canonical.diff.length > 0) {
+  const token = await decryptToken(
+    profile.ynab_token_ct,
+    profile.ynab_token_iv,
+  );
+  const activeGoals = canonical.goals.filter((goal) => goal.status === "active");
+  let hasCategoryLinkChanges = false;
+  for (const goal of activeGoals) {
+    const ynabCategoryId = await ensureGoalCategoryLink({
+      token,
+      budgetId: profile.ynab_budget_id,
+      goal,
+    });
+    if (ynabCategoryId === goal.ynab_category_id) {
+      continue;
+    }
+    await setGoalYnabCategoryId(userId, goal.id, ynabCategoryId);
+    hasCategoryLinkChanges = true;
+  }
+
+  const effectiveCanonical = hasCategoryLinkChanges
+    ? await buildCanonicalPlanAndDiff(userId, month)
+    : canonical;
+  if ("errorResponse" in effectiveCanonical) {
+    return effectiveCanonical.errorResponse;
+  }
+  if (acceptedDiffHash !== effectiveCanonical.diffHash) {
+    return NextResponse.json(
+      {
+        error: "Diff changed since preview. Please preview again.",
+        diff: effectiveCanonical.diff,
+        diffHash: effectiveCanonical.diffHash,
+      },
+      { status: 409 },
+    );
+  }
+  if (effectiveCanonical.diff.length > 0) {
     await pushMonthlyFundingGoals({
       token,
       budgetId: profile.ynab_budget_id,
-      updates: canonical.diff,
+      updates: effectiveCanonical.diff,
     });
   }
 
@@ -277,18 +321,18 @@ const applyDiffAndPersistSnapshot = async (params: {
     {
       inputsHash: buildInputsHash({
         month,
-        goals: canonical.goals,
-        budget: canonical.budget,
-        planResult: canonical.planResult,
+        goals: effectiveCanonical.goals,
+        budget: effectiveCanonical.budget,
+        planResult: effectiveCanonical.planResult,
       }),
-      result: canonical.planResult,
+      result: effectiveCanonical.planResult,
     },
     DEFAULT_PLAN_SNAPSHOT_KEEP,
   );
 
   return NextResponse.json({
-    applied: canonical.diff.length,
-    diffHash: canonical.diffHash,
+    applied: effectiveCanonical.diff.length,
+    diffHash: effectiveCanonical.diffHash,
   });
 };
 

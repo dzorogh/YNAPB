@@ -9,7 +9,8 @@ module.exports = {
     {
       name: "domain-pure",
       severity: "error",
-      comment: "/lib/planner must remain pure: no React, no Supabase, no Next, no YNAB SDK",
+      comment:
+        "/lib/planner must remain pure: no React, no Supabase, no Next, no YNAB SDK",
       from: { path: "^src/lib/planner" },
       to: {
         path: [

@@ -11,13 +11,12 @@ export default defineConfig({
     baseURL: "http://localhost:3100",
     trace: "retain-on-failure",
   },
-  projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-  ],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "E2E_AUTH_BYPASS=true PORT=3100 npm run dev",
+    command:
+      "npm run build && E2E_AUTH_BYPASS=true npm run start -- --port 3100",
     url: "http://localhost:3100",
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
   },
 });

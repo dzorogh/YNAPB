@@ -1,11 +1,14 @@
 "use client";
 
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/formatting/currency";
 
 export type PushDiffRow = {
   categoryId: string;
+  categoryName: string;
   current: number;
   next: number;
 };
@@ -13,24 +16,24 @@ export type PushDiffRow = {
 type PushDiffDialogProps = {
   isOpen: boolean;
   diffRows: PushDiffRow[];
+  currencyCode: string;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
   isApplying: boolean;
 };
 
-const formatMilliunits = (value: number): string =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value / 1000);
-
-const PushDiffTable = ({ diffRows }: { diffRows: PushDiffRow[] }) => (
+const PushDiffTable = ({
+  diffRows,
+  currencyCode,
+}: {
+  diffRows: PushDiffRow[];
+  currencyCode: string;
+}) => (
   <div className="max-h-[55vh] overflow-auto rounded-md border">
     <table className="w-full min-w-[560px] text-sm">
       <thead className="sticky top-0 bg-muted/80 backdrop-blur">
         <tr className="border-b text-left">
-          <th className="px-3 py-2 font-medium">Category ID</th>
+          <th className="px-3 py-2 font-medium">Category</th>
           <th className="px-3 py-2 font-medium">Current target</th>
           <th className="px-3 py-2 font-medium">Next target</th>
         </tr>
@@ -38,9 +41,18 @@ const PushDiffTable = ({ diffRows }: { diffRows: PushDiffRow[] }) => (
       <tbody>
         {diffRows.map((row) => (
           <tr key={row.categoryId} className="border-b last:border-b-0">
-            <td className="px-3 py-2 font-mono text-xs">{row.categoryId}</td>
-            <td className="px-3 py-2">{formatMilliunits(row.current)}</td>
-            <td className="px-3 py-2">{formatMilliunits(row.next)}</td>
+            <td className="px-3 py-2">
+              <div className="font-medium">{row.categoryName}</div>
+              <div className="font-mono text-xs text-muted-foreground">
+                {row.categoryId}
+              </div>
+            </td>
+            <td className="px-3 py-2">
+              {formatCurrency(row.current / 1000, currencyCode)}
+            </td>
+            <td className="px-3 py-2">
+              {formatCurrency(row.next / 1000, currencyCode)}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -55,7 +67,8 @@ const NoChangesState = () => (
       No changes to apply
     </div>
     <p className="mt-1 text-muted-foreground">
-      Current YNAB monthly funding already matches calculated plan for this month.
+      Current YNAB monthly funding already matches calculated plan for this
+      month.
     </p>
   </div>
 );
@@ -74,11 +87,13 @@ const PushWarning = () => (
 
 const PushDiffDialogBody = ({
   diffRows,
+  currencyCode,
   isApplying,
   onCancel,
   onConfirm,
 }: {
   diffRows: PushDiffRow[];
+  currencyCode: string;
   isApplying: boolean;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
@@ -92,7 +107,11 @@ const PushDiffDialogBody = ({
     </CardHeader>
 
     <CardContent className="space-y-4">
-      {diffRows.length === 0 ? <NoChangesState /> : <PushDiffTable diffRows={diffRows} />}
+      {diffRows.length === 0 ? (
+        <NoChangesState />
+      ) : (
+        <PushDiffTable diffRows={diffRows} currencyCode={currencyCode} />
+      )}
       <PushWarning />
 
       <div className="flex items-center justify-end gap-2">
@@ -121,6 +140,7 @@ const PushDiffDialogBody = ({
 export const PushDiffDialog = ({
   isOpen,
   diffRows,
+  currencyCode,
   onCancel,
   onConfirm,
   isApplying,
@@ -138,6 +158,7 @@ export const PushDiffDialog = ({
     >
       <PushDiffDialogBody
         diffRows={diffRows}
+        currencyCode={currencyCode}
         isApplying={isApplying}
         onCancel={onCancel}
         onConfirm={onConfirm}

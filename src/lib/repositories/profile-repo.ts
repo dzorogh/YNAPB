@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/supabase";
 
@@ -11,6 +12,7 @@ const ynabConnectionSchema = z
     ynabBudgetId: z.string().trim().min(1).nullable(),
     ynabTokenCt: z.string().trim().min(1).nullable(),
     ynabTokenIv: z.string().trim().min(1).nullable(),
+    ynabCurrencyCode: z.string().trim().length(3).nullable().optional(),
   })
   .refine(
     (value) =>
@@ -26,7 +28,9 @@ export type UpdateYnabConnectionInput = z.infer<typeof ynabConnectionSchema>;
 
 const assertUserId = (userId: string): string => userIdSchema.parse(userId);
 
-export const getProfile = async (userId: string): Promise<ProfileRow | null> => {
+export const getProfile = async (
+  userId: string,
+): Promise<ProfileRow | null> => {
   const parsedUserId = assertUserId(userId);
   const supabase = await getSupabaseServerClient();
 
@@ -51,13 +55,23 @@ export const updateYnabConnection = async (
   const parsedInput = ynabConnectionSchema.parse(input);
   const supabase = await getSupabaseServerClient();
 
+  const updatePayload: {
+    ynab_budget_id: string | null;
+    ynab_token_ct: string | null;
+    ynab_token_iv: string | null;
+    ynab_currency_code?: string | null;
+  } = {
+    ynab_budget_id: parsedInput.ynabBudgetId,
+    ynab_token_ct: parsedInput.ynabTokenCt,
+    ynab_token_iv: parsedInput.ynabTokenIv,
+  };
+  if (parsedInput.ynabCurrencyCode !== undefined) {
+    updatePayload.ynab_currency_code = parsedInput.ynabCurrencyCode;
+  }
+
   const { data, error } = await supabase
     .from("profiles")
-    .update({
-      ynab_budget_id: parsedInput.ynabBudgetId,
-      ynab_token_ct: parsedInput.ynabTokenCt,
-      ynab_token_iv: parsedInput.ynabTokenIv,
-    })
+    .update(updatePayload)
     .eq("id", parsedUserId)
     .select("*")
     .single();

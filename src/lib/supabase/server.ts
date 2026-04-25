@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+
 import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 import type { Database } from "@/types/supabase";
 

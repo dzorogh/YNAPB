@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+
 import { GoalForm, type GoalFormValues } from "@/components/goals/goal-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -73,7 +74,13 @@ export const GoalDialog = ({
       role="dialog"
       aria-modal="true"
       aria-label={titleByMode[mode]}
+      tabIndex={-1}
       onClick={onClose}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      }}
     >
       <Card
         className="w-full max-w-lg"

@@ -7,7 +7,10 @@ const getRequiredEnv = (value: string | undefined, name: string) => {
 };
 
 export const getSupabaseUrl = () =>
-  getRequiredEnv(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL");
+  getRequiredEnv(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    "NEXT_PUBLIC_SUPABASE_URL",
+  );
 
 export const getSupabasePublishableKey = () => {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/formatting/currency";
 
 type PlanAllocation = {
   month: string;
@@ -10,15 +11,9 @@ type PlanAllocation = {
 
 type PlanTableProps = {
   allocations: PlanAllocation[];
-  goalIds: string[];
+  goals: Array<{ id: string; name: string; deadline: string }>;
+  currencyCode: string;
 };
-
-const formatCurrency = (value: number): string =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value);
 
 const formatMonth = (value: string): string => {
   const parsed = new Date(value);
@@ -33,17 +28,44 @@ const formatMonth = (value: string): string => {
   }).format(parsed);
 };
 
-export const PlanTable = ({ allocations, goalIds }: PlanTableProps) => {
-  const visibleRows = allocations.slice(0, 12);
+export const PlanTable = ({
+  allocations,
+  goals,
+  currencyCode,
+}: PlanTableProps) => {
+  const goalIds = goals.map((goal) => goal.id);
+  const goalsById = new Map(goals.map((goal) => [goal.id, goal.name]));
+  const latestDeadlineMonthStart = goals.reduce<Date | null>((latest, goal) => {
+    const parsed = new Date(`${goal.deadline.slice(0, 7)}-01T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime())) {
+      return latest;
+    }
+    if (!latest || parsed.getTime() > latest.getTime()) {
+      return parsed;
+    }
+    return latest;
+  }, null);
 
-  if (goalIds.length === 0 || visibleRows.length === 0) {
+  const visibleRows = latestDeadlineMonthStart
+    ? allocations.filter((row) => {
+        const rowMonth = new Date(row.month);
+        if (Number.isNaN(rowMonth.getTime())) {
+          return false;
+        }
+        return rowMonth.getTime() <= latestDeadlineMonthStart.getTime();
+      })
+    : allocations;
+
+  if (goals.length === 0 || visibleRows.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Monthly allocation</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No allocation rows yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No allocation rows yet.
+          </p>
         </CardContent>
       </Card>
     );
@@ -62,7 +84,7 @@ export const PlanTable = ({ allocations, goalIds }: PlanTableProps) => {
                 <th className="py-2 pr-3 font-medium">Month</th>
                 {goalIds.map((goalId) => (
                   <th key={goalId} className="py-2 pr-3 font-medium">
-                    {goalId}
+                    {goalsById.get(goalId) ?? goalId}
                   </th>
                 ))}
                 <th className="py-2 font-medium">Unallocated</th>
@@ -74,10 +96,12 @@ export const PlanTable = ({ allocations, goalIds }: PlanTableProps) => {
                   <td className="py-2 pr-3">{formatMonth(row.month)}</td>
                   {goalIds.map((goalId) => (
                     <td key={`${row.month}-${goalId}`} className="py-2 pr-3">
-                      {formatCurrency(row.perGoal[goalId] ?? 0)}
+                      {formatCurrency(row.perGoal[goalId] ?? 0, currencyCode)}
                     </td>
                   ))}
-                  <td className="py-2">{formatCurrency(row.unallocated)}</td>
+                  <td className="py-2">
+                    {formatCurrency(row.unallocated, currencyCode)}
+                  </td>
                 </tr>
               ))}
             </tbody>

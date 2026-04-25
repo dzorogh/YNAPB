@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { cn } from "@/lib/utils";
 
 type NavigationItem = {
-  href: "/settings" | "/goals" | "/plan";
+  href: "/settings" | "/plan";
   label: string;
 };
 
 const navigationItems: NavigationItem[] = [
   { href: "/settings", label: "Settings" },
-  { href: "/goals", label: "Goals" },
   { href: "/plan", label: "Plan" },
 ];
 
@@ -33,15 +33,20 @@ export const AppShell = ({ children }: AppShellProps) => {
   }
 
   return (
-    <div className="min-h-full bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur">
+    <div className="isolate min-h-full bg-background">
+      <header className="sticky top-0 z-50 border-b bg-background">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-3 md:px-8">
-          <Link href="/plan" className="text-sm font-semibold tracking-wide" aria-label="Open plan page">
+          <Link
+            href="/plan"
+            className="text-sm font-semibold tracking-wide"
+            aria-label="Open plan page"
+          >
             YNAPB
           </Link>
           <nav aria-label="Main navigation" className="flex items-center gap-2">
             {navigationItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isActive =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
                   key={item.href}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { computePlan } from "./planner";
+
 import { M, goal, budget } from "./fixtures";
+import { computePlan } from "./planner";
 
 const expectRangeAllocation = (
   perMonth: ReturnType<typeof computePlan>["allocations"],
@@ -11,7 +12,10 @@ const expectRangeAllocation = (
 ): void => {
   for (let i = startIndex; i < endIndexExclusive; i++) {
     const monthAllocation = perMonth[i];
-    expect(monthAllocation?.perGoal.renovation ?? 0).toBeCloseTo(expectedRenovation, -2);
+    expect(monthAllocation?.perGoal.renovation ?? 0).toBeCloseTo(
+      expectedRenovation,
+      -2,
+    );
     expect(monthAllocation?.perGoal.car ?? 0).toBeCloseTo(expectedCar, -2);
   }
 };
@@ -38,7 +42,12 @@ describe("planner - basic distribution (spec §6 example)", () => {
 describe("planner - starting balances", () => {
   it("does not over-fund a goal with existing balance", () => {
     const goals = [
-      goal({ id: "phone", targetAmount: 100_000, currentBalance: 80_000, deadline: M(2026, 6) }),
+      goal({
+        id: "phone",
+        targetAmount: 100_000,
+        currentBalance: 80_000,
+        deadline: M(2026, 6),
+      }),
     ];
     const result = computePlan({
       goals,
@@ -54,7 +63,12 @@ describe("planner - starting balances", () => {
 
   it("treats already-completed goals as completed (zero remaining)", () => {
     const goals = [
-      goal({ id: "done", targetAmount: 100_000, currentBalance: 100_000, deadline: M(2026, 6) }),
+      goal({
+        id: "done",
+        targetAmount: 100_000,
+        currentBalance: 100_000,
+        deadline: M(2026, 6),
+      }),
     ];
     const result = computePlan({
       goals,
@@ -102,7 +116,7 @@ describe("planner - unreachable goals", () => {
     );
     expect(conflict).toBeDefined();
     if (conflict?.type === "unreachable") {
-      expect(conflict.earliestAchievable).toEqual(M(2032, 10));
+      expect(conflict.earliestAchievable).toEqual(M(2034, 4));
     }
   });
 
@@ -123,8 +137,18 @@ describe("planner - unreachable goals", () => {
 describe("planner - tied deadlines", () => {
   it("flags two goals sharing the same month deadline when budget cannot cover both", () => {
     const goals = [
-      goal({ id: "a", targetAmount: 600_000, deadline: M(2026, 8), createdAt: M(2026, 1) }),
-      goal({ id: "b", targetAmount: 600_000, deadline: M(2026, 8), createdAt: M(2026, 2) }),
+      goal({
+        id: "a",
+        targetAmount: 600_000,
+        deadline: M(2026, 8),
+        createdAt: M(2026, 1),
+      }),
+      goal({
+        id: "b",
+        targetAmount: 600_000,
+        deadline: M(2026, 8),
+        createdAt: M(2026, 2),
+      }),
     ];
     const result = computePlan({
       goals,
@@ -132,7 +156,9 @@ describe("planner - tied deadlines", () => {
       startMonth: M(2026, 5),
       horizonMonths: 6,
     });
-    const conflict = result.conflicts.find((entry) => entry.type === "tied_deadline");
+    const conflict = result.conflicts.find(
+      (entry) => entry.type === "tied_deadline",
+    );
     expect(conflict).toBeDefined();
     if (conflict?.type === "tied_deadline") {
       expect(conflict.goalIds.sort()).toEqual(["a", "b"]);
@@ -161,7 +187,12 @@ describe("planner - frozen goals", () => {
   it("does not allocate to frozen goals", () => {
     const goals = [
       goal({ id: "active", targetAmount: 100_000, deadline: M(2026, 8) }),
-      goal({ id: "frozen", targetAmount: 100_000, deadline: M(2026, 8), status: "frozen" }),
+      goal({
+        id: "frozen",
+        targetAmount: 100_000,
+        deadline: M(2026, 8),
+        status: "frozen",
+      }),
     ];
     const result = computePlan({
       goals,
@@ -218,8 +249,9 @@ describe("planner - deterministic tie-break", () => {
       startMonth: M(2026, 5),
       horizonMonths: 6,
     });
-    const earlierFirst = (result.allocations[0]?.perGoal.earlier ?? 0)
-      >= (result.allocations[0]?.perGoal.later ?? 0);
+    const earlierFirst =
+      (result.allocations[0]?.perGoal.earlier ?? 0) >=
+      (result.allocations[0]?.perGoal.later ?? 0);
     expect(earlierFirst).toBe(true);
   });
 });

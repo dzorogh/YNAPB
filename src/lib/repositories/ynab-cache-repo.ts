@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Json, Tables } from "@/types/supabase";
 
@@ -17,9 +18,14 @@ export type CachedYnabCategory = {
   id: string;
   name: string;
   goal_type: string | null;
+  goal_cadence: number | null;
   goal_target: number | null;
+  goal_target_month: string | null;
   goal_under_funded: number | null;
   balance: number | null;
+  hidden: boolean;
+  deleted: boolean;
+  assigned_history: number[];
 };
 export type CachedIncomeHistoryItem = {
   month: string;
@@ -30,9 +36,14 @@ const cachedYnabCategorySchema = z.object({
   id: z.string().min(1),
   name: z.string(),
   goal_type: z.string().nullable().optional(),
+  goal_cadence: z.number().int().nullable().optional(),
   goal_target: z.number().finite().nullable().optional(),
+  goal_target_month: z.string().nullable().optional(),
   goal_under_funded: z.number().finite().nullable().optional(),
   balance: z.number().finite().nullable().optional(),
+  hidden: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  assigned_history: z.array(z.number().finite()).optional(),
 });
 const cachedIncomeHistoryItemSchema = z.object({
   month: z.string().min(1),
@@ -69,13 +80,20 @@ export const parseCachedCategories = (value: Json): CachedYnabCategory[] => {
     id: category.id,
     name: category.name,
     goal_type: category.goal_type ?? null,
+    goal_cadence: category.goal_cadence ?? null,
     goal_target: category.goal_target ?? null,
+    goal_target_month: category.goal_target_month ?? null,
     goal_under_funded: category.goal_under_funded ?? null,
     balance: category.balance ?? null,
+    hidden: category.hidden ?? false,
+    deleted: category.deleted ?? false,
+    assigned_history: category.assigned_history ?? [],
   }));
 };
 
-export const parseCachedIncomeHistory = (value: Json): CachedIncomeHistoryItem[] => {
+export const parseCachedIncomeHistory = (
+  value: Json,
+): CachedIncomeHistoryItem[] => {
   const parsed = z.array(cachedIncomeHistoryItemSchema).safeParse(value);
   if (!parsed.success) {
     return [];
@@ -84,7 +102,9 @@ export const parseCachedIncomeHistory = (value: Json): CachedIncomeHistoryItem[]
   return parsed.data;
 };
 
-export const getCache = async (userId: string): Promise<YnabCacheRow | null> => {
+export const getCache = async (
+  userId: string,
+): Promise<YnabCacheRow | null> => {
   const parsedUserId = assertUserId(userId);
   const supabase = await getSupabaseServerClient();
 

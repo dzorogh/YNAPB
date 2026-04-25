@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
+
 import { encryptToken, decryptToken } from "./crypto";
 
 describe("crypto", () => {
