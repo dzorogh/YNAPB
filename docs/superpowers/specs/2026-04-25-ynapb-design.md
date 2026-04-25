@@ -28,10 +28,10 @@ YNAB при работе с несколькими разовыми целями
 
 1. Аутентификация через Supabase Auth (magic link) — отдельная страница `/login`.
 2. Подключение к YNAB через Personal Access Token, выбор бюджета — на странице `/settings`.
-3. Импорт из YNAB: категории, текущие балансы, история транзакций (для расчёта baseline дохода).
-4. CRUD разовых целей: имя, сумма, дедлайн, привязка к YNAB-категории, статус, заметки.
-5. CRUD обязательных регулярных трат (фиксированная сумма в месяц).
-6. Конфигурация месячного бюджета: baseline из истории YNAB (за N месяцев) + опциональный override (одно число).
+3. Импорт из YNAB: список категорий (с их `goal_type`, `goal_target`, `goal_under_funded`, `balance`), история транзакций (для подсказки "среднее за N месяцев").
+4. CRUD разовых целей: имя, сумма, дедлайн, привязка к YNAB-категории, статус, заметки. Привязка категории к YNAPB-цели делает категорию **«долгосрочной»** — она появляется в таймлайне.
+5. Автоматический расчёт **obligations** = сумма `goal_under_funded` всех YNAB-категорий, **не** привязанных к активным YNAPB-целям. Категории без YNAB-goal'а игнорируются (вклад 0).
+6. Конфигурация месячного бюджета: одно поле «Planned monthly income» (ручной ввод) + кнопка «Use N-month average from YNAB» (заполняет поле подсчитанным средним из истории; `baseline_months` настраивается, по умолчанию 6).
 7. Greedy-алгоритм распределения с учётом стартовых балансов целей.
 8. Визуализация плана: drag-and-drop таймлайн, помесячная таблица, график накопления.
 9. Каскадный preview в реальном времени при перетаскивании целей.
@@ -41,7 +41,8 @@ YNAB при работе с несколькими разовыми целями
 
 ### Не входит
 
-- Помесячный график изменения дохода (повышения, отпуска, бонусы) — только baseline + override одним числом.
+- Помесячный график изменения дохода (повышения, отпуска, бонусы) — только одно число «Planned monthly income».
+- Ручная таблица регулярных трат — заменена на автоматический расчёт из YNAB-goals на регулярных категориях.
 - Сценарии «пессимистичный/оптимистичный».
 - Резервный фонд / повторяющиеся цели (живут в YNAB как обычные цели).
 - Автоматическая запись в YNAB по расписанию (только ручной триггер).
@@ -92,7 +93,8 @@ YNAB при работе с несколькими разовыми целями
               │
 ┌─ Persistence ────────────────────────────────────────────┐
 │  Supabase client (server + browser)                      │
-│  Tables: goals, regular_expenses, settings, ynab_cache   │
+│  Tables: profiles, income_settings, goals,               │
+│          ynab_cache, plan_snapshots                      │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -125,10 +127,10 @@ profiles (
 )
 
 income_settings (
-  user_id         uuid PK FK profiles
-  baseline_months int default 6    -- сколько месяцев истории брать
-  manual_override numeric null     -- если задан — использовать вместо baseline
-  updated_at      timestamptz
+  user_id          uuid PK FK profiles
+  planned_income   numeric          -- ручное число «Planned monthly income»; источник правды
+  baseline_months  int default 6    -- параметр кнопки «Use N-month average from YNAB» (только подсказка)
+  updated_at       timestamptz
 )
 
 goals (
@@ -144,19 +146,13 @@ goals (
   updated_at       timestamptz
 )
 
-regular_expenses (
-  id               uuid PK
-  user_id          uuid FK
-  name             text
-  monthly_amount   numeric
-  ynab_category_id text null        -- опционально
-  active           boolean default true
-)
+-- Таблица regular_expenses удалена в пользу автоматического вычисления
+-- obligations из YNAB-goals на регулярных категориях (см. §5a).
 
 ynab_cache (
   user_id          uuid PK
   synced_at        timestamptz
-  categories       jsonb            -- [{id, name, balance, group}, ...]
+  categories       jsonb            -- [{id, name, group, balance, goal_type, goal_target, goal_under_funded, goal_target_month}, ...]
   income_history   jsonb            -- [{month: '2026-01', net_income: 350000}, ...]
 )
 
@@ -192,10 +188,26 @@ type Goal = {
   createdAt: Date;               // используется как стабильный тай-брейк
 };
 
+type YnabCategory = {
+  id: string;
+  name: string;
+  group: string;
+  balance: number;
+  goalType: 'TB' | 'TBD' | 'MF' | 'NEED' | 'DEBT' | null;
+  goalTarget: number | null;
+  goalUnderFunded: number | null;  // YNAB: сколько ещё нужно в текущем месяце
+  goalTargetMonth: string | null;
+};
+
 type MonthlyBudget = {
-  totalIncome: number;           // baseline или override
-  obligations: number;           // сумма regular_expenses
-  available: number;             // totalIncome - obligations
+  plannedIncome: number;           // ручное число пользователя
+  obligations: number;             // sum(c.goalUnderFunded) для регулярных категорий
+  available: number;               // plannedIncome - obligations
+  obligationBreakdown: Array<{    // для tooltip в UI
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+  }>;
 };
 
 type PlanInput = {
@@ -226,8 +238,48 @@ type PlanResult = {
 ### Замечания по модели
 
 - `currentBalance` целей берётся из YNAB на момент расчёта, не хранится отдельно. Источник правды — YNAB.
-- `ynab_cache` обновляется только явной кнопкой Sync. UI показывает `synced_at`.
+- `ynab_cache` обновляется ручной кнопкой Sync и автоматически при открытии `/plan`, если `synced_at` старше 24 часов.
 - Поля `manual_order` нет: единственный способ выразить приоритет — изменить дедлайн.
+- **Сырые транзакции YNAB не храним.** Для подсказки «average income» используется YNAB endpoint `GET /budgets/{id}/months` — он возвращает уже посчитанное поле `income` на каждый месяц. На Sync мы тянем последние `baseline_months` записей из `/months`, формируем массив `[{month, net_income}]` и сохраняем только его в `ynab_cache.income_history`. Это даёт минимум данных в нашей БД и быструю синхронизацию.
+
+## 5a. Классификация YNAB-категорий и расчёт бюджета
+
+Все YNAB-категории, полученные на Sync, делятся на две группы:
+
+**Долгосрочные категории** — те, у которых `goal.ynab_category_id` ссылается на категорию **и** этот goal в статусе `active`. Они управляются YNAPB через таймлайн; в YNAB на них пушится MF goal с рассчитанной нашим алгоритмом суммой.
+
+**Регулярные категории** — все остальные YNAB-категории. Они управляются пользователем в самом YNAB через его собственные goal'ы (любого типа); YNAPB их **не трогает**, только читает поле `goal_under_funded` для подсчёта obligations.
+
+### Расчёт месячного бюджета (Available)
+
+```
+plannedIncome   = income_settings.planned_income            (ручное число)
+obligations     = Σ category.goal_under_funded
+                  для category ∈ ynab_cache.categories,
+                  где category.id ∉ {goal.ynab_category_id для goal.status='active'}
+                  И category.goal_type IS NOT NULL
+available       = plannedIncome − obligations
+```
+
+Категории без goal'а в YNAB (`goal_type = null`) **не учитываются** в obligations (их вклад = 0). Пользователь сам отвечает за то, чтобы поставить goal в YNAB на категории, которые должны влиять на бюджет.
+
+### Подсказка про незакрытые TBD
+
+Если в `ynab_cache.categories` есть категория с `goal_type = 'TBD'`, но **не** привязанная ни к одной активной YNAPB-цели — UI показывает мягкое уведомление в `/plan`:
+
+> "These YNAB categories have Target Balance by Date goals but aren't linked to YNAPB goals. Consider creating YNAPB goals for them: \[Renovation, Vacation\]."
+
+Не блокирует, не меняет расчёт. Только подсказка, чтобы пользователь не забыл занести «дальние» цели в таймлайн.
+
+### Что показывается в `/plan` header
+
+```
+Planned monthly income:  ₽500,000
+Obligations (auto):      ₽150,000  ← tooltip с breakdown по категориям
+Available for goals:     ₽350,000  ← это бюджет для алгоритма
+```
+
+Кнопка `[Sync YNAB]` тут же. После Sync obligations пересчитываются автоматически.
 
 ## 6. Алгоритм планировщика
 
@@ -313,8 +365,8 @@ O(N × M), где N — число активных целей, M — гориз
 | Путь | Назначение | Заголовок UI |
 |------|------------|--------------|
 | `/login` | Вход через Supabase Auth (magic link). Незалогиненных редиректим сюда. | "Sign in" |
-| `/settings` | YNAB token, выбор бюджета, `baseline_months`, override дохода, выход. | "Settings" |
-| `/goals` | CRUD целей и обязательных трат. | "Goals" |
+| `/settings` | YNAB token, выбор бюджета, planned monthly income (с кнопкой «Use N-month average»), `baseline_months`, выход. | "Settings" |
+| `/goals` | CRUD долгосрочных целей. Привязка цели к YNAB-категории делает категорию долгосрочной. | "Goals" |
 | `/plan` | Главный экран планировщика. | "Plan" |
 
 Если YNAB не подключён, `/goals` и `/plan` показывают баннер «Connect your YNAB account» с кнопкой → `/settings`. Отдельной страницы onboarding нет.
@@ -325,8 +377,10 @@ O(N × M), где N — число активных целей, M — гориз
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ Monthly budget: ₽350,000 (baseline 6 mo)                │
-│ [Override: ___]  [Sync YNAB]  Synced 2h ago             │
+│ Planned income:  ₽500,000   [edit]                       │
+│ Obligations:     ₽150,000   ⓘ (8 YNAB categories)        │
+│ Available:       ₽350,000   ← used by planner            │
+│ [Sync YNAB]   Synced 2h ago                              │
 ├──────────────────────────────────────────────────────────┤
 │ ┌─ Timeline (drag-and-drop) ──────────────────────────┐ │
 │ │ 2026 ──────────── 2027 ──────────── 2028 ────────── │ │
