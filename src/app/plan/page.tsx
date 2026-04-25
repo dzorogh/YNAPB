@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlanConflicts } from "@/components/plan/plan-conflicts";
 import { PlanHeader } from "@/components/plan/plan-header";
 import { PlanTable } from "@/components/plan/plan-table";
@@ -63,6 +63,7 @@ type PushApplyResponse = {
 
 type LoadState = "loading" | "ready" | "error";
 type RefreshHandler = () => Promise<void>;
+type DeadlineShiftMap = Record<string, number>;
 type PushStatus = {
   tone: "success" | "error";
   title: string;
@@ -209,26 +210,14 @@ const EmptyGoalsPlanState = ({
   </main>
 );
 
-const MainPlanView = ({
-  planData,
-  goalIds,
-  unreachableGoalIds,
-  isRefreshing,
-  onRefresh,
-  pushStatus,
-  isPreviewLoading,
-  onOpenPushPreview,
-  isPushDialogOpen,
-  pushDiffRows,
-  isApplyingPush,
-  onClosePushDialog,
-  onApplyPushDiff,
-}: {
+type MainPlanViewProps = {
   planData: ApiPlanResponse;
   goalIds: string[];
   unreachableGoalIds: Set<string>;
   isRefreshing: boolean;
   onRefresh: RefreshHandler;
+  deadlineShifts: DeadlineShiftMap;
+  onShiftDeadline: (goalId: string, deltaMonths: number) => void;
   pushStatus: PushStatus;
   isPreviewLoading: boolean;
   onOpenPushPreview: () => Promise<void>;
@@ -237,7 +226,25 @@ const MainPlanView = ({
   isApplyingPush: boolean;
   onClosePushDialog: () => void;
   onApplyPushDiff: () => Promise<void>;
-}) => (
+};
+
+const MainPlanView = ({
+  planData,
+  goalIds,
+  unreachableGoalIds,
+  isRefreshing,
+  onRefresh,
+  deadlineShifts,
+  onShiftDeadline,
+  pushStatus,
+  isPreviewLoading,
+  onOpenPushPreview,
+  isPushDialogOpen,
+  pushDiffRows,
+  isApplyingPush,
+  onClosePushDialog,
+  onApplyPushDiff,
+}: MainPlanViewProps) => (
   <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
     <header className="space-y-1">
       <h1 className="text-2xl font-semibold">Plan</h1>
@@ -245,21 +252,18 @@ const MainPlanView = ({
         Review calculated allocations, timeline, and conflict warnings.
       </p>
     </header>
-
     <PlanHeader
       budget={planData.budget}
       needsSync={planData.needsSync}
       isRefreshing={isRefreshing}
       onRefresh={onRefresh}
     />
-
     {pushStatus ? (
       <Alert variant={pushStatus.tone === "error" ? "destructive" : "default"}>
         <AlertTitle>{pushStatus.title}</AlertTitle>
         <AlertDescription>{pushStatus.message}</AlertDescription>
       </Alert>
     ) : null}
-
     <div>
       <Button
         type="button"
@@ -270,18 +274,18 @@ const MainPlanView = ({
         {isPreviewLoading ? "Preparing preview..." : "Push goals to YNAB for current month"}
       </Button>
     </div>
-
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
       <PlanTable allocations={planData.planResult.allocations} goalIds={goalIds} />
       <PlanTimeline
         goalIds={goalIds}
         completionMap={planData.planResult.completionMap}
         unreachableGoalIds={unreachableGoalIds}
+        deadlineShifts={deadlineShifts}
+        isRecalculating={isRefreshing}
+        onShiftDeadline={onShiftDeadline}
       />
     </div>
-
     <PlanConflicts conflicts={planData.planResult.conflicts} tbdWarnings={planData.tbdWarnings} />
-
     <PushDiffDialog
       isOpen={isPushDialogOpen}
       diffRows={pushDiffRows}
@@ -299,8 +303,11 @@ const usePlanData = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [planData, setPlanData] = useState<ApiPlanResponse | null>(null);
+  const [deadlineShifts, setDeadlineShifts] = useState<DeadlineShiftMap>({});
+  const deadlineShiftsRef = useRef<DeadlineShiftMap>({});
 
-  const loadPlan = useCallback(async (showRefreshing = false) => {
+  const loadPlan = useCallback(async (showRefreshing = false, shiftsOverride?: DeadlineShiftMap) => {
+    const effectiveShifts = shiftsOverride ?? deadlineShiftsRef.current;
     if (showRefreshing) {
       setIsRefreshing(true);
     } else {
@@ -309,7 +316,11 @@ const usePlanData = () => {
 
     setStatusMessage(null);
     try {
-      const response = await fetch("/api/plan/calculate", { method: "POST" });
+      const response = await fetch("/api/plan/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deadlineShifts: effectiveShifts }),
+      });
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as ApiErrorResponse | null;
         setState("error");
@@ -349,6 +360,16 @@ const usePlanData = () => {
   const handleRetry = useCallback(async () => {
     await loadPlan(false);
   }, [loadPlan]);
+  const handleShiftDeadline = useCallback((goalId: string, deltaMonths: number) => {
+    const nextShifts = {
+      ...deadlineShiftsRef.current,
+      [goalId]: (deadlineShiftsRef.current[goalId] ?? 0) + deltaMonths,
+    };
+
+    deadlineShiftsRef.current = nextShifts;
+    setDeadlineShifts(nextShifts);
+    void loadPlan(true, nextShifts);
+  }, [loadPlan]);
 
   return {
     state,
@@ -357,9 +378,11 @@ const usePlanData = () => {
     planData,
     goalIds,
     unreachableGoalIds,
+    deadlineShifts,
     loadPlan,
     handleRefresh,
     handleRetry,
+    handleShiftDeadline,
   };
 };
 
@@ -418,7 +441,7 @@ const usePushApply = ({
   setPreviewDiffHash,
   setIsPushDialogOpen,
 }: {
-  loadPlan: (showRefreshing?: boolean) => Promise<void>;
+  loadPlan: (showRefreshing?: boolean, shiftsOverride?: DeadlineShiftMap) => Promise<void>;
   monthKey: string;
   previewDiffHash: string | null;
   setPushStatus: (status: PushStatus) => void;
@@ -481,9 +504,11 @@ export default function PlanPage() {
     planData,
     goalIds,
     unreachableGoalIds,
+    deadlineShifts,
     loadPlan,
     handleRefresh,
     handleRetry,
+    handleShiftDeadline,
   } = usePlanData();
   const [pushStatus, setPushStatus] = useState<PushStatus>(null);
   const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
@@ -540,6 +565,8 @@ export default function PlanPage() {
       unreachableGoalIds={unreachableGoalIds}
       isRefreshing={isRefreshing}
       onRefresh={handleRefresh}
+      deadlineShifts={deadlineShifts}
+      onShiftDeadline={handleShiftDeadline}
       pushStatus={pushStatus}
       isPreviewLoading={isPreviewLoading}
       onOpenPushPreview={handleOpenPushPreview}
