@@ -3,10 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:arch": "depcruise --config .dependency-cruiser.cjs src",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test:arch && npm run test:unit"
   },
   "dependencies": {
     "@base-ui/react": "1.4.1",
