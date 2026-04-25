@@ -6,6 +6,7 @@ import { PlanConflicts } from "@/components/plan/plan-conflicts";
 import { PlanHeader } from "@/components/plan/plan-header";
 import { PlanTable } from "@/components/plan/plan-table";
 import { PlanTimeline } from "@/components/plan/plan-timeline";
+import { PushDiffDialog, type PushDiffRow } from "@/components/plan/push-diff-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,8 +52,39 @@ type ApiErrorResponse = {
   error?: string;
 };
 
+type PushPreviewResponse = {
+  diff: PushDiffRow[];
+  diffHash: string;
+};
+
+type PushApplyResponse = {
+  applied: number;
+};
+
 type LoadState = "loading" | "ready" | "error";
 type RefreshHandler = () => Promise<void>;
+type PushStatus = {
+  tone: "success" | "error";
+  title: string;
+  message: string;
+} | null;
+
+const currentMonthKey = (): string => {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+};
+
+const parseErrorMessage = async (response: Response, fallbackMessage: string): Promise<string> => {
+  try {
+    const data = (await response.json()) as ApiErrorResponse;
+    if (typeof data.error === "string" && data.error.trim().length > 0) {
+      return data.error;
+    }
+    return fallbackMessage;
+  } catch {
+    return fallbackMessage;
+  }
+};
 
 const extractGoalIds = (payload: ApiPlanResponse): string[] => {
   const ids = new Set<string>();
@@ -183,12 +215,28 @@ const MainPlanView = ({
   unreachableGoalIds,
   isRefreshing,
   onRefresh,
+  pushStatus,
+  isPreviewLoading,
+  onOpenPushPreview,
+  isPushDialogOpen,
+  pushDiffRows,
+  isApplyingPush,
+  onClosePushDialog,
+  onApplyPushDiff,
 }: {
   planData: ApiPlanResponse;
   goalIds: string[];
   unreachableGoalIds: Set<string>;
   isRefreshing: boolean;
   onRefresh: RefreshHandler;
+  pushStatus: PushStatus;
+  isPreviewLoading: boolean;
+  onOpenPushPreview: () => Promise<void>;
+  isPushDialogOpen: boolean;
+  pushDiffRows: PushDiffRow[];
+  isApplyingPush: boolean;
+  onClosePushDialog: () => void;
+  onApplyPushDiff: () => Promise<void>;
 }) => (
   <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
     <header className="space-y-1">
@@ -205,6 +253,24 @@ const MainPlanView = ({
       onRefresh={onRefresh}
     />
 
+    {pushStatus ? (
+      <Alert variant={pushStatus.tone === "error" ? "destructive" : "default"}>
+        <AlertTitle>{pushStatus.title}</AlertTitle>
+        <AlertDescription>{pushStatus.message}</AlertDescription>
+      </Alert>
+    ) : null}
+
+    <div>
+      <Button
+        type="button"
+        disabled={isPreviewLoading || isApplyingPush}
+        aria-label="Push goals to YNAB for current month"
+        onClick={() => void onOpenPushPreview()}
+      >
+        {isPreviewLoading ? "Preparing preview..." : "Push goals to YNAB for current month"}
+      </Button>
+    </div>
+
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
       <PlanTable allocations={planData.planResult.allocations} goalIds={goalIds} />
       <PlanTimeline
@@ -215,10 +281,20 @@ const MainPlanView = ({
     </div>
 
     <PlanConflicts conflicts={planData.planResult.conflicts} tbdWarnings={planData.tbdWarnings} />
+
+    <PushDiffDialog
+      isOpen={isPushDialogOpen}
+      diffRows={pushDiffRows}
+      onCancel={onClosePushDialog}
+      onConfirm={onApplyPushDiff}
+      isApplying={isApplyingPush}
+    />
   </main>
 );
 
-export default function PlanPage() {
+const APPLY_FAILED_TITLE = "Apply failed";
+
+const usePlanData = () => {
   const [state, setState] = useState<LoadState>("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -274,6 +350,167 @@ export default function PlanPage() {
     await loadPlan(false);
   }, [loadPlan]);
 
+  return {
+    state,
+    isRefreshing,
+    statusMessage,
+    planData,
+    goalIds,
+    unreachableGoalIds,
+    loadPlan,
+    handleRefresh,
+    handleRetry,
+  };
+};
+
+const usePushPreview = ({
+  monthKey,
+  setPushStatus,
+  setPushDiffRows,
+  setPreviewDiffHash,
+  setIsPushDialogOpen,
+}: {
+  monthKey: string;
+  setPushStatus: (status: PushStatus) => void;
+  setPushDiffRows: (rows: PushDiffRow[]) => void;
+  setPreviewDiffHash: (value: string | null) => void;
+  setIsPushDialogOpen: (value: boolean) => void;
+}) => {
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  const handleOpenPushPreview = useCallback(async () => {
+    setPushStatus(null);
+    setIsPreviewLoading(true);
+    try {
+      const response = await fetch("/api/plan/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "preview", month: monthKey }),
+      });
+      if (!response.ok) {
+        const message = await parseErrorMessage(response, "Failed to prepare YNAB push preview.");
+        setPushStatus({ tone: "error", title: "Preview failed", message });
+        return;
+      }
+      const payload = (await response.json()) as PushPreviewResponse;
+      setPushDiffRows(payload.diff);
+      setPreviewDiffHash(payload.diffHash);
+      setIsPushDialogOpen(true);
+    } catch {
+      setPushStatus({
+        tone: "error",
+        title: "Preview failed",
+        message: "Unexpected network error while preparing push preview.",
+      });
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  }, [monthKey, setIsPushDialogOpen, setPreviewDiffHash, setPushDiffRows, setPushStatus]);
+
+  return { isPreviewLoading, handleOpenPushPreview };
+};
+
+const usePushApply = ({
+  loadPlan,
+  monthKey,
+  previewDiffHash,
+  setPushStatus,
+  setPreviewDiffHash,
+  setIsPushDialogOpen,
+}: {
+  loadPlan: (showRefreshing?: boolean) => Promise<void>;
+  monthKey: string;
+  previewDiffHash: string | null;
+  setPushStatus: (status: PushStatus) => void;
+  setPreviewDiffHash: (value: string | null) => void;
+  setIsPushDialogOpen: (value: boolean) => void;
+}) => {
+  const [isApplyingPush, setIsApplyingPush] = useState(false);
+
+  const handleApplyPushDiff = useCallback(async () => {
+    if (!previewDiffHash) {
+      setPushStatus({ tone: "error", title: APPLY_FAILED_TITLE, message: "Preview hash is missing. Run preview again." });
+      setIsPushDialogOpen(false);
+      return;
+    }
+
+    setPushStatus(null);
+    setIsApplyingPush(true);
+    try {
+      const response = await fetch("/api/plan/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "apply", month: monthKey, acceptedDiffHash: previewDiffHash }),
+      });
+      if (!response.ok) {
+        const message = await parseErrorMessage(response, "Failed to apply YNAB push.");
+        setPushStatus({ tone: "error", title: APPLY_FAILED_TITLE, message });
+        return;
+      }
+      const payload = (await response.json()) as PushApplyResponse;
+      setPushStatus({
+        tone: "success",
+        title: "Push completed",
+        message: payload.applied > 0
+          ? `Applied ${payload.applied} YNAB goal update(s) and refreshed plan data.`
+          : "No YNAB updates were needed. Plan data was refreshed.",
+      });
+      setIsPushDialogOpen(false);
+      setPreviewDiffHash(null);
+      await loadPlan(true);
+    } catch {
+      setPushStatus({
+        tone: "error",
+        title: APPLY_FAILED_TITLE,
+        message: "Unexpected network error while applying push updates.",
+      });
+    } finally {
+      setIsApplyingPush(false);
+    }
+  }, [loadPlan, monthKey, previewDiffHash, setIsPushDialogOpen, setPreviewDiffHash, setPushStatus]);
+
+  return { isApplyingPush, handleApplyPushDiff };
+};
+
+export default function PlanPage() {
+  const monthKey = useMemo(() => currentMonthKey(), []);
+  const {
+    state,
+    isRefreshing,
+    statusMessage,
+    planData,
+    goalIds,
+    unreachableGoalIds,
+    loadPlan,
+    handleRefresh,
+    handleRetry,
+  } = usePlanData();
+  const [pushStatus, setPushStatus] = useState<PushStatus>(null);
+  const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
+  const [pushDiffRows, setPushDiffRows] = useState<PushDiffRow[]>([]);
+  const [previewDiffHash, setPreviewDiffHash] = useState<string | null>(null);
+  const { isPreviewLoading, handleOpenPushPreview } = usePushPreview({
+    monthKey,
+    setPushStatus,
+    setPushDiffRows,
+    setPreviewDiffHash,
+    setIsPushDialogOpen,
+  });
+  const { isApplyingPush, handleApplyPushDiff } = usePushApply({
+    loadPlan,
+    monthKey,
+    previewDiffHash,
+    setPushStatus,
+    setPreviewDiffHash,
+    setIsPushDialogOpen,
+  });
+  const handleClosePushDialog = useCallback(() => {
+    if (isApplyingPush) {
+      return;
+    }
+    setIsPushDialogOpen(false);
+  }, [isApplyingPush]);
+
   if (state === "loading") {
     return <LoadingPlanState />;
   }
@@ -303,6 +540,14 @@ export default function PlanPage() {
       unreachableGoalIds={unreachableGoalIds}
       isRefreshing={isRefreshing}
       onRefresh={handleRefresh}
+      pushStatus={pushStatus}
+      isPreviewLoading={isPreviewLoading}
+      onOpenPushPreview={handleOpenPushPreview}
+      isPushDialogOpen={isPushDialogOpen}
+      pushDiffRows={pushDiffRows}
+      isApplyingPush={isApplyingPush}
+      onClosePushDialog={handleClosePushDialog}
+      onApplyPushDiff={handleApplyPushDiff}
     />
   );
 }
