@@ -4,6 +4,13 @@ import type { Tables } from "@/types/supabase";
 
 type GoalRow = Tables<"goals">;
 
+export class GoalNotFoundError extends Error {
+  constructor(message = "Goal not found") {
+    super(message);
+    this.name = "GoalNotFoundError";
+  }
+}
+
 const userIdSchema = z.uuid();
 const goalIdSchema = z.uuid();
 const deadlineSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid YYYY-MM-DD date");
@@ -86,23 +93,33 @@ export const updateGoal = async (
   const parsedInput = updateGoalSchema.parse(input);
   const supabase = await getSupabaseServerClient();
 
+  const updatePayload = {
+    ...(parsedInput.name !== undefined ? { name: parsedInput.name } : {}),
+    ...(parsedInput.targetAmount !== undefined
+      ? { target_amount: parsedInput.targetAmount }
+      : {}),
+    ...(parsedInput.deadline !== undefined ? { deadline: parsedInput.deadline } : {}),
+    ...(parsedInput.status !== undefined ? { status: parsedInput.status } : {}),
+    ...(parsedInput.notes !== undefined ? { notes: parsedInput.notes } : {}),
+    ...(parsedInput.ynabCategoryId !== undefined
+      ? { ynab_category_id: parsedInput.ynabCategoryId }
+      : {}),
+  };
+
   const { data, error } = await supabase
     .from("goals")
-    .update({
-      name: parsedInput.name,
-      target_amount: parsedInput.targetAmount,
-      deadline: parsedInput.deadline,
-      status: parsedInput.status,
-      notes: parsedInput.notes,
-      ynab_category_id: parsedInput.ynabCategoryId,
-    })
+    .update(updatePayload)
     .eq("id", parsedGoalId)
     .eq("user_id", parsedUserId)
     .select("*")
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to update goal: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new GoalNotFoundError();
   }
 
   return data;
@@ -113,13 +130,19 @@ export const deleteGoal = async (userId: string, goalId: string): Promise<void> 
   const parsedGoalId = assertGoalId(goalId);
   const supabase = await getSupabaseServerClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("goals")
     .delete()
     .eq("id", parsedGoalId)
-    .eq("user_id", parsedUserId);
+    .eq("user_id", parsedUserId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     throw new Error(`Failed to delete goal: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new GoalNotFoundError();
   }
 };
