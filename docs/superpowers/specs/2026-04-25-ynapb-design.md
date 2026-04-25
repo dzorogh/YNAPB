@@ -52,17 +52,21 @@ YNAB при работе с несколькими разовыми целями
 
 ## 4. Архитектура
 
-### Стек
+### Стек (версии актуальны на 2026-04-25)
 
-- **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind, shadcn/ui.
+- **Frontend:** Next.js 16.2 (App Router, Turbopack stable), React 19.2, TypeScript 6.0, Tailwind CSS v4.2, shadcn/ui.
 - **Backend:** Next.js Route Handlers (`app/api/*`) и Server Actions. Отдельного бэка нет.
-- **БД:** Supabase Postgres + Row-Level Security. Локальная разработка через `supabase start` (Docker).
-- **Auth:** Supabase Auth (email magic link).
-- **Графики:** Recharts.
-- **Drag-and-drop:** dnd-kit.
-- **State:** Zustand (клиентское состояние плана для отзывчивого preview), TanStack Query (серверные данные).
-- **YNAB SDK:** официальный `ynab` npm-пакет.
-- **Виртуализация таблиц:** `@tanstack/react-virtual` (горизонт 10 лет = 120 строк месячной таблицы).
+- **БД:** Supabase **cloud** (hosted, free tier для dev) Postgres + Row-Level Security. Локально приложение ходит в облачный инстанс — без `supabase start` / Docker.
+- **Auth:** Supabase Auth (email magic link), `@supabase/ssr` 0.10 для интеграции с Next.js App Router.
+- **Supabase JS:** `@supabase/supabase-js` 2.104.
+- **Графики:** Recharts 3.8.
+- **Drag-and-drop:** `@dnd-kit/core` 6.3.
+- **State:** Zustand 5.0 (клиентское состояние плана для отзывчивого preview), TanStack Query 5.100 (серверные данные).
+- **YNAB SDK:** официальный `ynab` npm-пакет 4.1.
+- **Виртуализация таблиц:** `@tanstack/react-virtual` 3.13 (горизонт 10 лет = 120 строк месячной таблицы).
+- **Линтинг/формат:** ESLint 9 (flat config), Prettier 3, актуально на момент Next 16.
+
+Конкретные минорные версии могут двигаться, но major-версии зафиксированы и проверены: Next 16, React 19.2, Tailwind v4, Recharts 3, Zustand 5, TanStack Query 5.
 
 ### Слои
 
