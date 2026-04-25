@@ -4,7 +4,6 @@ export const M = (year: number, month1to12: number): Date =>
   new Date(Date.UTC(year, month1to12 - 1, 1));
 
 export const goal = (overrides: Partial<Goal> & { id: string }): Goal => ({
-  id: overrides.id,
   name: overrides.id,
   targetAmount: 0,
   currentBalance: 0,
