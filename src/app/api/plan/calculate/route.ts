@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError, z } from "zod";
 import { computeMonthlyBudget } from "@/lib/budget/obligations";
 import { computePlan } from "@/lib/planner/planner";
 import type { Goal as PlannerGoal } from "@/lib/planner/types";
@@ -13,6 +14,11 @@ import {
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const DEFAULT_HORIZON_MONTHS = 120;
+const calculatePayloadSchema = z
+  .object({
+    deadlineShifts: z.record(z.string(), z.number().int().min(-240).max(240)).optional(),
+  })
+  .optional();
 
 type TbdWarning = {
   categoryId: string;
@@ -32,6 +38,9 @@ const normalizeToMonthStart = (value: string): Date => {
   const date = new Date(`${value}T00:00:00.000Z`);
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 };
+
+const addMonths = (date: Date, months: number): Date =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1));
 
 const currentMonthStart = (): Date => {
   const now = new Date();
@@ -72,6 +81,7 @@ const resolveCurrentBalance = (
 const mapGoalsToPlannerInput = (
   goals: Awaited<ReturnType<typeof listGoals>>,
   categories: ReturnType<typeof parseCachedCategories>,
+  deadlineShifts: Record<string, number>,
 ): PlannerGoal[] => {
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
 
@@ -87,7 +97,10 @@ const mapGoalsToPlannerInput = (
         name: goal.name,
         targetAmount: goal.target_amount,
         currentBalance: resolveCurrentBalance(goal, linkedCategory),
-        deadline: normalizeToMonthStart(goal.deadline),
+        deadline: addMonths(
+          normalizeToMonthStart(goal.deadline),
+          deadlineShifts[goal.id] ?? 0,
+        ),
         status: goal.status,
         ynabCategoryId: goal.ynab_category_id,
         createdAt: new Date(goal.created_at),
@@ -114,8 +127,10 @@ const buildTbdWarnings = (
     }));
 };
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const payload = calculatePayloadSchema.parse(await request.json().catch(() => ({})));
+    const deadlineShifts = payload?.deadlineShifts ?? {};
     const userId = await getCurrentUserId();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -129,7 +144,7 @@ export async function POST() {
 
     const categories = cache ? parseCachedCategories(cache.categories) : [];
     const needsSync = isCacheStale(cache);
-    const plannerGoals = mapGoalsToPlannerInput(goals, categories);
+    const plannerGoals = mapGoalsToPlannerInput(goals, categories, deadlineShifts);
     const activeGoalCategoryIds = plannerGoals
       .map((goal) => goal.ynabCategoryId)
       .filter((categoryId): categoryId is string => Boolean(categoryId));
@@ -159,7 +174,13 @@ export async function POST() {
       tbdWarnings,
       needsSync,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Invalid payload", issues: error.flatten() },
+        { status: 400 },
+      );
+    }
     return NextResponse.json({ error: "Failed to calculate plan" }, { status: 500 });
   }
 }
