@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# YNAPB - YNAB Planner & Budgeter
 
-## Getting Started
+Long-term planner for one-time goals with deadlines, on top of YNAB.
 
-First, run the development server:
+See `docs/superpowers/specs/2026-04-25-ynapb-design.md` for the full design.
+This codebase is implemented across multiple plans; see `docs/superpowers/plans/`.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Status
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Plan 1 (this commit):** foundation, auth, and the pure planner library with full test coverage.
+- Goals UI, YNAB sync UX, and rich planning screens land in Plans 2 and 3.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 22+ and npm
+- A Supabase cloud project (free tier is fine)
+- A YNAB Personal Access Token (needed from Plan 2 onward)
 
-## Learn More
+## Setup
 
-To learn more about Next.js, take a look at the following resources:
+1. `cp .env.example .env.local` and fill in:
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` from Supabase project settings.
+   - `ENCRYPTION_KEY` generated with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
+2. `npm install`
+3. `npx supabase link --project-ref <your-ref>` (one-time)
+4. `npx supabase db push` to apply migrations
+5. `npm run db:types` whenever schema changes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `npm run dev` - start Next.js dev server
+- `npm run build` - production build
+- `npm run lint` - ESLint (including complexity rules)
+- `npm run typecheck` - TypeScript check
+- `npm run test:unit` - Vitest unit tests
+- `npm run test:arch` - dependency-cruiser architecture checks
+- `npm run test:e2e` - Playwright e2e tests
+- `npm run check` - lint + typecheck + arch + unit
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `src/lib/planner` - pure TypeScript planning algorithm, unit-tested
+- `src/lib/supabase` - server/browser clients and middleware glue
+- `src/lib/crypto` - AES-GCM helpers for YNAB token protection
+- `src/app` - App Router pages and route handlers
+- `supabase/migrations` - schema and RLS setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Layering rules are enforced by dependency-cruiser config in `.dependency-cruiser.cjs`.
