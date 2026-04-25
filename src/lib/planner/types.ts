@@ -69,3 +69,5 @@ export type PlanResult = {
   /** Goals auto-frozen because their deadline already passed without funding. */
   autoFrozenGoalIds: string[];
 };
+
+export const PLANNER_TYPES_MODULE = "planner-types";
