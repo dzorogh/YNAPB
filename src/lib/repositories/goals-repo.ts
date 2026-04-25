@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import type { Enums, Tables } from "@/types/supabase";
+import type { Tables } from "@/types/supabase";
 
 type GoalRow = Tables<"goals">;
-type GoalStatus = Enums<"goal_status">;
 
 const userIdSchema = z.uuid();
 const goalIdSchema = z.uuid();
@@ -63,7 +62,7 @@ export const createGoal = async (
       name: parsedInput.name,
       target_amount: parsedInput.targetAmount,
       deadline: parsedInput.deadline,
-      status: parsedInput.status as GoalStatus,
+      status: parsedInput.status,
       notes: parsedInput.notes ?? null,
       ynab_category_id: parsedInput.ynabCategoryId ?? null,
     })
@@ -93,7 +92,7 @@ export const updateGoal = async (
       name: parsedInput.name,
       target_amount: parsedInput.targetAmount,
       deadline: parsedInput.deadline,
-      status: parsedInput.status as GoalStatus | undefined,
+      status: parsedInput.status,
       notes: parsedInput.notes,
       ynab_category_id: parsedInput.ynabCategoryId,
     })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { YnabSyncError, syncYnabData, type YnabDataClient } from "./sync";
+import { syncYnabData, type YnabDataClient } from "./sync";
 
 const buildClient = (): YnabDataClient => ({
   getCategories: () =>
@@ -37,7 +37,7 @@ describe("syncYnabData", () => {
         baselineMonths: 3,
         client: buildClient(),
       }),
-    ).rejects.toMatchObject<Partial<YnabSyncError>>({
+    ).rejects.toMatchObject({
       code: "MISSING_TOKEN",
       message: "YNAB token is required",
     });
