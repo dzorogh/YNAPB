@@ -52,6 +52,7 @@ module.exports = {
           "\\.test\\.(ts|tsx)$",
           "(^|/)tests/",
           "(^|/)src/test-setup\\.ts$",
+          "(^|/)src/types/",
         ],
       },
       to: {},
