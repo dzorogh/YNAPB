@@ -5,6 +5,8 @@ import type { Json, Tables } from "@/types/supabase";
 
 type PlanSnapshotRow = Tables<"plan_snapshots">;
 
+export const DEFAULT_PLAN_SNAPSHOT_KEEP = 100;
+
 const userIdSchema = z.uuid();
 const keepSchema = z.number().int().min(0);
 
@@ -44,7 +46,10 @@ export const createPlanSnapshot = async (
   return data;
 };
 
-export const trimPlanSnapshots = async (userId: string, keep = 100): Promise<number> => {
+export const trimPlanSnapshots = async (
+  userId: string,
+  keep = DEFAULT_PLAN_SNAPSHOT_KEEP,
+): Promise<number> => {
   const parsedUserId = assertUserId(userId);
   const parsedKeep = keepSchema.parse(keep);
   const supabase = await getSupabaseServerClient();
@@ -85,7 +90,7 @@ export const trimPlanSnapshots = async (userId: string, keep = 100): Promise<num
 export const createAndTrimPlanSnapshot = async (
   userId: string,
   input: CreatePlanSnapshotInput,
-  keep = 100,
+  keep = DEFAULT_PLAN_SNAPSHOT_KEEP,
 ): Promise<PlanSnapshotRow> => {
   const createdSnapshot = await createPlanSnapshot(userId, input);
   await trimPlanSnapshots(userId, keep);

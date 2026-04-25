@@ -36,6 +36,11 @@ const YNAB_API_BASE = "https://api.ynab.com/v1";
 
 const toMilliunits = (amount: number): number => Math.round(amount * 1000);
 
+export const sortMonthlyFundingDiff = (
+  diff: MonthlyFundingDiffItem[],
+): MonthlyFundingDiffItem[] =>
+  [...diff].sort((left, right) => left.categoryId.localeCompare(right.categoryId));
+
 export const buildPushDiff = ({
   goals,
   allocationForMonth,
@@ -48,7 +53,7 @@ export const buildPushDiff = ({
       .map((goal) => [goal.ynabCategoryId as string, goal]),
   );
 
-  return categories
+  const diff = categories
     .filter((category) => goalsByCategoryId.has(category.id))
     .map((category) => {
       const goal = goalsByCategoryId.get(category.id)!;
@@ -60,6 +65,8 @@ export const buildPushDiff = ({
       };
     })
     .filter((item) => item.current !== item.next);
+
+  return sortMonthlyFundingDiff(diff);
 };
 
 export const pushMonthlyFundingGoals = async ({
