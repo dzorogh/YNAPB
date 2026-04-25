@@ -1,14 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/lib/supabase/env";
 import type { Database } from "@/types/supabase";
 
 export async function refreshSession(req: NextRequest) {
   let response = NextResponse.next({ request: req });
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) {
+  let supabaseUrl: string;
+  let supabaseKey: string;
+
+  try {
+    supabaseUrl = getSupabaseUrl();
+    supabaseKey = getSupabasePublishableKey();
+  } catch {
     return { response, user: null };
   }
 

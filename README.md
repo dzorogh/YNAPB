@@ -20,6 +20,7 @@ This codebase is implemented across multiple plans; see `docs/superpowers/plans/
 
 1. `cp .env.example .env.local` and fill in:
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` from Supabase project settings.
+   - If your project still uses `NEXT_PUBLIC_SUPABASE_ANON_KEY`, it is supported as a fallback for the publishable key.
    - `ENCRYPTION_KEY` generated with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
 2. `npm install`
 3. `npx supabase link --project-ref <your-ref>` (one-time)
