@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
-import { createGoal, listGoals } from "@/lib/repositories/goals-repo";
+import { decryptToken } from "@/lib/crypto";
+import {
+  createGoal,
+  listGoals,
+  setGoalSyncState,
+  type GoalSyncStatus,
+} from "@/lib/repositories/goals-repo";
+import { getProfile } from "@/lib/repositories/profile-repo";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { pushImmediateMonthlyFundingGoal } from "@/lib/ynab/push-mf";
 
 const createGoalPayloadSchema = z.object({
   name: z.string().trim().min(1),
@@ -19,6 +27,58 @@ const getCurrentUserId = async (): Promise<string | null> => {
   } = await supabase.auth.getUser();
 
   return user?.id ?? null;
+};
+
+type GoalRow = Awaited<ReturnType<typeof createGoal>>;
+type GoalSyncResult = { status: "synced" | "error" | "skipped"; message?: string };
+
+const syncGoalWithYnab = async (userId: string, goal: GoalRow): Promise<GoalSyncResult> => {
+  if (goal.status !== "active" || !goal.ynab_category_id) {
+    return { status: "skipped" };
+  }
+
+  const profile = await getProfile(userId);
+  if (!profile?.ynab_budget_id || !profile.ynab_token_ct || !profile.ynab_token_iv) {
+    return {
+      status: "error",
+      message: "YNAB connection is not configured.",
+    };
+  }
+
+  try {
+    const token = await decryptToken(profile.ynab_token_ct, profile.ynab_token_iv);
+    await pushImmediateMonthlyFundingGoal({
+      token,
+      budgetId: profile.ynab_budget_id,
+      categoryId: goal.ynab_category_id,
+      targetAmount: goal.target_amount,
+      deadline: goal.deadline,
+    });
+    return { status: "synced" };
+  } catch {
+    return {
+      status: "error",
+      message: "Failed to sync goal to YNAB.",
+    };
+  }
+};
+
+const applyGoalSyncState = async (
+  userId: string,
+  goal: GoalRow,
+  syncResult: GoalSyncResult,
+): Promise<GoalRow> => {
+  if (syncResult.status === "skipped") {
+    return goal;
+  }
+
+  const syncStatus: GoalSyncStatus = syncResult.status === "error" ? "error" : "synced";
+  const syncedGoal = await setGoalSyncState(userId, goal.id, {
+    status: syncStatus,
+    error: syncResult.status === "error" ? syncResult.message ?? "Sync error." : null,
+  });
+
+  return syncedGoal;
 };
 
 export async function GET() {
@@ -46,8 +106,10 @@ export async function POST(request: Request) {
 
     const payload = createGoalPayloadSchema.parse(await request.json());
     const goal = await createGoal(userId, payload);
+    const syncResult = await syncGoalWithYnab(userId, goal);
+    const goalWithSyncState = await applyGoalSyncState(userId, goal, syncResult);
 
-    return NextResponse.json({ goal }, { status: 201 });
+    return NextResponse.json({ goal: goalWithSyncState, sync: syncResult }, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(

@@ -12,6 +12,9 @@ export type GoalRecord = {
   status: GoalStatus;
   notes: string | null;
   ynab_category_id: string | null;
+  last_sync_status: string;
+  last_sync_error: string | null;
+  last_synced_at: string | null;
 };
 
 type GoalsTableProps = {
@@ -127,6 +130,11 @@ const GoalRow = ({ goal, deletingGoalId, editingGoalId, onEdit, onDelete }: Goal
     <td className="p-2">
       <p className="font-medium">{goal.name}</p>
       {goal.notes ? <p className="text-xs text-muted-foreground">{goal.notes}</p> : null}
+      {goal.last_sync_status === "error" ? (
+        <p className="mt-1 inline-flex rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+          Unsynced
+        </p>
+      ) : null}
     </td>
     <td className="p-2">{goal.target_amount.toFixed(2)}</td>
     <td className="p-2">{goal.deadline}</td>

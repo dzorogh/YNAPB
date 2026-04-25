@@ -25,6 +25,8 @@ type GoalFormProps = {
   onSubmit: (values: GoalFormValues) => Promise<void>;
   onCancel?: () => void;
   disabled?: boolean;
+  variant?: "card" | "plain";
+  formIdPrefix?: string;
 };
 
 const defaultValues: GoalFormValues = {
@@ -44,6 +46,8 @@ export const GoalForm = ({
   onSubmit,
   onCancel,
   disabled = false,
+  variant = "card",
+  formIdPrefix,
 }: GoalFormProps) => {
   const [values, setValues] = useState<GoalFormValues>(initialValues ?? defaultValues);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -85,44 +89,50 @@ export const GoalForm = ({
     await onSubmit(values);
   };
 
+  const content = (
+    <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
+      <GoalFormFields
+        idPrefix={formIdPrefix ?? title}
+        values={values}
+        isDisabled={isDisabled}
+        onChange={handleChange}
+      />
+
+      {validationError ? (
+        <p className="text-sm text-destructive" role="alert">
+          {validationError}
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={isDisabled}>
+          {isSubmitting ? "Saving..." : submitLabel}
+        </Button>
+        {onCancel ? (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isDisabled}>
+            Cancel
+          </Button>
+        ) : null}
+      </div>
+    </form>
+  );
+
+  if (variant === "plain") {
+    return content;
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
-          <GoalFormFields
-            title={title}
-            values={values}
-            isDisabled={isDisabled}
-            onChange={handleChange}
-          />
-
-          {validationError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {validationError}
-            </p>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={isDisabled}>
-              {isSubmitting ? "Saving..." : submitLabel}
-            </Button>
-            {onCancel ? (
-              <Button type="button" variant="outline" onClick={onCancel} disabled={isDisabled}>
-                Cancel
-              </Button>
-            ) : null}
-          </div>
-        </form>
-      </CardContent>
+      <CardContent>{content}</CardContent>
     </Card>
   );
 };
 
 type GoalFormFieldsProps = {
-  title: string;
+  idPrefix: string;
   values: GoalFormValues;
   isDisabled: boolean;
   onChange: <TKey extends keyof GoalFormValues>(
@@ -131,12 +141,12 @@ type GoalFormFieldsProps = {
   ) => void;
 };
 
-const GoalFormFields = ({ title, values, isDisabled, onChange }: GoalFormFieldsProps) => (
+const GoalFormFields = ({ idPrefix, values, isDisabled, onChange }: GoalFormFieldsProps) => (
   <>
     <div className="space-y-2">
-      <Label htmlFor={`${title}-name`}>Name</Label>
+      <Label htmlFor={`${idPrefix}-name`}>Name</Label>
       <Input
-        id={`${title}-name`}
+        id={`${idPrefix}-name`}
         value={values.name}
         onChange={(event) => onChange("name", event.target.value)}
         disabled={isDisabled}
@@ -145,9 +155,9 @@ const GoalFormFields = ({ title, values, isDisabled, onChange }: GoalFormFieldsP
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor={`${title}-target-amount`}>Target amount</Label>
+      <Label htmlFor={`${idPrefix}-target-amount`}>Target amount</Label>
       <Input
-        id={`${title}-target-amount`}
+        id={`${idPrefix}-target-amount`}
         type="number"
         min={0}
         step="0.01"
@@ -159,9 +169,9 @@ const GoalFormFields = ({ title, values, isDisabled, onChange }: GoalFormFieldsP
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor={`${title}-deadline`}>Deadline</Label>
+      <Label htmlFor={`${idPrefix}-deadline`}>Deadline</Label>
       <Input
-        id={`${title}-deadline`}
+        id={`${idPrefix}-deadline`}
         type="date"
         value={values.deadline}
         onChange={(event) => onChange("deadline", event.target.value)}
@@ -171,9 +181,9 @@ const GoalFormFields = ({ title, values, isDisabled, onChange }: GoalFormFieldsP
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor={`${title}-status`}>Status</Label>
+      <Label htmlFor={`${idPrefix}-status`}>Status</Label>
       <select
-        id={`${title}-status`}
+        id={`${idPrefix}-status`}
         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         value={values.status}
         onChange={(event) => onChange("status", event.target.value as GoalStatus)}
@@ -186,9 +196,9 @@ const GoalFormFields = ({ title, values, isDisabled, onChange }: GoalFormFieldsP
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor={`${title}-notes`}>Notes</Label>
+      <Label htmlFor={`${idPrefix}-notes`}>Notes</Label>
       <textarea
-        id={`${title}-notes`}
+        id={`${idPrefix}-notes`}
         className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         value={values.notes}
         onChange={(event) => onChange("notes", event.target.value)}
@@ -197,9 +207,9 @@ const GoalFormFields = ({ title, values, isDisabled, onChange }: GoalFormFieldsP
     </div>
 
     <div className="space-y-2">
-      <Label htmlFor={`${title}-ynab-category-id`}>YNAB category id</Label>
+      <Label htmlFor={`${idPrefix}-ynab-category-id`}>YNAB category id</Label>
       <Input
-        id={`${title}-ynab-category-id`}
+        id={`${idPrefix}-ynab-category-id`}
         value={values.ynabCategoryId}
         onChange={(event) => onChange("ynabCategoryId", event.target.value)}
         disabled={isDisabled}

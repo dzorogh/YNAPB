@@ -33,6 +33,7 @@ const updateGoalSchema = createGoalSchema.partial().refine(
 
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
 export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
+export type GoalSyncStatus = "synced" | "error";
 
 const assertUserId = (userId: string): string => userIdSchema.parse(userId);
 const assertGoalId = (goalId: string): string => goalIdSchema.parse(goalId);
@@ -145,4 +146,42 @@ export const deleteGoal = async (userId: string, goalId: string): Promise<void> 
   if (!data) {
     throw new GoalNotFoundError();
   }
+};
+
+type SetGoalSyncStateInput = {
+  status: GoalSyncStatus;
+  error: string | null;
+  syncedAt?: string | null;
+};
+
+export const setGoalSyncState = async (
+  userId: string,
+  goalId: string,
+  input: SetGoalSyncStateInput,
+): Promise<GoalRow> => {
+  const parsedUserId = assertUserId(userId);
+  const parsedGoalId = assertGoalId(goalId);
+  const supabase = await getSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("goals")
+    .update({
+      last_sync_status: input.status,
+      last_sync_error: input.error,
+      last_synced_at: input.syncedAt ?? (input.status === "synced" ? new Date().toISOString() : null),
+    })
+    .eq("id", parsedGoalId)
+    .eq("user_id", parsedUserId)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to update goal sync state: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new GoalNotFoundError();
+  }
+
+  return data;
 };

@@ -8,9 +8,11 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { GoalForm, type GoalFormValues } from "@/components/goals/goal-form";
+import { toast } from "sonner";
+import { GoalDialog } from "@/components/goals/goal-dialog";
+import { type GoalFormValues } from "@/components/goals/goal-form";
 import { GoalsTable, type GoalRecord } from "@/components/goals/goals-table";
+import { Button } from "@/components/ui/button";
 
 type ErrorResponse = {
   error?: string;
@@ -22,15 +24,11 @@ type GoalsResponse = {
 
 type GoalResponse = {
   goal: GoalRecord;
+  sync?: {
+    status: "synced" | "error" | "skipped";
+    message?: string;
+  };
 };
-
-type StatusTone = "success" | "error";
-
-type InlineStatus = {
-  tone: StatusTone;
-  title: string;
-  message: string;
-} | null;
 
 const parseErrorMessage = async (response: Response, fallbackMessage: string): Promise<string> => {
   try {
@@ -62,7 +60,7 @@ const normalizeGoalPayload = (values: GoalFormValues) => ({
   ynabCategoryId: values.ynabCategoryId.trim() ? values.ynabCategoryId.trim() : null,
 });
 
-const useGoalsQuery = (setStatus: (status: InlineStatus) => void) => {
+const useGoalsQuery = () => {
   const [goals, setGoals] = useState<GoalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -78,23 +76,19 @@ const useGoalsQuery = (setStatus: (status: InlineStatus) => void) => {
       const response = await fetch("/api/goals", { method: "GET" });
       if (!response.ok) {
         const message = await parseErrorMessage(response, "Failed to load goals.");
-        setStatus({ tone: "error", title: "Load failed", message });
+        toast.error(message);
         return;
       }
 
       const data = (await response.json()) as GoalsResponse;
       setGoals(data.goals);
     } catch {
-      setStatus({
-        tone: "error",
-        title: "Load failed",
-        message: "Unexpected network error while loading goals.",
-      });
+      toast.error("Unexpected network error while loading goals.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [setStatus]);
+  }, []);
 
   useEffect(() => {
     void fetchGoals(false);
@@ -108,17 +102,16 @@ type GoalsStateSetter = Dispatch<SetStateAction<GoalRecord[]>>;
 type GoalsMutationsParams = {
   setGoals: GoalsStateSetter;
   fetchGoals: (showRefreshing?: boolean) => Promise<void>;
-  setStatus: (status: InlineStatus) => void;
+  closeModal: () => void;
 };
 
 const useCreateGoalMutation = ({
   setGoals,
   fetchGoals,
-  setStatus,
+  closeModal,
 }: GoalsMutationsParams) => {
   const [isCreating, setIsCreating] = useState(false);
   const handleCreateGoal = useCallback(async (values: GoalFormValues) => {
-    setStatus(null);
     setIsCreating(true);
     try {
       const response = await fetch("/api/goals", {
@@ -129,53 +122,43 @@ const useCreateGoalMutation = ({
 
       if (!response.ok) {
         const message = await parseErrorMessage(response, "Failed to create goal.");
-        setStatus({ tone: "error", title: "Create failed", message });
+        toast.error(message);
         return;
       }
 
       const data = (await response.json()) as GoalResponse;
       setGoals((currentGoals) => [data.goal, ...currentGoals]);
-      setStatus({
-        tone: "success",
-        title: "Goal created",
-        message: "Goal was added successfully.",
-      });
+      closeModal();
+      notifyGoalSyncResult("create", data.sync);
       await fetchGoals(true);
     } catch {
-      setStatus({
-        tone: "error",
-        title: "Create failed",
-        message: "Unexpected network error while creating goal.",
-      });
+      toast.error("Unexpected network error while creating goal.");
     } finally {
       setIsCreating(false);
     }
-  }, [fetchGoals, setGoals, setStatus]);
+  }, [closeModal, fetchGoals, setGoals]);
 
   return { isCreating, handleCreateGoal };
 };
 
 type UpdateGoalMutationParams = GoalsMutationsParams & {
-  editingGoal: GoalRecord | null;
-  setEditingGoal: (goal: GoalRecord | null) => void;
+  editingGoalId: string | null;
 };
 
 const useUpdateGoalMutation = ({
-  editingGoal,
-  setEditingGoal,
+  editingGoalId,
   setGoals,
   fetchGoals,
-  setStatus,
+  closeModal,
 }: UpdateGoalMutationParams) => {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleUpdateGoal = useCallback(async (values: GoalFormValues) => {
-    if (!editingGoal) return;
+    if (!editingGoalId) return;
 
-    setStatus(null);
     setIsUpdating(true);
     try {
-      const response = await fetch(`/api/goals/${editingGoal.id}`, {
+      const response = await fetch(`/api/goals/${editingGoalId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(normalizeGoalPayload(values)),
@@ -183,7 +166,7 @@ const useUpdateGoalMutation = ({
 
       if (!response.ok) {
         const message = await parseErrorMessage(response, "Failed to update goal.");
-        setStatus({ tone: "error", title: "Update failed", message });
+        toast.error(message);
         return;
       }
 
@@ -191,39 +174,29 @@ const useUpdateGoalMutation = ({
       setGoals((currentGoals) =>
         currentGoals.map((goal) => (goal.id === data.goal.id ? data.goal : goal)),
       );
-      setEditingGoal(null);
-      setStatus({
-        tone: "success",
-        title: "Goal updated",
-        message: "Goal changes were saved successfully.",
-      });
+      closeModal();
+      notifyGoalSyncResult("update", data.sync);
       await fetchGoals(true);
     } catch {
-      setStatus({
-        tone: "error",
-        title: "Update failed",
-        message: "Unexpected network error while updating goal.",
-      });
+      toast.error("Unexpected network error while updating goal.");
     } finally {
       setIsUpdating(false);
     }
-  }, [editingGoal, fetchGoals, setGoals, setStatus]);
+  }, [closeModal, editingGoalId, fetchGoals, setGoals]);
 
   return { isUpdating, handleUpdateGoal };
 };
 
 type DeleteGoalMutationParams = {
   editingGoalId: string | null;
-  setEditingGoal: (goal: GoalRecord | null) => void;
+  closeModal: () => void;
   setGoals: GoalsStateSetter;
-  setStatus: (status: InlineStatus) => void;
 };
 
 const useDeleteGoalMutation = ({
   editingGoalId,
-  setEditingGoal,
+  closeModal,
   setGoals,
-  setStatus,
 }: DeleteGoalMutationParams) => {
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
 
@@ -233,75 +206,87 @@ const useDeleteGoalMutation = ({
       return;
     }
 
-    setStatus(null);
     setDeletingGoalId(goal.id);
     try {
       const response = await fetch(`/api/goals/${goal.id}`, { method: "DELETE" });
       if (!response.ok) {
         const message = await parseErrorMessage(response, "Failed to delete goal.");
-        setStatus({ tone: "error", title: "Delete failed", message });
+        toast.error(message);
         return;
       }
 
       setGoals((currentGoals) => currentGoals.filter((item) => item.id !== goal.id));
       if (editingGoalId === goal.id) {
-        setEditingGoal(null);
+        closeModal();
       }
-      setStatus({
-        tone: "success",
-        title: "Goal deleted",
-        message: "Goal was removed successfully.",
-      });
+      toast.success("Goal deleted");
     } catch {
-      setStatus({
-        tone: "error",
-        title: "Delete failed",
-        message: "Unexpected network error while deleting goal.",
-      });
+      toast.error("Unexpected network error while deleting goal.");
     } finally {
       setDeletingGoalId(null);
     }
-  }, [editingGoalId, setEditingGoal, setGoals, setStatus]);
+  }, [closeModal, editingGoalId, setGoals]);
 
   return { deletingGoalId, handleDeleteGoal };
 };
 
-const GoalsHeader = () => (
-  <header className="space-y-1">
-    <h1 className="text-2xl font-semibold">Goals</h1>
-    <p className="text-sm text-muted-foreground">Create, edit, and delete savings goals.</p>
-  </header>
-);
+const notifyGoalSyncResult = (
+  action: "create" | "update",
+  sync?: GoalResponse["sync"],
+) => {
+  if (sync?.status === "error") {
+    toast.error(sync.message ?? "Goal saved, but YNAB sync failed.");
+    return;
+  }
+
+  if (sync?.status === "synced") {
+    toast.success(action === "create" ? "Goal saved and synced to YNAB" : "Goal updated and synced to YNAB");
+    return;
+  }
+
+  toast.success(action === "create" ? "Goal created" : "Goal updated");
+};
+
+type GoalsDialogState =
+  | { mode: "closed" }
+  | { mode: "create" }
+  | { mode: "edit"; goalId: string };
 
 export default function GoalsPage() {
-  const [status, setStatus] = useState<InlineStatus>(null);
-  const [editingGoal, setEditingGoal] = useState<GoalRecord | null>(null);
-  const { goals, setGoals, isLoading, isRefreshing, fetchGoals } = useGoalsQuery(setStatus);
-  const editingGoalId = editingGoal?.id ?? null;
+  const [dialogState, setDialogState] = useState<GoalsDialogState>({ mode: "closed" });
+  const { goals, setGoals, isLoading, isRefreshing, fetchGoals } = useGoalsQuery();
+  const editingGoalId = dialogState.mode === "edit" ? dialogState.goalId : null;
+  const editingGoal = editingGoalId
+    ? (goals.find((goal) => goal.id === editingGoalId) ?? null)
+    : null;
+  const closeDialog = useCallback(() => setDialogState({ mode: "closed" }), []);
   const { isCreating, handleCreateGoal } = useCreateGoalMutation({
     setGoals,
     fetchGoals,
-    setStatus,
+    closeModal: closeDialog,
   });
   const { isUpdating, handleUpdateGoal } = useUpdateGoalMutation({
-    editingGoal,
-    setEditingGoal,
+    editingGoalId,
     setGoals,
     fetchGoals,
-    setStatus,
+    closeModal: closeDialog,
   });
   const { deletingGoalId, handleDeleteGoal } = useDeleteGoalMutation({
     editingGoalId,
-    setEditingGoal,
+    closeModal: closeDialog,
     setGoals,
-    setStatus,
   });
 
   useEffect(() => {
-    if (!editingGoal) return;
-    const actualGoal = goals.find((goal) => goal.id === editingGoal.id) ?? null;
-    setEditingGoal(actualGoal);
-  }, [editingGoal, goals]);
+    if (dialogState.mode !== "edit") {
+      return;
+    }
+
+    const actualGoalExists = goals.some((goal) => goal.id === dialogState.goalId);
+    if (!actualGoalExists) {
+      closeDialog();
+    }
+  }, [closeDialog, dialogState, goals]);
 
   const sortedGoals = useMemo(
     () => [...goals].sort((leftGoal, rightGoal) => leftGoal.deadline.localeCompare(rightGoal.deadline)),
@@ -310,46 +295,35 @@ export default function GoalsPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
-      <GoalsHeader />
-
-      {status ? (
-        <Alert variant={status.tone === "error" ? "destructive" : "default"}>
-          <AlertTitle>{status.title}</AlertTitle>
-          <AlertDescription>{status.message}</AlertDescription>
-        </Alert>
-      ) : null}
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,340px)_1fr] lg:items-start">
-        <GoalForm
-          title="Create goal"
-          submitLabel="Create goal"
-          isSubmitting={isCreating}
-          onSubmit={handleCreateGoal}
-          disabled={isUpdating || deletingGoalId !== null}
-        />
-
-        <GoalsTable
-          goals={sortedGoals}
-          isLoading={isLoading}
-          isRefreshing={isRefreshing}
-          deletingGoalId={deletingGoalId}
-          editingGoalId={editingGoalId}
-          onEdit={setEditingGoal}
-          onDelete={handleDeleteGoal}
-        />
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">Goals</h1>
+          <p className="text-sm text-muted-foreground">Create, edit, and delete savings goals.</p>
+        </div>
+        <Button type="button" onClick={() => setDialogState({ mode: "create" })}>
+          Create goal
+        </Button>
       </div>
 
-      {editingGoal ? (
-        <GoalForm
-          title={`Edit goal: ${editingGoal.name}`}
-          submitLabel="Save changes"
-          isSubmitting={isUpdating}
-          initialValues={mapGoalToFormValues(editingGoal)}
-          onSubmit={handleUpdateGoal}
-          onCancel={() => setEditingGoal(null)}
-          disabled={isCreating || deletingGoalId !== null}
-        />
-      ) : null}
+      <GoalsTable
+        goals={sortedGoals}
+        isLoading={isLoading}
+        isRefreshing={isRefreshing}
+        deletingGoalId={deletingGoalId}
+        editingGoalId={editingGoalId}
+        onEdit={(goal) => setDialogState({ mode: "edit", goalId: goal.id })}
+        onDelete={handleDeleteGoal}
+      />
+
+      <GoalDialog
+        mode={dialogState.mode === "edit" ? "edit" : "create"}
+        isOpen={dialogState.mode !== "closed"}
+        isSubmitting={dialogState.mode === "edit" ? isUpdating : isCreating}
+        initialValues={dialogState.mode === "edit" && editingGoal ? mapGoalToFormValues(editingGoal) : undefined}
+        onSubmit={dialogState.mode === "edit" ? handleUpdateGoal : handleCreateGoal}
+        onClose={closeDialog}
+        disabled={deletingGoalId !== null}
+      />
     </main>
   );
 }

@@ -19,6 +19,9 @@ export type Database = {
           created_at: string
           deadline: string
           id: string
+          last_sync_error: string | null
+          last_sync_status: string
+          last_synced_at: string | null
           name: string
           notes: string | null
           status: Database["public"]["Enums"]["goal_status"]
@@ -31,6 +34,9 @@ export type Database = {
           created_at?: string
           deadline: string
           id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string
+          last_synced_at?: string | null
           name: string
           notes?: string | null
           status?: Database["public"]["Enums"]["goal_status"]
@@ -43,6 +49,9 @@ export type Database = {
           created_at?: string
           deadline?: string
           id?: string
+          last_sync_error?: string | null
+          last_sync_status?: string
+          last_synced_at?: string | null
           name?: string
           notes?: string | null
           status?: Database["public"]["Enums"]["goal_status"]

@@ -32,9 +32,95 @@ type PushMonthlyFundingGoalsInput = {
   fetchImpl?: typeof fetch;
 };
 
+type PushImmediateMonthlyFundingGoalInput = {
+  token: string;
+  budgetId: string;
+  categoryId: string;
+  targetAmount: number;
+  deadline: string;
+  fetchImpl?: typeof fetch;
+};
+
 const YNAB_API_BASE = "https://api.ynab.com/v1";
 
 const toMilliunits = (amount: number): number => Math.round(amount * 1000);
+const fromMilliunits = (amount: number): number => amount / 1000;
+
+const monthStartFromDate = (value: Date): Date =>
+  new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1));
+
+const monthStartFromString = (value: string): Date => {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+};
+
+const monthsDiffInclusive = (currentMonth: Date, deadlineMonth: Date): number => {
+  const yearDiff = deadlineMonth.getUTCFullYear() - currentMonth.getUTCFullYear();
+  const monthDiff = deadlineMonth.getUTCMonth() - currentMonth.getUTCMonth();
+  return yearDiff * 12 + monthDiff + 1;
+};
+
+const computeImmediateMonthlyFunding = ({
+  targetAmount,
+  currentBalance,
+  deadline,
+  now,
+}: {
+  targetAmount: number;
+  currentBalance: number;
+  deadline: string;
+  now: Date;
+}): number => {
+  const remainingAmount = Math.max(0, targetAmount - currentBalance);
+  if (remainingAmount === 0) {
+    return 0;
+  }
+
+  const currentMonth = monthStartFromDate(now);
+  const deadlineMonth = monthStartFromString(deadline);
+  const monthsRemaining = monthsDiffInclusive(currentMonth, deadlineMonth);
+  if (monthsRemaining <= 0) {
+    return toMilliunits(remainingAmount);
+  }
+
+  return toMilliunits(remainingAmount / monthsRemaining);
+};
+
+const fetchYnabCategory = async ({
+  token,
+  budgetId,
+  categoryId,
+  fetchImpl = fetch,
+}: {
+  token: string;
+  budgetId: string;
+  categoryId: string;
+  fetchImpl?: typeof fetch;
+}): Promise<{ goalTarget: number | null; balance: number }> => {
+  const response = await fetchImpl(
+    `${YNAB_API_BASE}/budgets/${budgetId}/categories/${categoryId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`YNAB request failed with status ${response.status}`);
+  }
+
+  const payload = (await response.json()) as {
+    data: { category: { goal_target: number | null; balance: number | null } };
+  };
+
+  return {
+    goalTarget: payload.data.category.goal_target,
+    balance: payload.data.category.balance ?? 0,
+  };
+};
 
 export const sortMonthlyFundingDiff = (
   diff: MonthlyFundingDiffItem[],
@@ -96,4 +182,34 @@ export const pushMonthlyFundingGoals = async ({
       throw new Error(`YNAB request failed with status ${response.status}`);
     }
   }
+};
+
+export const pushImmediateMonthlyFundingGoal = async ({
+  token,
+  budgetId,
+  categoryId,
+  targetAmount,
+  deadline,
+  fetchImpl = fetch,
+}: PushImmediateMonthlyFundingGoalInput): Promise<"updated" | "unchanged"> => {
+  const category = await fetchYnabCategory({ token, budgetId, categoryId, fetchImpl });
+  const nextTarget = computeImmediateMonthlyFunding({
+    targetAmount,
+    currentBalance: fromMilliunits(category.balance),
+    deadline,
+    now: new Date(),
+  });
+
+  if ((category.goalTarget ?? 0) === nextTarget) {
+    return "unchanged";
+  }
+
+  await pushMonthlyFundingGoals({
+    token,
+    budgetId,
+    updates: [{ categoryId, current: category.goalTarget ?? 0, next: nextTarget }],
+    fetchImpl,
+  });
+
+  return "updated";
 };
