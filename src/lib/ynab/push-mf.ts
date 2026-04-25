@@ -102,7 +102,7 @@ const fetchYnabCategory = async ({
   budgetId: string;
   categoryId: string;
   fetchImpl?: typeof fetch;
-}): Promise<{ goalTarget: number | null; balance: number }> => {
+}): Promise<{ name: string; goalTarget: number | null; balance: number }> => {
   const response = await fetchImpl(
     `${YNAB_API_BASE}/budgets/${budgetId}/categories/${categoryId}`,
     {
@@ -119,10 +119,17 @@ const fetchYnabCategory = async ({
   }
 
   const payload = (await response.json()) as {
-    data: { category: { goal_target: number | null; balance: number | null } };
+    data: {
+      category: {
+        name: string;
+        goal_target: number | null;
+        balance: number | null;
+      };
+    };
   };
 
   return {
+    name: payload.data.category.name,
     goalTarget: payload.data.category.goal_target,
     balance: payload.data.category.balance ?? 0,
   };
@@ -223,7 +230,12 @@ export const pushImmediateMonthlyFundingGoal = async ({
     token,
     budgetId,
     updates: [
-      { categoryId, current: category.goalTarget ?? 0, next: nextTarget },
+      {
+        categoryId,
+        categoryName: category.name,
+        current: category.goalTarget ?? 0,
+        next: nextTarget,
+      },
     ],
     fetchImpl,
   });
