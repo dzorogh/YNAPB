@@ -7,7 +7,7 @@ const createGoalPayloadSchema = z.object({
   name: z.string().trim().min(1),
   targetAmount: z.number().finite().nonnegative(),
   deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid YYYY-MM-DD date"),
-  status: z.enum(["active", "frozen", "completed"]).optional(),
+  status: z.enum(["active", "frozen", "completed"]).default("active"),
   notes: z.string().trim().max(5000).nullable().optional(),
   ynabCategoryId: z.string().trim().min(1).nullable().optional(),
 });

@@ -15,6 +15,26 @@ const syncPayloadSchema = z
 
 const DEFAULT_BASELINE_MONTHS = 6;
 
+const resolveBaselineMonths = (
+  payload: z.infer<typeof syncPayloadSchema>,
+  incomeSettings: Awaited<ReturnType<typeof getIncomeSettings>>,
+): number =>
+  payload?.baselineMonths
+  ?? incomeSettings?.baseline_months
+  ?? DEFAULT_BASELINE_MONTHS;
+
+const invalidConnectionResponse = () =>
+  NextResponse.json(
+    { error: "YNAB connection is not configured" },
+    { status: 400 },
+  );
+
+const invalidPayloadResponse = (error: ZodError) =>
+  NextResponse.json(
+    { error: "Invalid payload", issues: error.flatten() },
+    { status: 400 },
+  );
+
 export async function POST(request: Request) {
   try {
     const payload = syncPayloadSchema.parse(await request.json());
@@ -33,17 +53,11 @@ export async function POST(request: Request) {
       !profile.ynab_token_ct ||
       !profile.ynab_token_iv
     ) {
-      return NextResponse.json(
-        { error: "YNAB connection is not configured" },
-        { status: 400 },
-      );
+      return invalidConnectionResponse();
     }
 
     const incomeSettings = await getIncomeSettings(user.id);
-    const baselineMonths =
-      payload?.baselineMonths ??
-      incomeSettings?.baseline_months ??
-      DEFAULT_BASELINE_MONTHS;
+    const baselineMonths = resolveBaselineMonths(payload, incomeSettings);
 
     const token = await decryptToken(profile.ynab_token_ct, profile.ynab_token_iv);
     const synced = await syncYnabData({
@@ -65,10 +79,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Invalid payload", issues: error.flatten() },
-        { status: 400 },
-      );
+      return invalidPayloadResponse(error);
     }
 
     return NextResponse.json({ error: "Failed to sync YNAB data" }, { status: 500 });
