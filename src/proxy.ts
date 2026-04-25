@@ -5,7 +5,7 @@ const PUBLIC_PATHS = ["/login", "/auth/callback"];
 const E2E_AUTH_BYPASS_HEADER = "x-e2e-auth";
 const E2E_AUTH_BYPASS_VALUE = "1";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const shouldBypassAuthForE2E =
     process.env.E2E_AUTH_BYPASS === "true"
     && req.headers.get(E2E_AUTH_BYPASS_HEADER) === E2E_AUTH_BYPASS_VALUE;
