@@ -54,7 +54,7 @@ YNAB при работе с несколькими разовыми целями
 
 ### Стек (версии актуальны на 2026-04-25)
 
-- **Frontend:** Next.js 16.2 (App Router, Turbopack stable), React 19.2, TypeScript 6.0, Tailwind CSS v4.2, shadcn/ui.
+- **Frontend:** Next.js 16.2 (App Router, Turbopack stable), React 19.2, TypeScript 6.0, Tailwind CSS v4.2, shadcn/ui (CLI `shadcn` 4.5, с поддержкой Tailwind v4 и React 19), `lucide-react` 1.11 для иконок.
 - **Backend:** Next.js Route Handlers (`app/api/*`) и Server Actions. Отдельного бэка нет.
 - **БД:** Supabase **cloud** (hosted, free tier для dev) Postgres + Row-Level Security. Локально приложение ходит в облачный инстанс — без `supabase start` / Docker.
 - **Auth:** Supabase Auth (email magic link), `@supabase/ssr` 0.10 для интеграции с Next.js App Router.
