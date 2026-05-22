@@ -34,7 +34,7 @@ const buildClient = (): YnabDataClient => ({
         month: "2026-01-01",
         income: 100_000_000,
         categories: [
-          { id: "cat-rent", budgeted: 10_000_000 },
+          { id: "cat-rent", budgeted: 10_000_000, activity: -1_000_000 },
           { id: "cat-fun", budgeted: 2_000_000 },
         ],
       },
@@ -99,6 +99,10 @@ describe("syncYnabData", () => {
         goal_target_month: "2026-12-01",
         goal_under_funded: 30_000,
         balance: null,
+        activity: null,
+        assigned: 13_000,
+        prior_month_available: null,
+        cash_spent_total: 1_000,
         hidden: false,
         deleted: false,
         assigned_history: [13_000, 12_000, 11_000],
@@ -112,6 +116,10 @@ describe("syncYnabData", () => {
         goal_target_month: null,
         goal_under_funded: null,
         balance: null,
+        activity: null,
+        assigned: 5_000,
+        prior_month_available: null,
+        cash_spent_total: 0,
         hidden: false,
         deleted: false,
         assigned_history: [5_000, 4_000, 3_000],
@@ -133,6 +141,64 @@ describe("syncYnabData", () => {
     ]);
   });
 
+  it("uses income from months list beyond detail lookback", async () => {
+    const client: YnabDataClient = {
+      ...buildClient(),
+      getMonths: () =>
+        Promise.resolve([
+          {
+            month: "2026-06-01",
+            income: 600_000_000,
+          },
+          {
+            month: "2026-05-01",
+            income: 500_000_000,
+          },
+          {
+            month: "2026-04-01",
+            income: 400_000_000,
+            categories: [
+              { id: "cat-rent", budgeted: 13_000_000, activity: -1_000_000 },
+            ],
+          },
+          {
+            month: "2026-03-01",
+            income: 300_000_000,
+            categories: [
+              { id: "cat-rent", budgeted: 12_000_000, activity: -1_000_000 },
+            ],
+          },
+          {
+            month: "2026-02-01",
+            income: 200_000_000,
+            categories: [
+              { id: "cat-rent", budgeted: 11_000_000, activity: -1_000_000 },
+            ],
+          },
+          {
+            month: "2026-01-01",
+            income: 100_000_000,
+          },
+        ]),
+    };
+
+    const result = await syncYnabData({
+      token: TEST_TOKEN,
+      budgetId: TEST_BUDGET_ID,
+      baselineMonths: 6,
+      client,
+    });
+
+    expect(result.incomeHistory).toEqual([
+      { month: "2026-06-01", income: 600_000 },
+      { month: "2026-05-01", income: 500_000 },
+      { month: "2026-04-01", income: 400_000 },
+      { month: "2026-03-01", income: 300_000 },
+      { month: "2026-02-01", income: 200_000 },
+      { month: "2026-01-01", income: 100_000 },
+    ]);
+  });
+
   it("returns budget currency code", async () => {
     const result = await syncYnabData({
       token: TEST_TOKEN,
@@ -142,5 +208,16 @@ describe("syncYnabData", () => {
     });
 
     expect(result.currencyCode).toBe("EUR");
+  });
+
+  it("returns operation id for request logging", async () => {
+    const result = await syncYnabData({
+      token: TEST_TOKEN,
+      budgetId: TEST_BUDGET_ID,
+      baselineMonths: BASELINE_MONTHS,
+      client: buildClient(),
+    });
+
+    expect(result.operationId).toMatch(/^sync:/);
   });
 });

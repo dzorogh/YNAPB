@@ -10,21 +10,32 @@ type EnsureGoalCategoryLinkInput = {
   groupName?: string;
 };
 
-const DEFAULT_GOALS_GROUP_NAME = "Goals";
+/** Group where YNAPB creates auto-linked monthly-funding categories. */
+export const YNAP_DEFAULT_GOALS_GROUP_NAME = "Goals";
 
-const normalizeName = (value: string): string =>
+export const normalizeYnabComparableName = (value: string): string =>
   value.trim().toLocaleLowerCase();
+
+const normalizeName = normalizeYnabComparableName;
 
 const toDeadlineMonth = (deadline: string): string => deadline.slice(0, 7);
 
-const buildYnabGoalCategoryName = (goal: GoalRow): string =>
+const YNAB_CATEGORY_MONTH_SUFFIX = /\((\d{4}-\d{2})\)\s*$/;
+
+/** Month encoded in a YNAPB-managed category name, e.g. `Беседка (2026-05)`. */
+export const parseYnabCategoryMonthFromName = (name: string): string | null => {
+  const match = name.match(YNAB_CATEGORY_MONTH_SUFFIX);
+  return match?.[1] ?? null;
+};
+
+export const buildYnabGoalCategoryName = (goal: GoalRow): string =>
   `${goal.name} (${toDeadlineMonth(goal.deadline)})`;
 
 export const ensureGoalCategoryLink = async ({
   token,
   budgetId,
   goal,
-  groupName = DEFAULT_GOALS_GROUP_NAME,
+  groupName = YNAP_DEFAULT_GOALS_GROUP_NAME,
 }: EnsureGoalCategoryLinkInput): Promise<string> => {
   const client = createYnabClient(token);
   const categoryGroups = await client.getCategoryGroups(budgetId);

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getCurrentUserId } from "@/lib/api/auth";
+import { unauthorizedResponse } from "@/lib/api/http";
 import { updateGoal } from "@/lib/repositories/goals-repo";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const payloadSchema = z.object({
   deadlines: z
@@ -15,19 +16,11 @@ const payloadSchema = z.object({
     .min(1),
 });
 
-const getCurrentUserId = async (): Promise<string | null> => {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
-};
-
 export async function POST(request: Request) {
   try {
     const userId = await getCurrentUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const payload = payloadSchema.parse(await request.json());

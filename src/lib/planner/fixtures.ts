@@ -7,6 +7,8 @@ export const goal = (overrides: Partial<Goal> & { id: string }): Goal => ({
   name: overrides.id,
   targetAmount: 0,
   currentBalance: 0,
+  savedProgress: 0,
+  availableBalance: 0,
   deadline: M(2027, 1),
   status: "active",
   ynabCategoryId: null,

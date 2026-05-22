@@ -4,8 +4,12 @@ export type Goal = {
   id: string;
   name: string;
   targetAmount: number;
-  /** Current accumulated amount in YNAB at calculation time (>= 0). */
+  /** Assigned to the linked YNAB category (shown in UI). */
   currentBalance: number;
+  /** Saved progress toward the target (available + spending), for the planner. */
+  savedProgress: number;
+  /** YNAB available balance only (cash still in the category). */
+  availableBalance: number;
   /** Normalized to the 1st of the deadline month. */
   deadline: Date;
   status: GoalStatus;

@@ -16,11 +16,11 @@ import {
   PushDiffDialog,
   type PushDiffRow,
 } from "@/components/plan/push-diff-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { computePlan } from "@/lib/planner/planner";
 import type { PlanResult as DomainPlanResult } from "@/lib/planner/types";
+import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
 
 type ApiPlanConflict =
   | {
@@ -42,6 +42,8 @@ type ApiPlanResponse = {
     name: string;
     targetAmount: number;
     currentBalance: number;
+    savedProgress: number;
+    availableBalance: number;
     deadline: string;
     status: "active" | "frozen" | "completed";
     ynabCategoryId: string | null;
@@ -79,6 +81,14 @@ type ApiPlanResponse = {
 
 type ApiErrorResponse = {
   error?: string;
+  retryAfterSeconds?: number | null;
+  requestCount?: number | null;
+};
+
+type YnabSyncErrorDetails = {
+  message: string;
+  retryAfterSeconds: number | null;
+  requestCount: number | null;
 };
 
 type PushPreviewResponse = {
@@ -90,7 +100,12 @@ type PushApplyResponse = {
   applied: number;
 };
 
-type LoadState = "loading" | "ready" | "error";
+type LoadState = "loading" | "ready";
+type LoadStatus = {
+  tone: "success" | "error";
+  title: string;
+  message: string;
+} | null;
 type RefreshHandler = () => Promise<void>;
 type DeadlineDraftMap = Record<string, string>;
 type PushStatus = {
@@ -105,19 +120,72 @@ const currentMonthKey = (): string => {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 };
 
+const parseYnabSyncError = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<YnabSyncErrorDetails> => {
+  try {
+    const data = (await response.json()) as ApiErrorResponse;
+    const retryAfterSeconds =
+      typeof data.retryAfterSeconds === "number" &&
+      Number.isFinite(data.retryAfterSeconds) &&
+      data.retryAfterSeconds > 0
+        ? Math.ceil(data.retryAfterSeconds)
+        : null;
+    const requestCount =
+      typeof data.requestCount === "number" &&
+      Number.isFinite(data.requestCount) &&
+      data.requestCount > 0
+        ? Math.ceil(data.requestCount)
+        : null;
+    if (typeof data.error === "string" && data.error.trim().length > 0) {
+      const message =
+        data.error.includes("YNAB calls in this import") ||
+        requestCount === null
+          ? data.error
+          : toUserFacingYnabError(
+              new Error(data.error),
+              fallbackMessage,
+              retryAfterSeconds,
+              requestCount,
+            );
+      return {
+        message,
+        retryAfterSeconds,
+        requestCount,
+      };
+    }
+    return { message: fallbackMessage, retryAfterSeconds, requestCount };
+  } catch {
+    return {
+      message: fallbackMessage,
+      retryAfterSeconds: null,
+      requestCount: null,
+    };
+  }
+};
+
 const parseErrorMessage = async (
   response: Response,
   fallbackMessage: string,
 ): Promise<string> => {
-  try {
-    const data = (await response.json()) as ApiErrorResponse;
-    if (typeof data.error === "string" && data.error.trim().length > 0) {
-      return data.error;
-    }
-    return fallbackMessage;
-  } catch {
-    return fallbackMessage;
+  const details = await parseYnabSyncError(response, fallbackMessage);
+  return details.message;
+};
+
+const DEFAULT_IMPORT_COOLDOWN_SECONDS = 120;
+
+const resolveImportCooldownMs = (
+  retryAfterSeconds: number | null,
+  status: number,
+): number => {
+  if (retryAfterSeconds !== null) {
+    return retryAfterSeconds * 1000;
   }
+  if (status === 429) {
+    return DEFAULT_IMPORT_COOLDOWN_SECONDS * 1000;
+  }
+  return 60_000;
 };
 
 const toMonthStartIso = (value: string): string => `${value.slice(0, 7)}-01`;
@@ -153,28 +221,29 @@ const LoadingPlanState = () => (
   </main>
 );
 
-const ErrorPlanState = ({
-  statusMessage,
-  onRetry,
-}: {
-  statusMessage: string | null;
-  onRetry: RefreshHandler;
-}) => (
+const EmptyPlanState = ({ onRetry }: { onRetry: RefreshHandler }) => (
   <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
-    <Alert variant="destructive">
-      <AlertTitle>Failed to load plan</AlertTitle>
-      <AlertDescription>
-        {statusMessage ?? "Try again in a minute."}
-      </AlertDescription>
-    </Alert>
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => void onRetry()}
-      aria-label="Retry loading plan"
-    >
-      Retry
-    </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Plan</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-wrap items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          Plan data is not available yet.
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void onRetry()}
+          aria-label="Retry loading plan"
+        >
+          Retry
+        </Button>
+        <Button render={<Link href="/settings" />} aria-label="Go to settings">
+          Open settings
+        </Button>
+      </CardContent>
+    </Card>
   </main>
 );
 
@@ -205,7 +274,10 @@ type MainPlanViewProps = {
   activeGoals: ApiPlanResponse["goals"];
   deadlineDrafts: DeadlineDraftMap;
   isRefreshing: boolean;
+  isSyncingYnab: boolean;
+  ynabImportBlockedUntil: number | null;
   onRefresh: RefreshHandler;
+  onSyncYnab: RefreshHandler;
   onDragStartSnapshot: () => void;
   onDeadlinePreview: (goalId: string, nextDeadline: string) => void;
   onDeadlineCommit: (goalId: string, nextDeadline: string) => Promise<void>;
@@ -231,7 +303,10 @@ const MainPlanView = ({
   activeGoals,
   deadlineDrafts,
   isRefreshing,
+  isSyncingYnab,
+  ynabImportBlockedUntil,
   onRefresh,
+  onSyncYnab,
   onDragStartSnapshot,
   onDeadlinePreview,
   onDeadlineCommit,
@@ -260,9 +335,12 @@ const MainPlanView = ({
       currencyCode={planData.currencyCode}
       needsSync={planData.needsSync}
       isRefreshing={isRefreshing}
+      isSyncingYnab={isSyncingYnab}
+      ynabImportBlockedUntil={ynabImportBlockedUntil}
       isPreviewLoading={isPreviewLoading}
       isApplyingPush={isApplyingPush}
       onRefresh={onRefresh}
+      onSyncYnab={onSyncYnab}
       onOpenPushPreview={onOpenPushPreview}
     />
     <div className="space-y-4">
@@ -349,19 +427,25 @@ const toPlannerResult = (
 const usePlanData = () => {
   const [state, setState] = useState<LoadState>("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isSyncingYnab, setIsSyncingYnab] = useState(false);
+  const [ynabImportBlockedUntil, setYnabImportBlockedUntil] = useState<
+    number | null
+  >(null);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>(null);
   const [planData, setPlanData] = useState<ApiPlanResponse | null>(null);
   const [deadlineDrafts, setDeadlineDrafts] = useState<DeadlineDraftMap>({});
   const snapshotDeadlinesRef = useRef<DeadlineDraftMap | null>(null);
+  const planDataRef = useRef(planData);
+  planDataRef.current = planData;
 
   const loadPlan = useCallback(async (showRefreshing = false) => {
+    const hasPlanData = planDataRef.current !== null;
     if (showRefreshing) {
       setIsRefreshing(true);
-    } else {
+    } else if (!hasPlanData) {
       setState("loading");
     }
 
-    setStatusMessage(null);
     try {
       const response = await fetch("/api/plan/calculate", {
         method: "POST",
@@ -372,8 +456,19 @@ const usePlanData = () => {
         const data = (await response
           .json()
           .catch(() => null)) as ApiErrorResponse | null;
-        setState("error");
-        setStatusMessage(data?.error ?? "Failed to load plan calculation.");
+        setLoadStatus({
+          tone: "error",
+          title: showRefreshing
+            ? "Failed to refresh plan"
+            : "Failed to load plan",
+          message: toUserFacingYnabError(
+            data?.error ? new Error(data.error) : null,
+            "Failed to load plan calculation.",
+          ),
+        });
+        if (!hasPlanData) {
+          setState("ready");
+        }
         return;
       }
 
@@ -381,8 +476,16 @@ const usePlanData = () => {
       setPlanData(payload);
       setState("ready");
     } catch {
-      setState("error");
-      setStatusMessage("Unexpected network error while loading plan.");
+      setLoadStatus({
+        tone: "error",
+        title: showRefreshing
+          ? "Failed to refresh plan"
+          : "Failed to load plan",
+        message: "Unexpected network error while loading plan.",
+      });
+      if (!hasPlanData) {
+        setState("ready");
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -403,6 +506,8 @@ const usePlanData = () => {
         name: goal.name,
         targetAmount: goal.targetAmount,
         currentBalance: goal.currentBalance,
+        savedProgress: goal.savedProgress,
+        availableBalance: goal.availableBalance,
         deadline: new Date(
           `${(deadlineDrafts[goal.id] ?? goal.deadline).slice(0, 7)}-01T00:00:00.000Z`,
         ),
@@ -438,7 +543,25 @@ const usePlanData = () => {
       }, {});
   }, [previewPlanResult]);
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
+    await loadPlan(true);
+  }, [loadPlan]);
+  const handleSyncYnab = useCallback(async () => {
+    if (
+      ynabImportBlockedUntil !== null &&
+      Date.now() < ynabImportBlockedUntil
+    ) {
+      const secondsLeft = Math.ceil(
+        (ynabImportBlockedUntil - Date.now()) / 1000,
+      );
+      setLoadStatus({
+        tone: "error",
+        title: "YNAB import unavailable",
+        message: `Wait about ${secondsLeft} seconds before importing again.`,
+      });
+      return;
+    }
+
+    setIsSyncingYnab(true);
     try {
       const syncResponse = await fetch("/api/ynab/sync", {
         method: "POST",
@@ -446,24 +569,39 @@ const usePlanData = () => {
         body: JSON.stringify({}),
       });
       if (!syncResponse.ok) {
-        const message = await parseErrorMessage(
+        const { message, retryAfterSeconds } = await parseYnabSyncError(
           syncResponse,
-          "Failed to sync YNAB data before refresh.",
+          "Failed to import data from YNAB.",
         );
-        setState("error");
-        setStatusMessage(message);
+        setYnabImportBlockedUntil(
+          Date.now() +
+            resolveImportCooldownMs(retryAfterSeconds, syncResponse.status),
+        );
+        setLoadStatus({
+          tone: "error",
+          title: "YNAB import failed",
+          message,
+        });
         return;
       }
+
+      setYnabImportBlockedUntil(null);
       await loadPlan(true);
+      setLoadStatus({
+        tone: "success",
+        title: "YNAB data imported",
+        message: "Categories and income were refreshed. Plan was recalculated.",
+      });
     } catch {
-      setState("error");
-      setStatusMessage(
-        "Unexpected network error while syncing YNAB before refresh.",
-      );
+      setLoadStatus({
+        tone: "error",
+        title: "YNAB import failed",
+        message: "Unexpected network error while importing from YNAB.",
+      });
     } finally {
-      setIsRefreshing(false);
+      setIsSyncingYnab(false);
     }
-  }, [loadPlan]);
+  }, [loadPlan, ynabImportBlockedUntil]);
   const handleRetry = useCallback(async () => {
     await loadPlan(false);
   }, [loadPlan]);
@@ -489,15 +627,39 @@ const usePlanData = () => {
   }, []);
   const handleCommitDeadline = useCallback(
     async (goalId: string, nextDeadline: string) => {
-      await fetch("/api/plan/deadlines", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deadlines: [{ goalId, deadline: toMonthStartIso(nextDeadline) }],
-        }),
-      });
-      snapshotDeadlinesRef.current = null;
-      await loadPlan(true);
+      const deadlineIso = toMonthStartIso(nextDeadline);
+      try {
+        const response = await fetch("/api/plan/deadlines", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            deadlines: [{ goalId, deadline: deadlineIso }],
+          }),
+        });
+        if (!response.ok) {
+          const message = await parseErrorMessage(
+            response,
+            "Failed to save deadline.",
+          );
+          toast.error("Could not save deadline", {
+            description: message,
+          });
+          return;
+        }
+
+        snapshotDeadlinesRef.current = null;
+        // Keep draft in sync with what we persisted; otherwise stale drag
+        // previews override server deadlines and conflicts never clear.
+        setDeadlineDrafts((current) => ({
+          ...current,
+          [goalId]: deadlineIso,
+        }));
+        await loadPlan(true);
+      } catch {
+        toast.error("Could not save deadline", {
+          description: "Unexpected network error.",
+        });
+      }
     },
     [loadPlan],
   );
@@ -505,7 +667,10 @@ const usePlanData = () => {
   return {
     state,
     isRefreshing,
-    statusMessage,
+    isSyncingYnab,
+    ynabImportBlockedUntil,
+    loadStatus,
+    clearLoadStatus: () => setLoadStatus(null),
     planData,
     activeGoals,
     unreachableByGoalId,
@@ -513,6 +678,7 @@ const usePlanData = () => {
     previewPlanResult,
     loadPlan,
     handleRefresh,
+    handleSyncYnab,
     handleRetry,
     handleDragStartSnapshot,
     handleDeadlinePreview,
@@ -663,7 +829,10 @@ export default function PlanPage() {
   const {
     state,
     isRefreshing,
-    statusMessage,
+    isSyncingYnab,
+    ynabImportBlockedUntil,
+    loadStatus,
+    clearLoadStatus,
     planData,
     activeGoals,
     unreachableByGoalId,
@@ -671,6 +840,7 @@ export default function PlanPage() {
     previewPlanResult,
     loadPlan,
     handleRefresh,
+    handleSyncYnab,
     handleRetry,
     handleDragStartSnapshot,
     handleDeadlinePreview,
@@ -723,6 +893,18 @@ export default function PlanPage() {
   }, [pushStatus]);
 
   useEffect(() => {
+    if (!loadStatus) {
+      return;
+    }
+    if (loadStatus.tone === "error") {
+      toast.error(loadStatus.title, { description: loadStatus.message });
+    } else {
+      toast.success(loadStatus.title, { description: loadStatus.message });
+    }
+    clearLoadStatus();
+  }, [clearLoadStatus, loadStatus]);
+
+  useEffect(() => {
     if (!goalsCrudStatus) {
       return;
     }
@@ -738,14 +920,12 @@ export default function PlanPage() {
     clearGoalsCrudStatus();
   }, [clearGoalsCrudStatus, goalsCrudStatus]);
 
-  if (state === "loading") {
+  if (state === "loading" && !planData) {
     return <LoadingPlanState />;
   }
 
-  if (state === "error" || !planData || !previewPlanResult) {
-    return (
-      <ErrorPlanState statusMessage={statusMessage} onRetry={handleRetry} />
-    );
+  if (!planData || !previewPlanResult) {
+    return <EmptyPlanState onRetry={handleRetry} />;
   }
 
   if (isLikelyMissingYnabConnection(planData)) {
@@ -763,6 +943,9 @@ export default function PlanPage() {
         allocations={allocations}
         deadlineDrafts={deadlineDrafts}
         isRefreshing={isRefreshing}
+        isSyncingYnab={isSyncingYnab}
+        ynabImportBlockedUntil={ynabImportBlockedUntil}
+        onSyncYnab={handleSyncYnab}
         onOpenCreateGoal={goalsCrud.openCreateGoalModal}
         onOpenEditGoal={goalsCrud.openEditGoalById}
         onOpenDeleteGoal={goalsCrud.openDeleteGoalById}

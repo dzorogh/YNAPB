@@ -6,9 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "lint": "biome check . --formatter-enabled=false --assist-enabled=false",
+    "format": "biome format . --write",
+    "format:check": "biome format .",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:unit:coverage": "vitest run --coverage",
@@ -17,10 +17,12 @@
     "test:duplication": "jscpd --config .jscpd.json src",
     "test:e2e": "playwright test",
     "test:spelling": "cspell lint --config cspell.config.yaml \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "test:unused": "knip --no-exit-code",
+    "test:unused:strict": "knip",
     "test:security": "npm audit --audit-level=high",
     "check": "npm run lint && npm run typecheck && npm run test:arch && npm run test:unit",
     "quality:quick": "npm run format:check && npm run lint && npm run typecheck",
-    "quality:full": "npm run quality:quick && npm run test:arch && npm run test:unit:coverage && npm run test:spelling && npm run test:duplication && npm run test:e2e && npm run test:security"
+    "quality:full": "npm run quality:quick && npm run test:arch && npm run test:unit:coverage && npm run test:spelling && npm run test:duplication && npm run test:unused && npm run test:e2e && npm run test:security"
   },
   "dependencies": {
     "@base-ui/react": "1.4.1",
@@ -47,7 +49,7 @@
     "zustand": "5.0.12"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "16.2.4",
+    "@biomejs/biome": "^2.0.0",
     "@playwright/test": "1.59.1",
     "@tailwindcss/postcss": "4.2.4",
     "@testing-library/jest-dom": "6.7.0",
@@ -59,22 +61,13 @@
     "@vitest/ui": "4.1.5",
     "cspell": "^10.0.0",
     "dependency-cruiser": "17.3.10",
-    "eslint": "9.39.4",
-    "eslint-config-next": "16.2.4",
-    "eslint-plugin-eslint-comments": "^3.2.0",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-sonarjs": "4.0.3",
-    "eslint-plugin-unicorn": "^64.0.0",
     "jscpd": "^4.0.9",
     "jsdom": "26.1.0",
+    "knip": "^6.14.2",
     "msw": "2.8.0",
-    "prettier": "3.5.0",
     "supabase": "^2.95.3",
     "tailwindcss": "4.2.4",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.0",
     "vitest": "4.1.5"
   }
 }

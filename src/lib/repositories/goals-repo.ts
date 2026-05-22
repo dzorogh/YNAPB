@@ -130,6 +130,28 @@ export const updateGoal = async (
   return data;
 };
 
+export const getGoalById = async (
+  userId: string,
+  goalId: string,
+): Promise<GoalRow | null> => {
+  const parsedUserId = assertUserId(userId);
+  const parsedGoalId = assertGoalId(goalId);
+  const supabase = await getSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("goals")
+    .select("*")
+    .eq("id", parsedGoalId)
+    .eq("user_id", parsedUserId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load goal: ${error.message}`);
+  }
+
+  return data;
+};
+
 export const deleteGoal = async (
   userId: string,
   goalId: string,

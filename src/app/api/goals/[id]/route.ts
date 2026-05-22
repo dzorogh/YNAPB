@@ -5,6 +5,7 @@ import { decryptToken } from "@/lib/crypto";
 import {
   GoalNotFoundError,
   deleteGoal,
+  getGoalById,
   setGoalYnabCategoryId,
   setGoalSyncState,
   type GoalSyncStatus,
@@ -13,7 +14,9 @@ import {
 import { getProfile } from "@/lib/repositories/profile-repo";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
+import { hideManagedYnabCategoryForDeletedGoal } from "@/lib/ynab/hide-managed-goal-category";
 import { pushImmediateMonthlyFundingGoal } from "@/lib/ynab/push-mf";
+import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
 
 const patchGoalPayloadSchema = z
   .object({
@@ -94,11 +97,9 @@ const syncGoalWithYnab = async (
     });
     return { status: "synced", goal: linkedGoal };
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to sync goal to YNAB.";
     return {
       status: "error",
-      message,
+      message: toUserFacingYnabError(error, "Failed to sync goal to YNAB."),
     };
   }
 };
@@ -195,6 +196,32 @@ export async function DELETE(
     }
 
     const { id } = paramsSchema.parse(await context.params);
+    const goal = await getGoalById(userId, id);
+    if (!goal) {
+      throw new GoalNotFoundError();
+    }
+
+    const profile = await getProfile(userId);
+    if (
+      profile?.ynab_budget_id &&
+      profile.ynab_token_ct &&
+      profile.ynab_token_iv
+    ) {
+      try {
+        const token = await decryptToken(
+          profile.ynab_token_ct,
+          profile.ynab_token_iv,
+        );
+        await hideManagedYnabCategoryForDeletedGoal({
+          token,
+          budgetId: profile.ynab_budget_id,
+          goal,
+        });
+      } catch (error) {
+        console.error("YNAB category cleanup after goal delete failed", error);
+      }
+    }
+
     await deleteGoal(userId, id);
 
     return NextResponse.json({ ok: true }, { status: 200 });

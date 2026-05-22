@@ -12,7 +12,9 @@ ignorePaths:
   - docs/superpowers/specs/**
   - src/types/supabase.ts
 words:
+  - YNAP
   - YNAPB
+  - Беседка
   - ynab
   - supabase
   - turbopack

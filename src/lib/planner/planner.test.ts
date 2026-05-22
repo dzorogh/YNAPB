@@ -40,12 +40,64 @@ describe("planner - basic distribution (spec §6 example)", () => {
 });
 
 describe("planner - starting balances", () => {
+  it("allocates only unfunded amount when deadline is the start month", () => {
+    const goals = [
+      goal({
+        id: "gazebo",
+        targetAmount: 220_000,
+        currentBalance: 202_656,
+        savedProgress: 202_656,
+        availableBalance: 54_000,
+        deadline: M(2026, 5),
+      }),
+    ];
+    const result = computePlan({
+      goals,
+      budget: budget(200_000),
+      startMonth: M(2026, 5),
+      horizonMonths: 3,
+    });
+
+    expect(result.allocations[0]?.perGoal.gazebo).toBeCloseTo(17_344, -1);
+    expect(
+      result.conflicts.filter((entry) => entry.type === "unreachable"),
+    ).toHaveLength(0);
+  });
+
+  it("does not flag unreachable when goal is fully funded in deadline month (Беседка)", () => {
+    const goals = [
+      goal({
+        id: "gazebo",
+        targetAmount: 220_000,
+        currentBalance: 220_000,
+        savedProgress: 220_000,
+        availableBalance: 54_000,
+        deadline: M(2026, 5),
+      }),
+    ];
+    const result = computePlan({
+      goals,
+      budget: budget(165_000),
+      startMonth: M(2026, 5),
+      horizonMonths: 6,
+    });
+
+    for (const monthAllocation of result.allocations) {
+      expect(monthAllocation.perGoal.gazebo ?? 0).toBe(0);
+    }
+    expect(
+      result.conflicts.filter((entry) => entry.type === "unreachable"),
+    ).toHaveLength(0);
+  });
+
   it("does not over-fund a goal with existing balance", () => {
     const goals = [
       goal({
         id: "phone",
         targetAmount: 100_000,
         currentBalance: 80_000,
+        savedProgress: 80_000,
+        availableBalance: 80_000,
         deadline: M(2026, 6),
       }),
     ];
@@ -67,6 +119,8 @@ describe("planner - starting balances", () => {
         id: "done",
         targetAmount: 100_000,
         currentBalance: 100_000,
+        savedProgress: 100_000,
+        availableBalance: 100_000,
         deadline: M(2026, 6),
       }),
     ];
@@ -213,6 +267,7 @@ describe("planner - auto-freeze overdue", () => {
         id: "expired",
         targetAmount: 100_000,
         currentBalance: 50_000,
+        savedProgress: 50_000,
         deadline: M(2025, 12),
       }),
     ];

@@ -88,7 +88,7 @@ const formatGoalProgressPercent = (
     return "0%";
   }
 
-  const percent = (currentBalance / targetAmount) * 100;
+  const percent = Math.min(100, (currentBalance / targetAmount) * 100);
   return `${Math.round(percent)}%`;
 };
 

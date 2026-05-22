@@ -27,12 +27,15 @@ const monthKey = (value: Date): string =>
 
 type Working = Goal & { remaining: number };
 
+const initialRemainingForGoal = (goal: Goal): number =>
+  Math.max(0, goal.targetAmount - goal.savedProgress);
+
 const initialQueue = (goals: Goal[], startMonth: Date): Working[] =>
   goals
     .filter((g) => g.status === "active")
     .map((g) => ({
       ...g,
-      remaining: Math.max(0, g.targetAmount - g.currentBalance),
+      remaining: initialRemainingForGoal(g),
     }))
     .filter((g) => g.remaining > 0)
     .filter((g) => !isBeforeMonth(g.deadline, startMonth))
@@ -50,7 +53,7 @@ export function computePlan(input: PlanInput): PlanResult {
     .filter(
       (goalItem) =>
         goalItem.status === "active" &&
-        Math.max(0, goalItem.targetAmount - goalItem.currentBalance) > 0 &&
+        Math.max(0, goalItem.targetAmount - goalItem.savedProgress) > 0 &&
         isBeforeMonth(goalItem.deadline, input.startMonth),
     )
     .map((goalItem) => goalItem.id);
@@ -143,7 +146,7 @@ function detectTiedDeadlines(goals: Goal[], input: PlanInput): Conflict[] {
     if (goalItem.status !== "active") continue;
     const remaining = Math.max(
       0,
-      goalItem.targetAmount - goalItem.currentBalance,
+      goalItem.targetAmount - goalItem.savedProgress,
     );
     if (remaining <= 0) continue;
     const key = monthKey(goalItem.deadline);
@@ -157,7 +160,7 @@ function detectTiedDeadlines(goals: Goal[], input: PlanInput): Conflict[] {
     if (list.length < 2) continue;
     const totalRemaining = list.reduce(
       (sum, goalItem) =>
-        sum + Math.max(0, goalItem.targetAmount - goalItem.currentBalance),
+        sum + Math.max(0, goalItem.targetAmount - goalItem.savedProgress),
       0,
     );
     const months = monthsBetweenInclusive(input.startMonth, list[0]!.deadline);

@@ -7,8 +7,10 @@ import {
   getProfile,
   updateYnabConnection,
 } from "@/lib/repositories/profile-repo";
-import { upsertCache } from "@/lib/repositories/ynab-cache-repo";
+import { getCache, upsertCache } from "@/lib/repositories/ynab-cache-repo";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { YnabRequestError } from "@/lib/ynab/ynab-request";
+import { buildSyncErrorBody } from "@/lib/ynab/sync-error-response";
 import { syncYnabData } from "@/lib/ynab/sync";
 
 const syncPayloadSchema = z
@@ -18,6 +20,21 @@ const syncPayloadSchema = z
   .optional();
 
 const DEFAULT_BASELINE_MONTHS = 6;
+const SYNC_DEBOUNCE_MS = 60_000;
+
+const wasSyncedRecently = (
+  syncedAt: string | null | undefined,
+  now = Date.now(),
+): boolean => {
+  if (!syncedAt) {
+    return false;
+  }
+  const syncedAtMs = Date.parse(syncedAt);
+  if (Number.isNaN(syncedAtMs)) {
+    return false;
+  }
+  return now - syncedAtMs < SYNC_DEBOUNCE_MS;
+};
 
 const resolveBaselineMonths = (
   payload: z.infer<typeof syncPayloadSchema>,
@@ -62,17 +79,43 @@ export async function POST(request: Request) {
       return invalidConnectionResponse();
     }
 
-    const incomeSettings = await getIncomeSettings(user.id);
+    const [incomeSettings, cache] = await Promise.all([
+      getIncomeSettings(user.id),
+      getCache(user.id),
+    ]);
     const baselineMonths = resolveBaselineMonths(payload, incomeSettings);
+
+    if (wasSyncedRecently(cache?.synced_at)) {
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil(
+          (SYNC_DEBOUNCE_MS -
+            (Date.now() - Date.parse(cache?.synced_at ?? ""))) /
+            1000,
+        ),
+      );
+      return NextResponse.json(
+        {
+          error:
+            "YNAB import ran recently. Wait a minute before importing again.",
+          retryAfterSeconds,
+        },
+        { status: 409 },
+      );
+    }
 
     const token = await decryptToken(
       profile.ynab_token_ct,
       profile.ynab_token_iv,
     );
+    const hasStoredCurrency =
+      typeof profile.ynab_currency_code === "string" &&
+      profile.ynab_currency_code.trim().length > 0;
     const synced = await syncYnabData({
       token,
       budgetId: profile.ynab_budget_id,
       baselineMonths,
+      skipCurrencyLookup: hasStoredCurrency,
     });
 
     try {
@@ -80,7 +123,9 @@ export async function POST(request: Request) {
         ynabBudgetId: profile.ynab_budget_id,
         ynabTokenCt: profile.ynab_token_ct,
         ynabTokenIv: profile.ynab_token_iv,
-        ynabCurrencyCode: synced.currencyCode,
+        ynabCurrencyCode:
+          synced.currencyCode ??
+          (hasStoredCurrency ? profile.ynab_currency_code : null),
       });
     } catch {
       // Currency persistence is best-effort only.
@@ -104,8 +149,18 @@ export async function POST(request: Request) {
       return invalidPayloadResponse(error);
     }
 
-    const message =
-      error instanceof Error ? error.message : "Failed to sync YNAB data";
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (error instanceof YnabRequestError && error.status === 429) {
+      const body = buildSyncErrorBody(
+        error,
+        "YNAB rate limit reached. Wait a few minutes, then try again.",
+        error.operationId,
+      );
+      console.error("[YNAB] sync failed with rate limit", body);
+      return NextResponse.json(body, { status: 429 });
+    }
+
+    const body = buildSyncErrorBody(error, "Failed to sync YNAB data");
+    console.error("[YNAB] sync failed", body);
+    return NextResponse.json(body, { status: 500 });
   }
 }

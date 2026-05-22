@@ -6,7 +6,10 @@ import { computeMonthlyBudget } from "@/lib/budget/obligations";
 import { decryptToken } from "@/lib/crypto";
 import { computePlan } from "@/lib/planner/planner";
 import type { Goal as PlannerGoal, PlanResult } from "@/lib/planner/types";
-import { listGoals, setGoalYnabCategoryId } from "@/lib/repositories/goals-repo";
+import {
+  listGoals,
+  setGoalYnabCategoryId,
+} from "@/lib/repositories/goals-repo";
 import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
 import {
   createAndTrimPlanSnapshot,
@@ -21,6 +24,11 @@ import {
 } from "@/lib/repositories/ynab-cache-repo";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
+import { toYnabGoalProgressInput } from "@/lib/ynab/category-progress-input";
+import {
+  buildMonthlyFundingTargetsForPush,
+  resolveGoalAmountsFromCategory,
+} from "@/lib/ynab/goal-progress";
 import {
   buildPushDiff,
   pushMonthlyFundingGoals,
@@ -68,28 +76,6 @@ const averageIncome = (values: number[]): number => {
   return total / values.length;
 };
 
-const resolveCurrentBalance = (
-  _goal: Awaited<ReturnType<typeof listGoals>>[number],
-  category: ReturnType<typeof parseCachedCategories>[number] | null,
-): number => {
-  if (!category) {
-    return 0;
-  }
-
-  if (typeof category.balance === "number") {
-    return Math.max(0, category.balance);
-  }
-
-  if (
-    typeof category.goal_target === "number" &&
-    typeof category.goal_under_funded === "number"
-  ) {
-    return Math.max(0, category.goal_target - category.goal_under_funded);
-  }
-
-  return 0;
-};
-
 const mapGoalsToPlannerInput = (
   goals: Awaited<ReturnType<typeof listGoals>>,
   categories: ReturnType<typeof parseCachedCategories>,
@@ -105,11 +91,17 @@ const mapGoalsToPlannerInput = (
         ? (categoriesById.get(goal.ynab_category_id) ?? null)
         : null;
 
+      const ynabAmounts = resolveGoalAmountsFromCategory(
+        toYnabGoalProgressInput(linkedCategory),
+      );
+
       return {
         id: goal.id,
         name: goal.name,
         targetAmount: goal.target_amount,
-        currentBalance: resolveCurrentBalance(goal, linkedCategory),
+        currentBalance: ynabAmounts.currentBalance,
+        savedProgress: ynabAmounts.savedProgress,
+        availableBalance: ynabAmounts.availableBalance,
         deadline: normalizeToMonthStart(goal.deadline),
         status: goal.status,
         ynabCategoryId: goal.ynab_category_id,
@@ -219,13 +211,40 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     } as const;
   }
 
+  const goalsById = new Map(goals.map((goal) => [goal.id, goal]));
+  const categoriesById = new Map(
+    categories.map((category) => [
+      category.id,
+      toYnabGoalProgressInput(category),
+    ]),
+  );
+  const categoryNamesById = new Map(
+    categories.map((category) => [category.id, category.name]),
+  );
+  const categoryGoalTargetsById = new Map(
+    categories.map((category) => [category.id, category.goal_target]),
+  );
+  const monthlyFundingTargets = buildMonthlyFundingTargetsForPush({
+    goals: plannerGoals.map((goal) => ({
+      id: goal.id,
+      targetAmount: goal.targetAmount,
+      deadline: goalsById.get(goal.id)!.deadline,
+      ynabCategoryId: goal.ynabCategoryId,
+    })),
+    categoriesById,
+    categoryNamesById,
+    categoryGoalTargetsById,
+    pushMonth: month,
+    plannerAllocationForMonth: allocationForMonth.perGoal,
+  });
+
   const diff = buildPushDiff({
     goals: goals.map((goal) => ({
       id: goal.id,
       status: goal.status,
       ynabCategoryId: goal.ynab_category_id,
     })),
-    allocationForMonth: allocationForMonth.perGoal,
+    allocationForMonth: monthlyFundingTargets,
     categories: categories.map((category) => ({
       id: category.id,
       name: category.name,
@@ -277,7 +296,9 @@ const applyDiffAndPersistSnapshot = async (params: {
     profile.ynab_token_ct,
     profile.ynab_token_iv,
   );
-  const activeGoals = canonical.goals.filter((goal) => goal.status === "active");
+  const activeGoals = canonical.goals.filter(
+    (goal) => goal.status === "active",
+  );
   let hasCategoryLinkChanges = false;
   for (const goal of activeGoals) {
     const ynabCategoryId = await ensureGoalCategoryLink({

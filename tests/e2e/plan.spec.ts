@@ -6,6 +6,8 @@ type PlanCalculateResponse = {
     name: string;
     targetAmount: number;
     currentBalance: number;
+    savedProgress: number;
+    availableBalance: number;
     deadline: string;
     status: "active" | "frozen" | "completed";
     ynabCategoryId: string | null;
@@ -114,6 +116,8 @@ const buildCalculatedState = (): PlanCalculateResponse => ({
       name: "Vacation",
       targetAmount: 300000,
       currentBalance: 100000,
+      savedProgress: 100000,
+      availableBalance: 100000,
       deadline: "2026-08-01",
       status: "active",
       ynabCategoryId: VACATION_CATEGORY_ID,
@@ -124,6 +128,8 @@ const buildCalculatedState = (): PlanCalculateResponse => ({
       name: "Emergency",
       targetAmount: 400000,
       currentBalance: 250000,
+      savedProgress: 250000,
+      availableBalance: 250000,
       deadline: "2026-08-01",
       status: "active",
       ynabCategoryId: EMERGENCY_CATEGORY_ID,

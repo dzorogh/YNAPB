@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
 
 const DEFAULT_BASELINE_MONTHS = 6;
 const SETTINGS_ENDPOINT = "/api/settings";
@@ -68,7 +69,7 @@ const parseErrorMessage = async (
   try {
     const data = (await response.json()) as ErrorResponse;
     if (typeof data.error === "string" && data.error.length > 0) {
-      return data.error;
+      return toUserFacingYnabError(new Error(data.error), fallbackMessage);
     }
     return fallbackMessage;
   } catch {
