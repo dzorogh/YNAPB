@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, type PointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/formatting/currency";
+import { formatAmount } from "@/lib/formatting/currency";
 
 type TimelineGoal = {
   id: string;
@@ -25,7 +25,6 @@ type PlanTimelineProps = {
   completionByGoalId: Record<string, string | null>;
   draftDeadlines: Record<string, string>;
   isRecalculating: boolean;
-  currencyCode: string;
   onOpenCreateGoal: () => void;
   onOpenEditGoal: (goalId: string) => void;
   onOpenDeleteGoal: (goalId: string) => void;
@@ -100,7 +99,6 @@ export const PlanTimeline = ({
   completionByGoalId,
   draftDeadlines,
   isRecalculating,
-  currencyCode,
   onOpenCreateGoal,
   onOpenEditGoal,
   onOpenDeleteGoal,
@@ -342,8 +340,8 @@ export const PlanTimeline = ({
                       </div>
                       <div className="flex items-end justify-between gap-2">
                         <p className="truncate text-[11px] font-medium text-muted-foreground">
-                          {formatCurrency(goal.currentBalance, currencyCode)} /{" "}
-                          {formatCurrency(goal.targetAmount, currencyCode)} (
+                          {formatAmount(goal.currentBalance)} /{" "}
+                          {formatAmount(goal.targetAmount)} (
                           {formatGoalProgressPercent(
                             goal.currentBalance,
                             goal.targetAmount,

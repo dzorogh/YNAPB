@@ -332,7 +332,6 @@ const MainPlanView = ({
     </header>
     <PlanHeader
       budget={planData.budget}
-      currencyCode={planData.currencyCode}
       needsSync={planData.needsSync}
       isRefreshing={isRefreshing}
       isSyncingYnab={isSyncingYnab}
@@ -352,7 +351,6 @@ const MainPlanView = ({
         completionByGoalId={completionByGoalId}
         draftDeadlines={deadlineDrafts}
         isRecalculating={isRefreshing}
-        currencyCode={planData.currencyCode}
         onOpenCreateGoal={onOpenCreateGoal}
         onOpenEditGoal={onOpenEditGoal}
         onOpenDeleteGoal={onOpenDeleteGoal}
@@ -371,7 +369,6 @@ const MainPlanView = ({
           name: goal.name,
           deadline: goal.deadline,
         }))}
-        currencyCode={planData.currencyCode}
       />
     </div>
     <PlanConflicts
@@ -381,15 +378,12 @@ const MainPlanView = ({
     <PushDiffDialog
       isOpen={isPushDialogOpen}
       diffRows={pushDiffRows}
-      currencyCode={planData.currencyCode}
       onCancel={onClosePushDialog}
       onConfirm={onApplyPushDiff}
       isApplying={isApplyingPush}
     />
   </main>
 );
-
-const APPLY_FAILED_TITLE = "Apply failed";
 
 const toPlannerResult = (
   result: DomainPlanResult,
@@ -424,6 +418,28 @@ const toPlannerResult = (
   autoFrozenGoalIds: result.autoFrozenGoalIds,
 });
 
+const APPLY_FAILED_TITLE = "Apply failed";
+
+const loadPlanErrorTitle = (showRefreshing: boolean): string =>
+  showRefreshing ? "Failed to refresh plan" : "Failed to load plan";
+
+const reportLoadPlanFailure = (params: {
+  showRefreshing: boolean;
+  hasPlanData: boolean;
+  message: string;
+  setLoadStatus: (status: LoadStatus) => void;
+  setState: (state: LoadState) => void;
+}): void => {
+  params.setLoadStatus({
+    tone: "error",
+    title: loadPlanErrorTitle(params.showRefreshing),
+    message: params.message,
+  });
+  if (!params.hasPlanData) {
+    params.setState("ready");
+  }
+};
+
 const usePlanData = () => {
   const [state, setState] = useState<LoadState>("loading");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -456,19 +472,16 @@ const usePlanData = () => {
         const data = (await response
           .json()
           .catch(() => null)) as ApiErrorResponse | null;
-        setLoadStatus({
-          tone: "error",
-          title: showRefreshing
-            ? "Failed to refresh plan"
-            : "Failed to load plan",
+        reportLoadPlanFailure({
+          showRefreshing,
+          hasPlanData,
           message: toUserFacingYnabError(
             data?.error ? new Error(data.error) : null,
             "Failed to load plan calculation.",
           ),
+          setLoadStatus,
+          setState,
         });
-        if (!hasPlanData) {
-          setState("ready");
-        }
         return;
       }
 
@@ -476,16 +489,13 @@ const usePlanData = () => {
       setPlanData(payload);
       setState("ready");
     } catch {
-      setLoadStatus({
-        tone: "error",
-        title: showRefreshing
-          ? "Failed to refresh plan"
-          : "Failed to load plan",
+      reportLoadPlanFailure({
+        showRefreshing,
+        hasPlanData,
         message: "Unexpected network error while loading plan.",
+        setLoadStatus,
+        setState,
       });
-      if (!hasPlanData) {
-        setState("ready");
-      }
     } finally {
       setIsRefreshing(false);
     }

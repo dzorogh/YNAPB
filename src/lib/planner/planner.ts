@@ -45,32 +45,27 @@ const initialQueue = (goals: Goal[], startMonth: Date): Working[] =>
         a.createdAt.getTime() - b.createdAt.getTime(),
     );
 
-// The monthly allocator intentionally keeps explicit branch logic for readability.
-// eslint-disable-next-line complexity,sonarjs/cognitive-complexity
-export function computePlan(input: PlanInput): PlanResult {
-  void PLANNER_TYPES_MODULE;
-  const autoFrozenGoalIds = input.goals
+const detectAutoFrozenGoalIds = (goals: Goal[], startMonth: Date): string[] =>
+  goals
     .filter(
       (goalItem) =>
         goalItem.status === "active" &&
         Math.max(0, goalItem.targetAmount - goalItem.savedProgress) > 0 &&
-        isBeforeMonth(goalItem.deadline, input.startMonth),
+        isBeforeMonth(goalItem.deadline, startMonth),
     )
     .map((goalItem) => goalItem.id);
 
-  const liveGoals = input.goals.map((goalItem) =>
+const applyAutoFreeze = (goals: Goal[], autoFrozenGoalIds: string[]): Goal[] =>
+  goals.map((goalItem) =>
     autoFrozenGoalIds.includes(goalItem.id)
       ? { ...goalItem, status: "frozen" as const }
       : goalItem,
   );
 
-  const queue = initialQueue(liveGoals, input.startMonth);
-  const allocations: Allocation[] = [];
-  const completionMap: Record<string, Date | null> = {};
-  for (const g of liveGoals) completionMap[g.id] = null;
-  const activeQueueGoals = queue.filter(
-    (goalItem) => goalItem.status === "active",
-  );
+const computeSimulationMonths = (
+  input: PlanInput,
+  activeQueueGoals: Working[],
+): number => {
   const maxDeadlineSimulationMonths =
     activeQueueGoals.length > 0
       ? Math.max(
@@ -79,10 +74,17 @@ export function computePlan(input: PlanInput): PlanResult {
           ),
         )
       : 0;
-  const simulationMonths = Math.max(
-    input.horizonMonths,
-    maxDeadlineSimulationMonths,
-  );
+
+  return Math.max(input.horizonMonths, maxDeadlineSimulationMonths);
+};
+
+const simulateMonthlyAllocations = (
+  input: PlanInput,
+  queue: Working[],
+  simulationMonths: number,
+  completionMap: Record<string, Date | null>,
+): Allocation[] => {
+  const allocations: Allocation[] = [];
 
   for (let i = 0; i < simulationMonths; i++) {
     const month = addMonths(input.startMonth, i);
@@ -115,7 +117,17 @@ export function computePlan(input: PlanInput): PlanResult {
     }
   }
 
-  const conflicts: Conflict[] = [...detectTiedDeadlines(liveGoals, input)];
+  return allocations;
+};
+
+const collectUnreachableConflicts = (
+  queue: Working[],
+  completionMap: Record<string, Date | null>,
+  input: PlanInput,
+  simulationMonths: number,
+): Conflict[] => {
+  const conflicts: Conflict[] = [];
+
   for (const goalItem of queue) {
     const completedAt: Date | null = completionMap[goalItem.id] ?? null;
     const completedAfterDeadline =
@@ -136,6 +148,40 @@ export function computePlan(input: PlanInput): PlanResult {
         : "Not achievable within 100 years at current budget",
     });
   }
+
+  return conflicts;
+};
+
+export function computePlan(input: PlanInput): PlanResult {
+  void PLANNER_TYPES_MODULE;
+  const autoFrozenGoalIds = detectAutoFrozenGoalIds(
+    input.goals,
+    input.startMonth,
+  );
+  const liveGoals = applyAutoFreeze(input.goals, autoFrozenGoalIds);
+  const queue = initialQueue(liveGoals, input.startMonth);
+  const completionMap: Record<string, Date | null> = {};
+  for (const g of liveGoals) completionMap[g.id] = null;
+
+  const activeQueueGoals = queue.filter(
+    (goalItem) => goalItem.status === "active",
+  );
+  const simulationMonths = computeSimulationMonths(input, activeQueueGoals);
+  const allocations = simulateMonthlyAllocations(
+    input,
+    queue,
+    simulationMonths,
+    completionMap,
+  );
+  const conflicts = [
+    ...detectTiedDeadlines(liveGoals, input),
+    ...collectUnreachableConflicts(
+      queue,
+      completionMap,
+      input,
+      simulationMonths,
+    ),
+  ];
 
   return { allocations, conflicts, completionMap, autoFrozenGoalIds };
 }

@@ -147,6 +147,61 @@ export const requestYnab = async <TData>(
     return payload.data;
   });
 
+const formatRateLimitMessage = (retryAfterSeconds: number | null): string => {
+  if (retryAfterSeconds !== null && retryAfterSeconds > 0) {
+    return `YNAB rate limit reached. Try again in about ${retryAfterSeconds} seconds.`;
+  }
+
+  return "YNAB rate limit reached. Wait a few minutes, then try again.";
+};
+
+const resolveBaseYnabErrorMessage = (
+  error: unknown,
+  fallbackMessage: string,
+  retryAfterSeconds: number | null,
+): string => {
+  if (error instanceof YnabRequestError) {
+    if (error.status === 429) {
+      return formatRateLimitMessage(retryAfterSeconds);
+    }
+
+    return "Could not reach YNAB. Try again in a minute.";
+  }
+
+  if (!(error instanceof Error)) {
+    return fallbackMessage;
+  }
+
+  if (error.message.includes("429")) {
+    return formatRateLimitMessage(retryAfterSeconds);
+  }
+
+  if (error.message.startsWith("YNAB request failed with status")) {
+    return "Could not reach YNAB. Try again in a minute.";
+  }
+
+  return error.message;
+};
+
+const appendRequestCountToMessage = (
+  message: string,
+  error: unknown,
+  requestCount: number | null,
+): string => {
+  const shouldAppend =
+    typeof requestCount === "number" &&
+    requestCount > 0 &&
+    (error instanceof YnabRequestError
+      ? error.status === 429
+      : message.includes("rate limit"));
+
+  if (!shouldAppend) {
+    return message;
+  }
+
+  return `${message} YNAB calls in this import: ${requestCount}.`;
+};
+
 export const toUserFacingYnabError = (
   error: unknown,
   fallbackMessage: string,
@@ -160,41 +215,15 @@ export const toUserFacingYnabError = (
     requestCount ??
     (error instanceof YnabRequestError ? error.requestCount : null);
 
-  let message: string;
-  if (error instanceof YnabRequestError && error.status === 429) {
-    if (resolvedRetryAfter !== null && resolvedRetryAfter > 0) {
-      message = `YNAB rate limit reached. Try again in about ${resolvedRetryAfter} seconds.`;
-    } else {
-      message = "YNAB rate limit reached. Wait a few minutes, then try again.";
-    }
-  } else if (error instanceof YnabRequestError) {
-    message = "Could not reach YNAB. Try again in a minute.";
-  } else if (error instanceof Error) {
-    if (error.message.includes("429")) {
-      if (resolvedRetryAfter !== null && resolvedRetryAfter > 0) {
-        message = `YNAB rate limit reached. Try again in about ${resolvedRetryAfter} seconds.`;
-      } else {
-        message =
-          "YNAB rate limit reached. Wait a few minutes, then try again.";
-      }
-    } else if (error.message.startsWith("YNAB request failed with status")) {
-      message = "Could not reach YNAB. Try again in a minute.";
-    } else {
-      message = error.message;
-    }
-  } else {
-    message = fallbackMessage;
-  }
+  const message = resolveBaseYnabErrorMessage(
+    error,
+    fallbackMessage,
+    resolvedRetryAfter,
+  );
 
-  if (
-    typeof resolvedRequestCount === "number" &&
-    resolvedRequestCount > 0 &&
-    (error instanceof YnabRequestError
-      ? error.status === 429
-      : message.includes("rate limit"))
-  ) {
-    return `${message} YNAB calls in this import: ${resolvedRequestCount}.`;
-  }
-
-  return message;
+  return appendRequestCountToMessage(
+    message,
+    error,
+    resolvedRequestCount,
+  );
 };

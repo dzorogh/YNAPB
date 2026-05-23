@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/formatting/currency";
+import { formatAmount } from "@/lib/formatting/currency";
 
 type BudgetSummary = {
   plannedIncome: number;
@@ -21,7 +21,6 @@ type BudgetSummary = {
 
 type PlanHeaderProps = {
   budget: BudgetSummary;
-  currencyCode: string;
   needsSync: boolean;
   isRefreshing: boolean;
   isSyncingYnab: boolean;
@@ -45,7 +44,6 @@ const resolveImportCooldownSeconds = (
 
 export const PlanHeader = ({
   budget,
-  currencyCode,
   needsSync,
   isRefreshing,
   isSyncingYnab,
@@ -132,19 +130,19 @@ export const PlanHeader = ({
           <div className="rounded-md border px-3 py-2">
             <dt className="text-muted-foreground">Planned income</dt>
             <dd className="text-sm font-semibold">
-              {formatCurrency(budget.plannedIncome, currencyCode)}
+              {formatAmount(budget.plannedIncome)}
             </dd>
           </div>
           <div className="rounded-md border px-3 py-2">
             <dt className="text-muted-foreground">Obligations</dt>
             <dd className="text-sm font-semibold">
-              {formatCurrency(budget.obligations, currencyCode)}
+              {formatAmount(budget.obligations)}
             </dd>
           </div>
           <div className="rounded-md border px-3 py-2">
             <dt className="text-muted-foreground">Available for goals</dt>
             <dd className="text-sm font-semibold">
-              {formatCurrency(budget.available, currencyCode)}
+              {formatAmount(budget.available)}
             </dd>
           </div>
         </dl>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/formatting/currency";
+import { formatAmount } from "@/lib/formatting/currency";
 import { formatMonthLabel } from "@/lib/formatting/month-label";
 
 type PlanAllocation = {
@@ -13,13 +13,11 @@ type PlanAllocation = {
 type PlanTableProps = {
   allocations: PlanAllocation[];
   goals: Array<{ id: string; name: string; deadline: string }>;
-  currencyCode: string;
 };
 
 export const PlanTable = ({
   allocations,
   goals,
-  currencyCode,
 }: PlanTableProps) => {
   const goalIds = goals.map((goal) => goal.id);
   const goalsById = new Map(goals.map((goal) => [goal.id, goal.name]));
@@ -84,11 +82,11 @@ export const PlanTable = ({
                   <td className="py-2 pr-3">{formatMonthLabel(row.month)}</td>
                   {goalIds.map((goalId) => (
                     <td key={`${row.month}-${goalId}`} className="py-2 pr-3">
-                      {formatCurrency(row.perGoal[goalId] ?? 0, currencyCode)}
+                      {formatAmount(row.perGoal[goalId] ?? 0)}
                     </td>
                   ))}
                   <td className="py-2">
-                    {formatCurrency(row.unallocated, currencyCode)}
+                    {formatAmount(row.unallocated)}
                   </td>
                 </tr>
               ))}

@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/formatting/currency";
+import { formatAmount } from "@/lib/formatting/currency";
 
 export type PushDiffRow = {
   categoryId: string;
@@ -16,7 +16,6 @@ export type PushDiffRow = {
 type PushDiffDialogProps = {
   isOpen: boolean;
   diffRows: PushDiffRow[];
-  currencyCode: string;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
   isApplying: boolean;
@@ -24,10 +23,8 @@ type PushDiffDialogProps = {
 
 const PushDiffTable = ({
   diffRows,
-  currencyCode,
 }: {
   diffRows: PushDiffRow[];
-  currencyCode: string;
 }) => (
   <div className="max-h-[55vh] overflow-auto rounded-md border">
     <table className="w-full min-w-[560px] text-sm">
@@ -48,10 +45,10 @@ const PushDiffTable = ({
               </div>
             </td>
             <td className="px-3 py-2">
-              {formatCurrency(row.current / 1000, currencyCode)}
+              {formatAmount(row.current / 1000)}
             </td>
             <td className="px-3 py-2">
-              {formatCurrency(row.next / 1000, currencyCode)}
+              {formatAmount(row.next / 1000)}
             </td>
           </tr>
         ))}
@@ -87,13 +84,11 @@ const PushWarning = () => (
 
 const PushDiffDialogBody = ({
   diffRows,
-  currencyCode,
   isApplying,
   onCancel,
   onConfirm,
 }: {
   diffRows: PushDiffRow[];
-  currencyCode: string;
   isApplying: boolean;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
@@ -110,7 +105,7 @@ const PushDiffDialogBody = ({
       {diffRows.length === 0 ? (
         <NoChangesState />
       ) : (
-        <PushDiffTable diffRows={diffRows} currencyCode={currencyCode} />
+        <PushDiffTable diffRows={diffRows} />
       )}
       <PushWarning />
 
@@ -140,7 +135,6 @@ const PushDiffDialogBody = ({
 export const PushDiffDialog = ({
   isOpen,
   diffRows,
-  currencyCode,
   onCancel,
   onConfirm,
   isApplying,
@@ -158,7 +152,6 @@ export const PushDiffDialog = ({
     >
       <PushDiffDialogBody
         diffRows={diffRows}
-        currencyCode={currencyCode}
         isApplying={isApplying}
         onCancel={onCancel}
         onConfirm={onConfirm}
