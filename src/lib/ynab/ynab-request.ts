@@ -221,9 +221,5 @@ export const toUserFacingYnabError = (
     resolvedRetryAfter,
   );
 
-  return appendRequestCountToMessage(
-    message,
-    error,
-    resolvedRequestCount,
-  );
+  return appendRequestCountToMessage(message, error, resolvedRequestCount);
 };

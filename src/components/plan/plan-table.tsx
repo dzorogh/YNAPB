@@ -15,10 +15,7 @@ type PlanTableProps = {
   goals: Array<{ id: string; name: string; deadline: string }>;
 };
 
-export const PlanTable = ({
-  allocations,
-  goals,
-}: PlanTableProps) => {
+export const PlanTable = ({ allocations, goals }: PlanTableProps) => {
   const goalIds = goals.map((goal) => goal.id);
   const goalsById = new Map(goals.map((goal) => [goal.id, goal.name]));
   const latestDeadlineMonthStart = goals.reduce<Date | null>((latest, goal) => {
@@ -85,9 +82,7 @@ export const PlanTable = ({
                       {formatAmount(row.perGoal[goalId] ?? 0)}
                     </td>
                   ))}
-                  <td className="py-2">
-                    {formatAmount(row.unallocated)}
-                  </td>
+                  <td className="py-2">{formatAmount(row.unallocated)}</td>
                 </tr>
               ))}
             </tbody>

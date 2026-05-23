@@ -21,11 +21,7 @@ type PushDiffDialogProps = {
   isApplying: boolean;
 };
 
-const PushDiffTable = ({
-  diffRows,
-}: {
-  diffRows: PushDiffRow[];
-}) => (
+const PushDiffTable = ({ diffRows }: { diffRows: PushDiffRow[] }) => (
   <div className="max-h-[55vh] overflow-auto rounded-md border">
     <table className="w-full min-w-[560px] text-sm">
       <thead className="sticky top-0 bg-muted/80 backdrop-blur">
@@ -44,12 +40,8 @@ const PushDiffTable = ({
                 {row.categoryId}
               </div>
             </td>
-            <td className="px-3 py-2">
-              {formatAmount(row.current / 1000)}
-            </td>
-            <td className="px-3 py-2">
-              {formatAmount(row.next / 1000)}
-            </td>
+            <td className="px-3 py-2">{formatAmount(row.current / 1000)}</td>
+            <td className="px-3 py-2">{formatAmount(row.next / 1000)}</td>
           </tr>
         ))}
       </tbody>

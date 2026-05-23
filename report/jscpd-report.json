@@ -1,6 +1,6 @@
 {
   "statistics": {
-    "detectionDate": "2026-05-23T00:28:08.930Z",
+    "detectionDate": "2026-05-23T01:02:54.302Z",
     "formats": {
       "typescript": {
         "sources": {
@@ -173,8 +173,8 @@
             "newClones": 0
           },
           "src/lib/ynab/ynab-request.ts": {
-            "lines": 199,
-            "tokens": 1722,
+            "lines": 224,
+            "tokens": 1814,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -545,8 +545,8 @@
             "newClones": 0
           },
           "src/lib/planner/planner.ts": {
-            "lines": 190,
-            "tokens": 2096,
+            "lines": 248,
+            "tokens": 2556,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -617,8 +617,8 @@
             "newClones": 0
           },
           "src/lib/formatting/currency.ts": {
-            "lines": 23,
-            "tokens": 215,
+            "lines": 6,
+            "tokens": 64,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -774,14 +774,14 @@
           }
         },
         "total": {
-          "lines": 6071,
-          "tokens": 52453,
+          "lines": 6137,
+          "tokens": 52854,
           "sources": 64,
           "clones": 6,
           "duplicatedLines": 60,
           "duplicatedTokens": 584,
-          "percentage": 0.99,
-          "percentageTokens": 1.11,
+          "percentage": 0.98,
+          "percentageTokens": 1.1,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -885,8 +885,8 @@
             "newClones": 0
           },
           "src/components/plan/push-diff-dialog.tsx": {
-            "lines": 121,
-            "tokens": 892,
+            "lines": 113,
+            "tokens": 851,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -897,8 +897,20 @@
             "newClones": 0
           },
           "src/components/plan/plan-timeline.tsx": {
-            "lines": 173,
-            "tokens": 1269,
+            "lines": 62,
+            "tokens": 387,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-timeline-goal-row.tsx": {
+            "lines": 78,
+            "tokens": 579,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1006,9 +1018,9 @@
           }
         },
         "total": {
-          "lines": 943,
-          "tokens": 6909,
-          "sources": 18,
+          "lines": 902,
+          "tokens": 6565,
+          "sources": 19,
           "clones": 0,
           "duplicatedLines": 0,
           "duplicatedTokens": 0,
@@ -1117,8 +1129,8 @@
             "newClones": 0
           },
           "src/components/plan/push-diff-dialog.tsx": {
-            "lines": 167,
-            "tokens": 1259,
+            "lines": 152,
+            "tokens": 1196,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1129,20 +1141,32 @@
             "newClones": 0
           },
           "src/components/plan/plan-timeline.tsx": {
-            "lines": 445,
-            "tokens": 3756,
+            "lines": 271,
+            "tokens": 2364,
             "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
+            "clones": 2,
+            "duplicatedLines": 17,
+            "duplicatedTokens": 195,
+            "percentage": 6.27,
+            "percentageTokens": 8.25,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/plan/plan-timeline-goal-row.tsx": {
+            "lines": 277,
+            "tokens": 2219,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 17,
+            "duplicatedTokens": 195,
+            "percentage": 6.14,
+            "percentageTokens": 8.79,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/components/plan/plan-table.tsx": {
-            "lines": 100,
-            "tokens": 948,
+            "lines": 93,
+            "tokens": 924,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1153,8 +1177,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-header.tsx": {
-            "lines": 163,
-            "tokens": 1240,
+            "lines": 161,
+            "tokens": 1220,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1274,14 +1298,14 @@
           }
         },
         "total": {
-          "lines": 2460,
-          "tokens": 18642,
-          "sources": 21,
-          "clones": 0,
-          "duplicatedLines": 0,
-          "duplicatedTokens": 0,
-          "percentage": 0,
-          "percentageTokens": 0,
+          "lines": 2539,
+          "tokens": 19362,
+          "sources": 22,
+          "clones": 2,
+          "duplicatedLines": 17,
+          "duplicatedTokens": 195,
+          "percentage": 0.67,
+          "percentageTokens": 1.01,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -1316,14 +1340,14 @@
       }
     },
     "total": {
-      "lines": 9603,
-      "tokens": 79438,
-      "sources": 104,
-      "clones": 6,
-      "duplicatedLines": 60,
-      "duplicatedTokens": 584,
-      "percentage": 0.62,
-      "percentageTokens": 0.74,
+      "lines": 9707,
+      "tokens": 80215,
+      "sources": 106,
+      "clones": 8,
+      "duplicatedLines": 77,
+      "duplicatedTokens": 779,
+      "percentage": 0.79,
+      "percentageTokens": 0.97,
       "newDuplicatedLines": 0,
       "newClones": 0
     }
@@ -1542,6 +1566,78 @@
           "line": 198,
           "column": 17,
           "position": 1840
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": ";\n\nconst parseMonthStart = (value: string): Date => {\n  const date = new Date(`${value.slice(0, 7)}-01T00:00:00.000Z`);\n  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));\n};\n\nconst monthDiff",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/components/plan/plan-timeline-goal-row.tsx",
+        "start": 17,
+        "end": 24,
+        "startLoc": {
+          "line": 17,
+          "column": 3,
+          "position": 139
+        },
+        "endLoc": {
+          "line": 24,
+          "column": 10,
+          "position": 225
+        }
+      },
+      "secondFile": {
+        "name": "src/components/plan/plan-timeline.tsx",
+        "start": 37,
+        "end": 44,
+        "startLoc": {
+          "line": 37,
+          "column": 2,
+          "position": 352
+        },
+        "endLoc": {
+          "line": 44,
+          "column": 10,
+          "position": 438
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 11,
+      "fragment": ";\n\nconst monthDiff = (left: Date, right: Date): number =>\n  (left.getUTCFullYear() - right.getUTCFullYear()) * 12 +\n  left.getUTCMonth() -\n  right.getUTCMonth();\n\nconst toDeadlineString = (date: Date): string =>\n  `${date.toISOString().slice(0, 7)}-01`;\n\nconst formatAchievableMonth",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/components/plan/plan-timeline-goal-row.tsx",
+        "start": 22,
+        "end": 32,
+        "startLoc": {
+          "line": 22,
+          "column": 2,
+          "position": 220
+        },
+        "endLoc": {
+          "line": 32,
+          "column": 22,
+          "position": 329
+        }
+      },
+      "secondFile": {
+        "name": "src/components/plan/plan-timeline.tsx",
+        "start": 45,
+        "end": 55,
+        "startLoc": {
+          "line": 45,
+          "column": 2,
+          "position": 490
+        },
+        "endLoc": {
+          "line": 55,
+          "column": 17,
+          "position": 599
         }
       }
     }

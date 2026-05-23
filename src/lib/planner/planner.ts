@@ -78,6 +78,35 @@ const computeSimulationMonths = (
   return Math.max(input.horizonMonths, maxDeadlineSimulationMonths);
 };
 
+const allocateQueueForMonth = (
+  queue: Working[],
+  month: Date,
+  availableBudget: number,
+  completionMap: Record<string, Date | null>,
+): { perGoal: Record<string, number>; remainingBudget: number } => {
+  let remainingBudget = availableBudget;
+  const perGoal: Record<string, number> = {};
+
+  for (const g of queue) {
+    if (g.remaining <= 0) continue;
+    if (remainingBudget <= 0) break;
+
+    const monthsLeft = Math.max(1, monthsBetweenInclusive(month, g.deadline));
+    const neededPerMonth = g.remaining / monthsLeft;
+    const contribution = Math.min(neededPerMonth, remainingBudget, g.remaining);
+
+    perGoal[g.id] = (perGoal[g.id] ?? 0) + contribution;
+    g.remaining -= contribution;
+    remainingBudget -= contribution;
+
+    if (g.remaining <= 0 && completionMap[g.id] === null) {
+      completionMap[g.id] = month;
+    }
+  }
+
+  return { perGoal, remainingBudget };
+};
+
 const simulateMonthlyAllocations = (
   input: PlanInput,
   queue: Working[],
@@ -88,29 +117,12 @@ const simulateMonthlyAllocations = (
 
   for (let i = 0; i < simulationMonths; i++) {
     const month = addMonths(input.startMonth, i);
-    let remainingBudget = input.budget.available;
-    const perGoal: Record<string, number> = {};
-
-    for (const g of queue) {
-      if (g.remaining <= 0) continue;
-      if (remainingBudget <= 0) break;
-
-      const monthsLeft = Math.max(1, monthsBetweenInclusive(month, g.deadline));
-      const neededPerMonth = g.remaining / monthsLeft;
-      const contribution = Math.min(
-        neededPerMonth,
-        remainingBudget,
-        g.remaining,
-      );
-
-      perGoal[g.id] = (perGoal[g.id] ?? 0) + contribution;
-      g.remaining -= contribution;
-      remainingBudget -= contribution;
-
-      if (g.remaining <= 0 && completionMap[g.id] === null) {
-        completionMap[g.id] = month;
-      }
-    }
+    const { perGoal, remainingBudget } = allocateQueueForMonth(
+      queue,
+      month,
+      input.budget.available,
+      completionMap,
+    );
 
     if (i < input.horizonMonths) {
       allocations.push({ month, perGoal, unallocated: remainingBudget });
