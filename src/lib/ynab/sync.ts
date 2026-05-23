@@ -16,7 +16,7 @@ export type YnabDataClient = Pick<
   "getCategories" | "getMonths" | "getBudgetCurrencyCode"
 >;
 
-export class YnabSyncError extends Error {
+class YnabSyncError extends Error {
   code: "MISSING_TOKEN";
 
   constructor(code: "MISSING_TOKEN", message: string) {

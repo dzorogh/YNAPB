@@ -1,4 +1,4 @@
-export type GoalStatus = "active" | "frozen" | "completed";
+type GoalStatus = "active" | "frozen" | "completed";
 
 export type Goal = {
   id: string;
@@ -16,18 +16,6 @@ export type Goal = {
   ynabCategoryId: string | null;
   /** Used as a deterministic tie-breaker only, not as user-visible priority. */
   createdAt: Date;
-};
-
-export type YnabCategory = {
-  id: string;
-  name: string;
-  group: string;
-  balance: number;
-  goalType: "TB" | "TBD" | "MF" | "NEED" | "DEBT" | null;
-  goalTarget: number | null;
-  /** YNAB-reported "still needed this month". */
-  goalUnderFunded: number | null;
-  goalTargetMonth: string | null;
 };
 
 export type ObligationItem = {

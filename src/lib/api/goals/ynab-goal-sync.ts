@@ -68,7 +68,7 @@ export const syncGoalWithYnab = async (
   }
 };
 
-export const applyGoalSyncState = async (
+const applyGoalSyncState = async (
   userId: string,
   goal: GoalRow,
   syncResult: GoalSyncResult,

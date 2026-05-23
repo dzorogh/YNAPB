@@ -1,6 +1,6 @@
 {
   "statistics": {
-    "detectionDate": "2026-05-22T23:54:31.861Z",
+    "detectionDate": "2026-05-23T00:28:08.930Z",
     "formats": {
       "typescript": {
         "sources": {
@@ -102,7 +102,7 @@
           },
           "src/lib/api/goals/ynab-goal-sync.ts": {
             "lines": 121,
-            "tokens": 955,
+            "tokens": 953,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -222,7 +222,7 @@
           },
           "src/lib/ynab/test-fixtures.ts": {
             "lines": 44,
-            "tokens": 330,
+            "tokens": 328,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -234,7 +234,7 @@
           },
           "src/lib/ynab/sync.ts": {
             "lines": 122,
-            "tokens": 1040,
+            "tokens": 1038,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -341,8 +341,8 @@
             "newClones": 0
           },
           "src/lib/ynab/goal-progress.ts": {
-            "lines": 314,
-            "tokens": 2111,
+            "lines": 305,
+            "tokens": 2067,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -390,7 +390,7 @@
           },
           "src/lib/ynab/client.ts": {
             "lines": 282,
-            "tokens": 2238,
+            "tokens": 2236,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -474,13 +474,13 @@
           },
           "src/lib/repositories/ynab-cache-repo.ts": {
             "lines": 162,
-            "tokens": 1659,
+            "tokens": 1657,
             "sources": 1,
             "clones": 1,
             "duplicatedLines": 11,
             "duplicatedTokens": 107,
             "percentage": 6.79,
-            "percentageTokens": 6.45,
+            "percentageTokens": 6.46,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -498,7 +498,7 @@
           },
           "src/lib/repositories/plan-snapshots-repo.ts": {
             "lines": 100,
-            "tokens": 904,
+            "tokens": 900,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -533,8 +533,8 @@
             "newClones": 0
           },
           "src/lib/planner/types.ts": {
-            "lines": 86,
-            "tokens": 568,
+            "lines": 74,
+            "tokens": 461,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -700,6 +700,18 @@
             "newDuplicatedLines": 0,
             "newClones": 0
           },
+          "src/components/goals/goal-record.ts": {
+            "lines": 13,
+            "tokens": 113,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
           "src/lib/utils.ts": {
             "lines": 5,
             "tokens": 61,
@@ -762,9 +774,9 @@
           }
         },
         "total": {
-          "lines": 6079,
-          "tokens": 52505,
-          "sources": 63,
+          "lines": 6071,
+          "tokens": 52453,
+          "sources": 64,
           "clones": 6,
           "duplicatedLines": 60,
           "duplicatedTokens": 584,
@@ -825,8 +837,8 @@
             "newClones": 0
           },
           "src/components/ui/card.tsx": {
-            "lines": 76,
-            "tokens": 419,
+            "lines": 53,
+            "tokens": 286,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -849,8 +861,8 @@
             "newClones": 0
           },
           "src/components/ui/alert.tsx": {
-            "lines": 39,
-            "tokens": 216,
+            "lines": 29,
+            "tokens": 151,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -944,18 +956,6 @@
             "newDuplicatedLines": 0,
             "newClones": 0
           },
-          "src/components/goals/goals-table.tsx": {
-            "lines": 113,
-            "tokens": 940,
-            "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
-            "newDuplicatedLines": 0,
-            "newClones": 0
-          },
           "src/components/goals/goal-form.tsx": {
             "lines": 134,
             "tokens": 1013,
@@ -1006,9 +1006,9 @@
           }
         },
         "total": {
-          "lines": 1089,
-          "tokens": 8047,
-          "sources": 19,
+          "lines": 943,
+          "tokens": 6909,
+          "sources": 18,
           "clones": 0,
           "duplicatedLines": 0,
           "duplicatedTokens": 0,
@@ -1069,8 +1069,8 @@
             "newClones": 0
           },
           "src/components/ui/card.tsx": {
-            "lines": 102,
-            "tokens": 563,
+            "lines": 71,
+            "tokens": 416,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1082,7 +1082,7 @@
           },
           "src/components/ui/button.tsx": {
             "lines": 57,
-            "tokens": 339,
+            "tokens": 336,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1093,8 +1093,8 @@
             "newClones": 0
           },
           "src/components/ui/alert.tsx": {
-            "lines": 75,
-            "tokens": 432,
+            "lines": 65,
+            "tokens": 364,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1179,18 +1179,6 @@
           "src/components/layout/app-shell.tsx": {
             "lines": 72,
             "tokens": 525,
-            "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
-            "newDuplicatedLines": 0,
-            "newClones": 0
-          },
-          "src/components/goals/goals-table.tsx": {
-            "lines": 182,
-            "tokens": 1439,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1286,9 +1274,9 @@
           }
         },
         "total": {
-          "lines": 2683,
-          "tokens": 20299,
-          "sources": 22,
+          "lines": 2460,
+          "tokens": 18642,
+          "sources": 21,
           "clones": 0,
           "duplicatedLines": 0,
           "duplicatedTokens": 0,
@@ -1328,14 +1316,14 @@
       }
     },
     "total": {
-      "lines": 9980,
-      "tokens": 82285,
-      "sources": 105,
+      "lines": 9603,
+      "tokens": 79438,
+      "sources": 104,
       "clones": 6,
       "duplicatedLines": 60,
       "duplicatedTokens": 584,
-      "percentage": 0.6,
-      "percentageTokens": 0.71,
+      "percentage": 0.62,
+      "percentageTokens": 0.74,
       "newDuplicatedLines": 0,
       "newClones": 0
     }

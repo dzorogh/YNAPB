@@ -58,7 +58,7 @@ const cachedIncomeHistoryItemSchema = z.object({
   income: z.number().finite(),
 });
 
-export const CACHE_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+const CACHE_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 const assertUserId = (userId: string): string => userIdSchema.parse(userId);
 

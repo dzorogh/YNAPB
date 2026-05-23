@@ -25,7 +25,7 @@ export type YnabGoalProgressInput = {
   activity?: number | null;
 };
 
-export const resolveYnabAvailableBalance = (balance: number | null): number => {
+const resolveYnabAvailableBalance = (balance: number | null): number => {
   if (typeof balance === "number" && Number.isFinite(balance)) {
     return Math.max(0, balance);
   }
@@ -162,12 +162,6 @@ export const resolveGoalTotalAssigned = (
 
   return fromAssignedAndCarryover;
 };
-
-/** Assigned total for UI. */
-export const resolveGoalAssignedForDisplay = resolveGoalTotalAssigned;
-
-/** Assigned total for the planner (same metric). */
-export const resolveGoalSavedProgress = resolveGoalTotalAssigned;
 
 export const resolveGoalAmountsFromCategory = (
   input: YnabGoalProgressInput | null,
@@ -310,6 +304,3 @@ export const buildMonthlyFundingTargetsForPush = ({
 
   return targets;
 };
-
-/** @deprecated Use {@link resolveGoalSavedProgress}. */
-export const resolveGoalCurrentBalance = resolveGoalSavedProgress;

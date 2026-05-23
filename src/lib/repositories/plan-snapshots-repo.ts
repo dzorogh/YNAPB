@@ -22,7 +22,7 @@ const assertUserId = (userId: string): string => userIdSchema.parse(userId);
 const serializePlanResult = (result: PlanResult): Json =>
   JSON.parse(JSON.stringify(result)) as Json;
 
-export const createPlanSnapshot = async (
+const createPlanSnapshot = async (
   userId: string,
   input: CreatePlanSnapshotInput,
 ): Promise<PlanSnapshotRow> => {
@@ -47,7 +47,7 @@ export const createPlanSnapshot = async (
   return data;
 };
 
-export const trimPlanSnapshots = async (
+const trimPlanSnapshots = async (
   userId: string,
   keep = DEFAULT_PLAN_SNAPSHOT_KEEP,
 ): Promise<number> => {

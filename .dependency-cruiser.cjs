@@ -54,6 +54,7 @@ module.exports = {
           "(^|/)tests/",
           "(^|/)src/test-setup\\.ts$",
           "(^|/)src/types/",
+          "(^|/)src/components/goals/goal-record\\.ts$",
         ],
       },
       to: {},

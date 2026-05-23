@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { GoalDialog } from "@/components/goals/goal-dialog";
 import type { GoalFormValues } from "@/components/goals/goal-form";
-import type { GoalRecord } from "@/components/goals/goals-table";
+import type { GoalRecord } from "@/components/goals/goal-record";
 import { PlanConflicts } from "@/components/plan/plan-conflicts";
 import { PlanHeader } from "@/components/plan/plan-header";
 import { PlanTable } from "@/components/plan/plan-table";

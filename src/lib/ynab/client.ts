@@ -92,7 +92,7 @@ type YnabCreatedCategoryGroupPayload = {
   category_group: YnabCategoryGroup;
 };
 
-export type PatchCategoryResponseInner = {
+type PatchCategoryResponseInner = {
   category: YnabCategory;
 };
 

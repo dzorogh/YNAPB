@@ -1,6 +1,6 @@
 import type { Tables } from "@/types/supabase";
 
-export const TEST_USER_ID = "11111111-1111-1111-1111-111111111111";
+const TEST_USER_ID = "11111111-1111-1111-1111-111111111111";
 
 export const createTestGoal = (
   overrides?: Partial<Tables<"goals">>,
