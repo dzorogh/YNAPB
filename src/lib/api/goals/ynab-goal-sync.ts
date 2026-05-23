@@ -8,14 +8,9 @@ import { getProfile } from "@/lib/repositories/profile-repo";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
 import { pushImmediateMonthlyFundingGoal } from "@/lib/ynab/push-mf";
 import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
+import type { Tables } from "@/types/supabase";
 
-type GoalRow = {
-  id: string;
-  status: "active" | "frozen" | "completed";
-  ynab_category_id: string | null;
-  target_amount: number;
-  deadline: string;
-};
+type GoalRow = Tables<"goals">;
 
 export type GoalSyncResult = {
   status: "synced" | "error" | "skipped";
@@ -94,4 +89,34 @@ export const applyGoalSyncState = async (
   });
 
   return syncedGoal;
+};
+
+export const finalizeGoalMutationResponse = async (params: {
+  userId: string;
+  goal: GoalRow;
+  syncResult: GoalSyncResult;
+  syncStateFailureMessage: string;
+}): Promise<{
+  goal: GoalRow;
+  sync: GoalSyncResult;
+}> => {
+  const { userId, goal, syncResult, syncStateFailureMessage } = params;
+
+  try {
+    const goalWithSyncState = await applyGoalSyncState(
+      userId,
+      goal,
+      syncResult,
+    );
+    return { goal: goalWithSyncState, sync: syncResult };
+  } catch (syncStateError) {
+    console.error("Failed to persist goal sync state", syncStateError);
+    return {
+      goal: syncResult.goal ?? goal,
+      sync: {
+        status: "error",
+        message: syncStateFailureMessage,
+      },
+    };
+  }
 };

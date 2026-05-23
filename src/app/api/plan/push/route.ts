@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { ZodError, z } from "zod";
 
-import { computeMonthlyBudget } from "@/lib/budget/obligations";
+import { getCurrentUserId } from "@/lib/api/auth";
+import {
+  invalidPayloadResponse,
+  invalidYnabConnectionResponse,
+  unauthorizedResponse,
+} from "@/lib/api/http";
 import { decryptToken } from "@/lib/crypto";
-import { computePlan } from "@/lib/planner/planner";
-import type { Goal as PlannerGoal, PlanResult } from "@/lib/planner/types";
+import { monthKeyFromDate, monthStartFromKey } from "@/lib/dates/month";
+import type { PlanResult } from "@/lib/planner/types";
+import { buildPlanComputation } from "@/lib/plan/plan-computation";
 import {
   listGoals,
   setGoalYnabCategoryId,
@@ -16,19 +22,10 @@ import {
   DEFAULT_PLAN_SNAPSHOT_KEEP,
 } from "@/lib/repositories/plan-snapshots-repo";
 import { getProfile } from "@/lib/repositories/profile-repo";
-import {
-  getCache,
-  isCacheStale,
-  parseCachedCategories,
-  parseCachedIncomeHistory,
-} from "@/lib/repositories/ynab-cache-repo";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getCache, isCacheStale } from "@/lib/repositories/ynab-cache-repo";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
 import { toYnabGoalProgressInput } from "@/lib/ynab/category-progress-input";
-import {
-  buildMonthlyFundingTargetsForPush,
-  resolveGoalAmountsFromCategory,
-} from "@/lib/ynab/goal-progress";
+import { buildMonthlyFundingTargetsForPush } from "@/lib/ynab/goal-progress";
 import {
   buildPushDiff,
   pushMonthlyFundingGoals,
@@ -36,7 +33,6 @@ import {
   type MonthlyFundingDiffItem,
 } from "@/lib/ynab/push-mf";
 
-const DEFAULT_HORIZON_MONTHS = 120;
 const monthStringSchema = z.string().regex(/^\d{4}-\d{2}$/);
 const previewPayloadSchema = z.object({
   mode: z.literal("preview"),
@@ -49,67 +45,6 @@ const applyPayloadSchema = z.object({
 });
 const pushPayloadSchema = z.union([previewPayloadSchema, applyPayloadSchema]);
 
-const monthKeyFromDate = (value: Date): string =>
-  `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}`;
-
-const monthStartFromKey = (value: string): Date => {
-  const [year, month] = value.split("-").map((part) => Number(part));
-  return new Date(Date.UTC(year!, month! - 1, 1));
-};
-
-const normalizeToMonthStart = (value: string): Date => {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-};
-
-const currentMonthStart = (): Date => {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-};
-
-const averageIncome = (values: number[]): number => {
-  if (values.length === 0) {
-    return 0;
-  }
-
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return total / values.length;
-};
-
-const mapGoalsToPlannerInput = (
-  goals: Awaited<ReturnType<typeof listGoals>>,
-  categories: ReturnType<typeof parseCachedCategories>,
-): PlannerGoal[] => {
-  const categoriesById = new Map(
-    categories.map((category) => [category.id, category]),
-  );
-
-  return goals
-    .filter((goal) => goal.status === "active")
-    .map((goal) => {
-      const linkedCategory = goal.ynab_category_id
-        ? (categoriesById.get(goal.ynab_category_id) ?? null)
-        : null;
-
-      const ynabAmounts = resolveGoalAmountsFromCategory(
-        toYnabGoalProgressInput(linkedCategory),
-      );
-
-      return {
-        id: goal.id,
-        name: goal.name,
-        targetAmount: goal.target_amount,
-        currentBalance: ynabAmounts.currentBalance,
-        savedProgress: ynabAmounts.savedProgress,
-        availableBalance: ynabAmounts.availableBalance,
-        deadline: normalizeToMonthStart(goal.deadline),
-        status: goal.status,
-        ynabCategoryId: goal.ynab_category_id,
-        createdAt: new Date(goal.created_at),
-      };
-    });
-};
-
 const hashValue = (value: unknown): string =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
@@ -119,7 +54,7 @@ const buildDiffHash = (month: string, diff: MonthlyFundingDiffItem[]): string =>
 const buildInputsHash = (params: {
   month: string;
   goals: Awaited<ReturnType<typeof listGoals>>;
-  budget: ReturnType<typeof computeMonthlyBudget>;
+  budget: ReturnType<typeof buildPlanComputation>["budget"];
   planResult: PlanResult;
 }): string =>
   hashValue({
@@ -135,27 +70,6 @@ const buildInputsHash = (params: {
     budget: params.budget,
     planResult: params.planResult,
   });
-
-const getCurrentUserId = async (): Promise<string | null> => {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  return user?.id ?? null;
-};
-
-const invalidPayloadResponse = (error: ZodError) =>
-  NextResponse.json(
-    { error: "Invalid payload", issues: error.flatten() },
-    { status: 400 },
-  );
-
-const invalidConnectionResponse = () =>
-  NextResponse.json(
-    { error: "YNAB connection is not configured" },
-    { status: 400 },
-  );
 
 const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
   const [goals, cache, incomeSettings] = await Promise.all([
@@ -176,29 +90,9 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     } as const;
   }
 
-  const categories = parseCachedCategories(cache.categories);
-  const plannerGoals = mapGoalsToPlannerInput(goals, categories);
-  const activeGoalCategoryIds = plannerGoals
-    .map((goal) => goal.ynabCategoryId)
-    .filter((categoryId): categoryId is string => Boolean(categoryId));
-  const incomeHistory = parseCachedIncomeHistory(cache.income_history);
-  const plannedIncome =
-    incomeSettings?.planned_income ??
-    averageIncome(incomeHistory.map((item) => item.income));
-  const budget = computeMonthlyBudget({
-    categories,
-    activeGoalCategoryIds,
-    plannedIncome,
-  });
-  const planResult = computePlan({
-    goals: plannerGoals,
-    budget,
-    startMonth: currentMonthStart(),
-    horizonMonths: DEFAULT_HORIZON_MONTHS,
-  });
-
+  const computation = buildPlanComputation({ goals, cache, incomeSettings });
   const targetMonth = monthStartFromKey(month);
-  const allocationForMonth = planResult.allocations.find(
+  const allocationForMonth = computation.planResult.allocations.find(
     (allocation) =>
       monthKeyFromDate(allocation.month) === monthKeyFromDate(targetMonth),
   );
@@ -213,24 +107,34 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
 
   const goalsById = new Map(goals.map((goal) => [goal.id, goal]));
   const categoriesById = new Map(
-    categories.map((category) => [
+    computation.categories.map((category) => [
       category.id,
       toYnabGoalProgressInput(category),
     ]),
   );
   const categoryNamesById = new Map(
-    categories.map((category) => [category.id, category.name]),
+    computation.categories.map((category) => [category.id, category.name]),
   );
   const categoryGoalTargetsById = new Map(
-    categories.map((category) => [category.id, category.goal_target]),
+    computation.categories.map((category) => [
+      category.id,
+      category.goal_target,
+    ]),
   );
   const monthlyFundingTargets = buildMonthlyFundingTargetsForPush({
-    goals: plannerGoals.map((goal) => ({
-      id: goal.id,
-      targetAmount: goal.targetAmount,
-      deadline: goalsById.get(goal.id)!.deadline,
-      ynabCategoryId: goal.ynabCategoryId,
-    })),
+    goals: computation.plannerGoals.map((goal) => {
+      const sourceGoal = goalsById.get(goal.id);
+      if (!sourceGoal) {
+        throw new Error(`Goal ${goal.id} is missing from planner input`);
+      }
+
+      return {
+        id: goal.id,
+        targetAmount: goal.targetAmount,
+        deadline: sourceGoal.deadline,
+        ynabCategoryId: goal.ynabCategoryId,
+      };
+    }),
     categoriesById,
     categoryNamesById,
     categoryGoalTargetsById,
@@ -245,7 +149,7 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
       ynabCategoryId: goal.ynab_category_id,
     })),
     allocationForMonth: monthlyFundingTargets,
-    categories: categories.map((category) => ({
+    categories: computation.categories.map((category) => ({
       id: category.id,
       name: category.name,
       goalTarget: category.goal_target,
@@ -254,8 +158,8 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
 
   return {
     goals,
-    budget,
-    planResult,
+    budget: computation.budget,
+    planResult: computation.planResult,
     diff,
     diffHash: buildDiffHash(month, diff),
   } as const;
@@ -289,7 +193,7 @@ const applyDiffAndPersistSnapshot = async (params: {
     !profile.ynab_token_ct ||
     !profile.ynab_token_iv
   ) {
-    return invalidConnectionResponse();
+    return invalidYnabConnectionResponse();
   }
 
   const token = await decryptToken(
@@ -362,7 +266,7 @@ export async function POST(request: Request) {
     const payload = pushPayloadSchema.parse(await request.json());
     const userId = await getCurrentUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const canonical = await buildCanonicalPlanAndDiff(userId, payload.month);

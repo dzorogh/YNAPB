@@ -2,6 +2,7 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatMonthLabel } from "@/lib/formatting/month-label";
 
 type UnreachableConflict = {
   type: "unreachable";
@@ -27,19 +28,6 @@ type TbdWarning = {
 type PlanConflictsProps = {
   conflicts: PlanConflict[];
   tbdWarnings: TbdWarning[];
-};
-
-const formatMonth = (value: string): string => {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(parsed);
 };
 
 export const PlanConflicts = ({
@@ -77,7 +65,7 @@ export const PlanConflicts = ({
                 <AlertTitle>Unreachable goal: {conflict.goalId}</AlertTitle>
                 <AlertDescription>
                   {conflict.earliestAchievable
-                    ? `Earliest achievable month: ${formatMonth(conflict.earliestAchievable)}.`
+                    ? `Earliest achievable month: ${formatMonthLabel(conflict.earliestAchievable)}.`
                     : "No achievable month detected within calculation horizon."}{" "}
                   {conflict.detail}
                 </AlertDescription>
@@ -90,7 +78,7 @@ export const PlanConflicts = ({
               <AlertTitle>Tied deadline conflict</AlertTitle>
               <AlertDescription>
                 Goals {conflict.goalIds.join(", ")} share deadline{" "}
-                {formatMonth(conflict.deadline)}. {conflict.detail}
+                {formatMonthLabel(conflict.deadline)}. {conflict.detail}
               </AlertDescription>
             </Alert>
           );

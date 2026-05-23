@@ -8,10 +8,15 @@ import {
   updateYnabConnection,
 } from "@/lib/repositories/profile-repo";
 import { getCache, upsertCache } from "@/lib/repositories/ynab-cache-repo";
+import {
+  invalidPayloadResponse,
+  invalidYnabConnectionResponse,
+  unauthorizedResponse,
+} from "@/lib/api/http";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { YnabRequestError } from "@/lib/ynab/ynab-request";
 import { buildSyncErrorBody } from "@/lib/ynab/sync-error-response";
 import { syncYnabData } from "@/lib/ynab/sync";
+import { YnabRequestError } from "@/lib/ynab/ynab-request";
 
 const syncPayloadSchema = z
   .object({
@@ -44,18 +49,6 @@ const resolveBaselineMonths = (
   incomeSettings?.baseline_months ??
   DEFAULT_BASELINE_MONTHS;
 
-const invalidConnectionResponse = () =>
-  NextResponse.json(
-    { error: "YNAB connection is not configured" },
-    { status: 400 },
-  );
-
-const invalidPayloadResponse = (error: ZodError) =>
-  NextResponse.json(
-    { error: "Invalid payload", issues: error.flatten() },
-    { status: 400 },
-  );
-
 export async function POST(request: Request) {
   try {
     const payload = syncPayloadSchema.parse(
@@ -67,7 +60,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     const profile = await getProfile(user.id);
@@ -76,7 +69,7 @@ export async function POST(request: Request) {
       !profile.ynab_token_ct ||
       !profile.ynab_token_iv
     ) {
-      return invalidConnectionResponse();
+      return invalidYnabConnectionResponse();
     }
 
     const [incomeSettings, cache] = await Promise.all([

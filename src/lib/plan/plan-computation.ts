@@ -1,8 +1,8 @@
 import { averageIncome } from "@/lib/budget/average-income";
 import { computeMonthlyBudget } from "@/lib/budget/obligations";
 import { currentMonthStart } from "@/lib/dates/month";
+import { mapGoalsToPlannerInput } from "@/lib/plan/goal-mapping";
 import { computePlan } from "@/lib/planner/planner";
-import { mapGoalsToPlannerInput } from "@/lib/planner/goal-mapping";
 import type { Goal as PlannerGoal, PlanResult } from "@/lib/planner/types";
 import type { listGoals } from "@/lib/repositories/goals-repo";
 import type { getIncomeSettings } from "@/lib/repositories/income-settings-repo";

@@ -14,6 +14,9 @@ import {
   getCache,
   parseCachedIncomeHistory,
 } from "@/lib/repositories/ynab-cache-repo";
+import { averageIncomeOrNull } from "@/lib/budget/average-income";
+import { getCurrentUserId } from "@/lib/api/auth";
+import { invalidPayloadResponse, unauthorizedResponse } from "@/lib/api/http";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const settingsPayloadSchema = z
@@ -47,22 +50,6 @@ const settingsPayloadSchema = z
 
 const DEFAULT_BASELINE_MONTHS = 6;
 
-const averageIncome = (values: number[]): number | null => {
-  if (values.length === 0) {
-    return null;
-  }
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return total / values.length;
-};
-
-const getCurrentUserId = async (): Promise<string | null> => {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
-};
-
 const getLatestIncomeHistory = (
   incomeHistory: ReturnType<typeof parseCachedIncomeHistory>,
   baselineMonths: number,
@@ -91,7 +78,7 @@ const buildIncomeDetails = (
   );
   return {
     incomeHistory: latestIncomeHistory,
-    historicalAverageIncome: averageIncome(
+    historicalAverageIncome: averageIncomeOrNull(
       latestIncomeHistory.map((item) => item.income),
     ),
   };
@@ -175,7 +162,7 @@ export async function GET() {
   try {
     const userId = await getCurrentUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorizedResponse();
     }
     return NextResponse.json(await buildSettingsResponse(userId));
   } catch {
@@ -195,7 +182,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     await Promise.all([
@@ -208,10 +195,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json(
-        { error: "Invalid payload", issues: error.flatten() },
-        { status: 400 },
-      );
+      return invalidPayloadResponse(error);
     }
 
     return NextResponse.json(

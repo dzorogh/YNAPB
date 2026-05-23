@@ -43,4 +43,3 @@ export const createMockYnabCategory = (
   goal_under_funded: null,
   ...overrides,
 });
-

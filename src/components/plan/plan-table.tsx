@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/formatting/currency";
+import { formatMonthLabel } from "@/lib/formatting/month-label";
 
 type PlanAllocation = {
   month: string;
@@ -13,19 +14,6 @@ type PlanTableProps = {
   allocations: PlanAllocation[];
   goals: Array<{ id: string; name: string; deadline: string }>;
   currencyCode: string;
-};
-
-const formatMonth = (value: string): string => {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(parsed);
 };
 
 export const PlanTable = ({
@@ -93,7 +81,7 @@ export const PlanTable = ({
             <tbody>
               {visibleRows.map((row) => (
                 <tr key={row.month} className="border-b last:border-b-0">
-                  <td className="py-2 pr-3">{formatMonth(row.month)}</td>
+                  <td className="py-2 pr-3">{formatMonthLabel(row.month)}</td>
                   {goalIds.map((goalId) => (
                     <td key={`${row.month}-${goalId}`} className="py-2 pr-3">
                       {formatCurrency(row.perGoal[goalId] ?? 0, currencyCode)}

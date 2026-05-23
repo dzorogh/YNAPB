@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 
 import {
-  applyGoalSyncState,
+  finalizeGoalMutationResponse,
   syncGoalWithYnab,
 } from "@/lib/api/goals/ynab-goal-sync";
 import { getCurrentUserId } from "@/lib/api/auth";
@@ -47,29 +47,13 @@ export async function POST(request: Request) {
     const payload = createGoalPayloadSchema.parse(await request.json());
     const goal = await createGoal(userId, payload);
     const syncResult = await syncGoalWithYnab(userId, goal);
-    try {
-      const goalWithSyncState = await applyGoalSyncState(
-        userId,
-        goal,
-        syncResult,
-      );
-      return NextResponse.json(
-        { goal: goalWithSyncState, sync: syncResult },
-        { status: 201 },
-      );
-    } catch (syncStateError) {
-      console.error("Failed to persist goal sync state", syncStateError);
-      return NextResponse.json(
-        {
-          goal: syncResult.goal ?? goal,
-          sync: {
-            status: "error" as const,
-            message: "Goal saved, but sync state persistence failed.",
-          },
-        },
-        { status: 201 },
-      );
-    }
+    const response = await finalizeGoalMutationResponse({
+      userId,
+      goal,
+      syncResult,
+      syncStateFailureMessage: "Goal saved, but sync state persistence failed.",
+    });
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     if (error instanceof ZodError) {
       return invalidPayloadResponse(error);

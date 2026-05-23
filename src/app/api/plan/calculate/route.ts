@@ -3,21 +3,15 @@ import { ZodError, z } from "zod";
 
 import { getCurrentUserId } from "@/lib/api/auth";
 import { unauthorizedResponse } from "@/lib/api/http";
-import {
-  buildTbdWarnings,
-  mapGoalsToViewModel,
-} from "@/lib/planner/goal-mapping";
+import { buildTbdWarnings, mapGoalsToViewModel } from "@/lib/plan/goal-mapping";
 import {
   buildPlanComputation,
   DEFAULT_HORIZON_MONTHS,
-} from "@/lib/planner/plan-computation";
+} from "@/lib/plan/plan-computation";
 import { listGoals } from "@/lib/repositories/goals-repo";
 import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
 import { getProfile } from "@/lib/repositories/profile-repo";
-import {
-  getCache,
-  isCacheStale,
-} from "@/lib/repositories/ynab-cache-repo";
+import { getCache, isCacheStale } from "@/lib/repositories/ynab-cache-repo";
 
 const DEFAULT_CURRENCY_CODE = "USD";
 const calculatePayloadSchema = z

@@ -1,66 +1,114 @@
 {
   "statistics": {
-    "detectionDate": "2026-05-22T23:46:19.954Z",
+    "detectionDate": "2026-05-22T23:54:31.861Z",
     "formats": {
       "typescript": {
         "sources": {
           "src/app/api/ynab/sync/route.ts": {
-            "lines": 165,
-            "tokens": 1384,
+            "lines": 158,
+            "tokens": 1285,
             "sources": 1,
-            "clones": 1,
-            "duplicatedLines": 10,
-            "duplicatedTokens": 93,
-            "percentage": 6.06,
-            "percentageTokens": 6.72,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/plan/push/route.ts": {
-            "lines": 391,
-            "tokens": 3464,
+            "lines": 295,
+            "tokens": 2478,
             "sources": 1,
-            "clones": 6,
-            "duplicatedLines": 78,
-            "duplicatedTokens": 750,
-            "percentage": 19.95,
-            "percentageTokens": 21.65,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/plan/deadlines/route.ts": {
-            "lines": 52,
-            "tokens": 511,
+            "lines": 45,
+            "tokens": 415,
             "sources": 1,
-            "clones": 2,
-            "duplicatedLines": 23,
-            "duplicatedTokens": 194,
-            "percentage": 44.23,
-            "percentageTokens": 37.96,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/plan/calculate/route.ts": {
-            "lines": 257,
-            "tokens": 2328,
+            "lines": 98,
+            "tokens": 833,
             "sources": 1,
-            "clones": 6,
-            "duplicatedLines": 84,
-            "duplicatedTokens": 773,
-            "percentage": 32.68,
-            "percentageTokens": 33.2,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/goals/[id]/route.ts": {
-            "lines": 244,
-            "tokens": 2141,
+            "lines": 135,
+            "tokens": 1222,
             "sources": 1,
-            "clones": 8,
-            "duplicatedLines": 158,
-            "duplicatedTokens": 1348,
-            "percentage": 64.75,
-            "percentageTokens": 62.96,
+            "clones": 2,
+            "duplicatedLines": 22,
+            "duplicatedTokens": 202,
+            "percentage": 16.3,
+            "percentageTokens": 16.53,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/test/months-fetch-mock.ts": {
+            "lines": 45,
+            "tokens": 501,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/test/goal-category-link-helpers.ts": {
+            "lines": 20,
+            "tokens": 177,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/test/client-mocks.ts": {
+            "lines": 30,
+            "tokens": 278,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/api/goals/ynab-goal-sync.ts": {
+            "lines": 121,
+            "tokens": 955,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -77,26 +125,26 @@
             "newClones": 0
           },
           "src/app/api/settings/route.ts": {
-            "lines": 221,
-            "tokens": 1913,
+            "lines": 205,
+            "tokens": 1694,
             "sources": 1,
-            "clones": 3,
-            "duplicatedLines": 32,
-            "duplicatedTokens": 283,
-            "percentage": 14.48,
-            "percentageTokens": 14.79,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/goals/route.ts": {
-            "lines": 180,
-            "tokens": 1587,
+            "lines": 66,
+            "tokens": 639,
             "sources": 1,
-            "clones": 4,
-            "duplicatedLines": 110,
-            "duplicatedTokens": 910,
-            "percentage": 61.11,
-            "percentageTokens": 57.34,
+            "clones": 1,
+            "duplicatedLines": 6,
+            "duplicatedTokens": 88,
+            "percentage": 9.09,
+            "percentageTokens": 13.77,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -163,6 +211,18 @@
           "src/lib/ynab/ynab-request-log.test.ts": {
             "lines": 70,
             "tokens": 457,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/test-fixtures.ts": {
+            "lines": 44,
+            "tokens": 330,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -258,7 +318,7 @@
           },
           "src/lib/ynab/hide-managed-goal-category.ts": {
             "lines": 79,
-            "tokens": 520,
+            "tokens": 532,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -269,26 +329,26 @@
             "newClones": 0
           },
           "src/lib/ynab/hide-managed-goal-category.test.ts": {
-            "lines": 149,
-            "tokens": 1148,
+            "lines": 128,
+            "tokens": 1013,
             "sources": 1,
-            "clones": 5,
-            "duplicatedLines": 75,
-            "duplicatedTokens": 554,
-            "percentage": 50.34,
-            "percentageTokens": 48.26,
+            "clones": 2,
+            "duplicatedLines": 32,
+            "duplicatedTokens": 224,
+            "percentage": 25,
+            "percentageTokens": 22.11,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/lib/ynab/goal-progress.ts": {
-            "lines": 325,
-            "tokens": 2285,
+            "lines": 314,
+            "tokens": 2111,
             "sources": 1,
-            "clones": 3,
-            "duplicatedLines": 21,
-            "duplicatedTokens": 245,
-            "percentage": 6.46,
-            "percentageTokens": 10.72,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -317,14 +377,14 @@
             "newClones": 0
           },
           "src/lib/ynab/goal-category-link.test.ts": {
-            "lines": 177,
-            "tokens": 1424,
+            "lines": 104,
+            "tokens": 776,
             "sources": 1,
-            "clones": 9,
-            "duplicatedLines": 139,
-            "duplicatedTokens": 1050,
-            "percentage": 78.53,
-            "percentageTokens": 73.74,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -341,14 +401,14 @@
             "newClones": 0
           },
           "src/lib/ynab/client-months.test.ts": {
-            "lines": 121,
-            "tokens": 1114,
+            "lines": 76,
+            "tokens": 699,
             "sources": 1,
-            "clones": 4,
-            "duplicatedLines": 48,
-            "duplicatedTokens": 466,
-            "percentage": 39.67,
-            "percentageTokens": 41.83,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 178,
+            "percentage": 18.42,
+            "percentageTokens": 25.46,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -466,9 +526,9 @@
             "sources": 1,
             "clones": 3,
             "duplicatedLines": 24,
-            "duplicatedTokens": 264,
+            "duplicatedTokens": 262,
             "percentage": 9.72,
-            "percentageTokens": 11.87,
+            "percentageTokens": 11.78,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -520,9 +580,57 @@
             "newDuplicatedLines": 0,
             "newClones": 0
           },
+          "src/lib/plan/plan-computation.ts": {
+            "lines": 72,
+            "tokens": 634,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/plan/goal-mapping.ts": {
+            "lines": 115,
+            "tokens": 1034,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/formatting/month-label.ts": {
+            "lines": 11,
+            "tokens": 111,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
           "src/lib/formatting/currency.ts": {
             "lines": 23,
             "tokens": 215,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/dates/month.ts": {
+            "lines": 36,
+            "tokens": 510,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -547,6 +655,42 @@
           "src/lib/budget/obligations.test.ts": {
             "lines": 105,
             "tokens": 761,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/budget/average-income.ts": {
+            "lines": 16,
+            "tokens": 193,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/api/http.ts": {
+            "lines": 16,
+            "tokens": 172,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/api/auth.ts": {
+            "lines": 9,
+            "tokens": 103,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -618,14 +762,14 @@
           }
         },
         "total": {
-          "lines": 6202,
-          "tokens": 53629,
-          "sources": 51,
-          "clones": 28,
-          "duplicatedLines": 412,
-          "duplicatedTokens": 3572,
-          "percentage": 6.64,
-          "percentageTokens": 6.66,
+          "lines": 6079,
+          "tokens": 52505,
+          "sources": 63,
+          "clones": 6,
+          "duplicatedLines": 60,
+          "duplicatedTokens": 584,
+          "percentage": 0.99,
+          "percentageTokens": 1.11,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -997,14 +1141,14 @@
             "newClones": 0
           },
           "src/components/plan/plan-table.tsx": {
-            "lines": 112,
-            "tokens": 1047,
+            "lines": 100,
+            "tokens": 948,
             "sources": 1,
-            "clones": 1,
-            "duplicatedLines": 16,
-            "duplicatedTokens": 122,
-            "percentage": 14.29,
-            "percentageTokens": 11.65,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -1021,14 +1165,14 @@
             "newClones": 0
           },
           "src/components/plan/plan-conflicts.tsx": {
-            "lines": 110,
-            "tokens": 844,
+            "lines": 98,
+            "tokens": 745,
             "sources": 1,
-            "clones": 1,
-            "duplicatedLines": 16,
-            "duplicatedTokens": 122,
-            "percentage": 14.55,
-            "percentageTokens": 14.45,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -1142,14 +1286,14 @@
           }
         },
         "total": {
-          "lines": 2707,
-          "tokens": 20497,
+          "lines": 2683,
+          "tokens": 20299,
           "sources": 22,
-          "clones": 1,
-          "duplicatedLines": 16,
-          "duplicatedTokens": 122,
-          "percentage": 0.59,
-          "percentageTokens": 0.6,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -1184,14 +1328,14 @@
       }
     },
     "total": {
-      "lines": 10127,
-      "tokens": 83607,
-      "sources": 93,
-      "clones": 29,
-      "duplicatedLines": 428,
-      "duplicatedTokens": 3694,
-      "percentage": 4.23,
-      "percentageTokens": 4.42,
+      "lines": 9980,
+      "tokens": 82285,
+      "sources": 105,
+      "clones": 6,
+      "duplicatedLines": 60,
+      "duplicatedTokens": 584,
+      "percentage": 0.6,
+      "percentageTokens": 0.71,
       "newDuplicatedLines": 0,
       "newClones": 0
     }
@@ -1200,900 +1344,108 @@
     {
       "format": "typescript",
       "lines": 12,
-      "fragment": ",\n});\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n  return user?.id ?? null;\n};\n\nexport",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/plan/deadlines/route.ts",
-        "start": 15,
-        "end": 26,
-        "startLoc": {
-          "line": 15,
-          "column": 2,
-          "position": 125
-        },
-        "endLoc": {
-          "line": 26,
-          "column": 7,
-          "position": 221
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/push/route.ts",
-        "start": 136,
-        "end": 148,
-        "startLoc": {
-          "line": 136,
-          "column": 11,
-          "position": 1343
-        },
-        "endLoc": {
-          "line": 148,
-          "column": 6,
-          "position": 1441
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": ";\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n\n  return user?.id ?? null;\n};\n\nconst normalizeToMonthStart",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/plan/calculate/route.ts",
-        "start": 47,
-        "end": 58,
-        "startLoc": {
-          "line": 47,
-          "column": 2,
-          "position": 391
-        },
-        "endLoc": {
-          "line": 58,
-          "column": 22,
-          "position": 486
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/push/route.ts",
-        "start": 137,
-        "end": 148,
-        "startLoc": {
-          "line": 137,
-          "column": 2,
-          "position": 1348
-        },
-        "endLoc": {
-          "line": 148,
-          "column": 23,
-          "position": 1443
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 9,
-      "fragment": ";\n};\n\nconst normalizeToMonthStart = (value: string): Date => {\n  const date = new Date(`${value}T00:00:00.000Z`);\n  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));\n};\n\nconst addMonths",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/plan/calculate/route.ts",
-        "start": 55,
-        "end": 63,
-        "startLoc": {
-          "line": 55,
-          "column": 5,
-          "position": 478
-        },
-        "endLoc": {
-          "line": 63,
-          "column": 10,
-          "position": 559
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/push/route.ts",
-        "start": 57,
-        "end": 65,
-        "startLoc": {
-          "line": 57,
-          "column": 2,
-          "position": 554
-        },
-        "endLoc": {
-          "line": 65,
-          "column": 18,
-          "position": 635
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 20,
-      "fragment": ";\n\nconst currentMonthStart = (): Date => {\n  const now = new Date();\n  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));\n};\n\nconst averageIncome = (values: number[]): number => {\n  if (values.length === 0) {\n    return 0;\n  }\n\n  const total = values.reduce((sum, value) => sum + value, 0);\n  return total / values.length;\n};\n\nconst mapGoalsToPlannerInput = (\n  goals: Awaited<ReturnType<typeof listGoals>>,\n  categories: ReturnType<typeof parseCachedCategories>,\n  deadlineShifts",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/plan/calculate/route.ts",
-        "start": 64,
-        "end": 83,
-        "startLoc": {
-          "line": 64,
-          "column": 2,
-          "position": 611
-        },
-        "endLoc": {
-          "line": 83,
-          "column": 15,
-          "position": 807
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/push/route.ts",
-        "start": 63,
-        "end": 82,
-        "startLoc": {
-          "line": 63,
-          "column": 2,
-          "position": 630
-        },
-        "endLoc": {
-          "line": 82,
-          "column": 2,
-          "position": 825
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 25,
-      "fragment": ">,\n): PlannerGoal[] => {\n  const categoriesById = new Map(\n    categories.map((category) => [category.id, category]),\n  );\n\n  return goals\n    .filter((goal) => goal.status === \"active\")\n    .map((goal) => {\n      const linkedCategory = goal.ynab_category_id\n        ? (categoriesById.get(goal.ynab_category_id) ?? null)\n        : null;\n\n      const ynabAmounts = resolveGoalAmountsFromCategory(\n        toYnabGoalProgressInput(linkedCategory),\n      );\n\n      return {\n        id: goal.id,\n        name: goal.name,\n        targetAmount: goal.target_amount,\n        currentBalance: ynabAmounts.currentBalance,\n        savedProgress: ynabAmounts.savedProgress,\n        availableBalance: ynabAmounts.availableBalance,\n        deadline: addMonths",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/plan/calculate/route.ts",
-        "start": 83,
-        "end": 107,
-        "startLoc": {
-          "line": 83,
-          "column": 7,
-          "position": 816
-        },
-        "endLoc": {
-          "line": 107,
-          "column": 10,
-          "position": 1027
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/push/route.ts",
-        "start": 81,
-        "end": 105,
-        "startLoc": {
-          "line": 81,
-          "column": 22,
-          "position": 822
-        },
-        "endLoc": {
-          "line": 105,
-          "column": 22,
-          "position": 1033
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 13,
-      "fragment": "),\n});\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n\n  return user?.id ?? null;\n};\n\ntype",
+      "fragment": ": Request,\n  context: { params: Promise<{ id: string }> },\n) {\n  try {\n    const userId = await getCurrentUserId();\n\n    if (!userId) {\n      return unauthorizedResponse();\n    }\n\n    const { id } = paramsSchema.parse(await context.params);\n    const goal",
       "tokens": 0,
       "firstFile": {
         "name": "src/app/api/goals/[id]/route.ts",
-        "start": 38,
-        "end": 50,
+        "start": 79,
+        "end": 90,
         "startLoc": {
-          "line": 38,
-          "column": 2,
-          "position": 396
-        },
-        "endLoc": {
-          "line": 50,
-          "column": 5,
-          "position": 494
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/deadlines/route.ts",
-        "start": 15,
-        "end": 148,
-        "startLoc": {
-          "line": 15,
-          "column": 2,
-          "position": 124
-        },
-        "endLoc": {
-          "line": 148,
-          "column": 6,
-          "position": 1441
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": ": Request,\n  context: { params: Promise<{ id: string }> },\n) {\n  try {\n    const userId = await getCurrentUserId();\n\n    if (!userId) {\n      return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 });\n    }\n\n    const { id } = paramsSchema.parse(await context.params);\n    const goal",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/goals/[id]/route.ts",
-        "start": 188,
-        "end": 199,
-        "startLoc": {
-          "line": 188,
+          "line": 79,
           "column": 9,
-          "position": 1647
+          "position": 748
         },
         "endLoc": {
-          "line": 199,
+          "line": 90,
           "column": 5,
-          "position": 1768
+          "position": 849
         }
       },
       "secondFile": {
         "name": "src/app/api/goals/[id]/route.ts",
-        "start": 131,
-        "end": 142,
+        "start": 41,
+        "end": 52,
         "startLoc": {
-          "line": 131,
+          "line": 41,
           "column": 8,
-          "position": 1128
+          "position": 397
         },
         "endLoc": {
-          "line": 142,
+          "line": 52,
           "column": 8,
-          "position": 1249
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 11,
-      "fragment": ", issues: error.flatten() },\n        { status: 400 },\n      );\n    }\n\n    if (error instanceof GoalNotFoundError) {\n      return NextResponse.json({ error: error.message }, { status: 404 });\n    }\n\n    return NextResponse.json(\n      { error: \"Failed to delete goal\"",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/goals/[id]/route.ts",
-        "start": 231,
-        "end": 241,
-        "startLoc": {
-          "line": 231,
-          "column": 18,
-          "position": 2024
-        },
-        "endLoc": {
-          "line": 241,
-          "column": 24,
-          "position": 2118
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/goals/[id]/route.ts",
-        "start": 171,
-        "end": 181,
-        "startLoc": {
-          "line": 171,
-          "column": 18,
-          "position": 1516
-        },
-        "endLoc": {
-          "line": 181,
-          "column": 24,
-          "position": 1610
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": ";\n};\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n  return user?.id ?? null;\n};\n\nconst getLatestIncomeHistory",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/settings/route.ts",
-        "start": 55,
-        "end": 66,
-        "startLoc": {
-          "line": 55,
-          "column": 7,
-          "position": 517
-        },
-        "endLoc": {
-          "line": 66,
-          "column": 23,
-          "position": 614
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/calculate/route.ts",
-        "start": 46,
-        "end": 148,
-        "startLoc": {
-          "line": 46,
-          "column": 7,
-          "position": 388
-        },
-        "endLoc": {
-          "line": 148,
-          "column": 23,
-          "position": 1443
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 11,
-      "fragment": ");\n    const supabase = await getSupabaseServerClient();\n    const {\n      data: { user },\n    } = await supabase.auth.getUser();\n\n    if (!user) {\n      return NextResponse.json({ error: \"Unauthorized\" }, { status: 401 });\n    }\n\n    await",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/settings/route.ts",
-        "start": 191,
-        "end": 201,
-        "startLoc": {
-          "line": 191,
-          "column": 2,
-          "position": 1652
-        },
-        "endLoc": {
-          "line": 201,
-          "column": 6,
-          "position": 1745
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/ynab/sync/route.ts",
-        "start": 63,
-        "end": 73,
-        "startLoc": {
-          "line": 63,
-          "column": 5,
-          "position": 563
-        },
-        "endLoc": {
-          "line": 73,
-          "column": 6,
-          "position": 656
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": ",\n    });\n  } catch (error) {\n    if (error instanceof ZodError) {\n      return NextResponse.json(\n        { error: \"Invalid payload\", issues: error.flatten() },\n        { status: 400 },\n      );\n    }\n\n    return NextResponse.json(\n      { error: \"Failed to save settings\"",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/settings/route.ts",
-        "start": 207,
-        "end": 218,
-        "startLoc": {
-          "line": 207,
-          "column": 5,
-          "position": 1797
-        },
-        "endLoc": {
-          "line": 218,
-          "column": 26,
-          "position": 1890
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/calculate/route.ts",
-        "start": 244,
-        "end": 254,
-        "startLoc": {
-          "line": 244,
-          "column": 13,
-          "position": 2213
-        },
-        "endLoc": {
-          "line": 254,
-          "column": 27,
-          "position": 2305
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 13,
-      "fragment": "(),\n});\n\nconst getCurrentUserId = async (): Promise<string | null> => {\n  const supabase = await getSupabaseServerClient();\n  const {\n    data: { user },\n  } = await supabase.auth.getUser();\n\n  return user?.id ?? null;\n};\n\ntype GoalRow = Awaited<ReturnType<typeof createGoal",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/goals/route.ts",
-        "start": 24,
-        "end": 36,
-        "startLoc": {
-          "line": 24,
-          "column": 9,
-          "position": 289
-        },
-        "endLoc": {
-          "line": 36,
-          "column": 11,
-          "position": 400
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/goals/[id]/route.ts",
-        "start": 38,
-        "end": 50,
-        "startLoc": {
-          "line": 38,
-          "column": 5,
-          "position": 395
-        },
-        "endLoc": {
-          "line": 50,
-          "column": 11,
-          "position": 506
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 81,
-      "fragment": ">>;\ntype GoalSyncResult = {\n  status: \"synced\" | \"error\" | \"skipped\";\n  message?: string;\n  goal?: GoalRow;\n};\n\nconst syncGoalWithYnab = async (\n  userId: string,\n  goal: GoalRow,\n): Promise<GoalSyncResult> => {\n  if (goal.status !== \"active\") {\n    return { status: \"skipped\" };\n  }\n\n  const profile = await getProfile(userId);\n  if (\n    !profile?.ynab_budget_id ||\n    !profile.ynab_token_ct ||\n    !profile.ynab_token_iv\n  ) {\n    return {\n      status: \"error\",\n      message: \"YNAB connection is not configured.\",\n    };\n  }\n\n  try {\n    const token = await decryptToken(\n      profile.ynab_token_ct,\n      profile.ynab_token_iv,\n    );\n    const ynabCategoryId = await ensureGoalCategoryLink({\n      token,\n      budgetId: profile.ynab_budget_id,\n      goal,\n    });\n    const linkedGoal =\n      ynabCategoryId === goal.ynab_category_id\n        ? goal\n        : await setGoalYnabCategoryId(userId, goal.id, ynabCategoryId);\n    await pushImmediateMonthlyFundingGoal({\n      token,\n      budgetId: profile.ynab_budget_id,\n      categoryId: ynabCategoryId,\n      targetAmount: linkedGoal.target_amount,\n      deadline: linkedGoal.deadline,\n    });\n    return { status: \"synced\", goal: linkedGoal };\n  } catch (error) {\n    return {\n      status: \"error\",\n      message: toUserFacingYnabError(error, \"Failed to sync goal to YNAB.\"),\n    };\n  }\n};\n\nconst applyGoalSyncState = async (\n  userId: string,\n  goal: GoalRow,\n  syncResult: GoalSyncResult,\n): Promise<GoalRow> => {\n  if (syncResult.status === \"skipped\") {\n    return syncResult.goal ?? goal;\n  }\n\n  const sourceGoal = syncResult.goal ?? goal;\n  const syncStatus: GoalSyncStatus =\n    syncResult.status === \"error\" ? \"error\" : \"synced\";\n  const syncedGoal = await setGoalSyncState(userId, sourceGoal.id, {\n    status: syncStatus,\n    error:\n      syncResult.status === \"error\"\n        ? (syncResult.message ?? \"Sync error.\")\n        : null,\n  });\n\n  return syncedGoal;\n};\n\nexport async function GET",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/goals/route.ts",
-        "start": 36,
-        "end": 116,
-        "startLoc": {
-          "line": 36,
-          "column": 11,
-          "position": 401
-        },
-        "endLoc": {
-          "line": 116,
-          "column": 4,
-          "position": 1017
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/goals/[id]/route.ts",
-        "start": 50,
-        "end": 130,
-        "startLoc": {
-          "line": 50,
-          "column": 11,
-          "position": 507
-        },
-        "endLoc": {
-          "line": 130,
-          "column": 6,
-          "position": 1123
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 13,
-      "fragment": "},\n      );\n    } catch (syncStateError) {\n      console.error(\"Failed to persist goal sync state\", syncStateError);\n      return NextResponse.json(\n        {\n          goal: syncResult.goal ?? goal,\n          sync: {\n            status: \"error\" as const,\n            message: \"Goal saved, but sync state persistence failed.\",\n          },\n        },\n        { status: 201",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/app/api/goals/route.ts",
-        "start": 153,
-        "end": 165,
-        "startLoc": {
-          "line": 153,
-          "column": 2,
-          "position": 1373
-        },
-        "endLoc": {
-          "line": 165,
-          "column": 4,
-          "position": 1466
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/goals/[id]/route.ts",
-        "start": 153,
-        "end": 165,
-        "startLoc": {
-          "line": 153,
-          "column": 2,
-          "position": 1372
-        },
-        "endLoc": {
-          "line": 165,
-          "column": 4,
-          "position": 1465
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": ",\n      category_group_id: \"group-goals\",\n      hidden: false,\n      deleted: false,\n      goal_type: null,\n      goal_target: null,\n      goal_under_funded: null,\n    }),\n    getCategoryGroups: vi\n      .fn()\n      .mockResolvedValue([{ id: \"group-goals\", name: \"Goals\" }]),\n    patchBudgetCategoryFields: vi.fn(),",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
-        "start": 128,
-        "end": 139,
-        "startLoc": {
-          "line": 128,
-          "column": 17,
-          "position": 987
-        },
-        "endLoc": {
-          "line": 139,
-          "column": 2,
-          "position": 1080
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
-        "start": 59,
-        "end": 70,
-        "startLoc": {
-          "line": 59,
-          "column": 19,
-          "position": 469
-        },
-        "endLoc": {
-          "line": 70,
-          "column": 2,
-          "position": 562
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 13,
-      "fragment": "]),\n    patchBudgetCategoryFields: vi.fn(),\n  };\n  mockedCreateYnabClient.mockReturnValue(client as never);\n\n  await hideManagedYnabCategoryForDeletedGoal({\n    token: \"token\",\n    budgetId: \"budget\",\n    goal,\n  });\n\n  expect(client.patchBudgetCategoryFields).not.toHaveBeenCalled();\n});",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
-        "start": 138,
-        "end": 150,
-        "startLoc": {
-          "line": 138,
-          "column": 2,
-          "position": 1067
-        },
-        "endLoc": {
-          "line": 150,
-          "column": 2,
-          "position": 1148
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
-        "start": 107,
-        "end": 119,
-        "startLoc": {
-          "line": 107,
-          "column": 5,
-          "position": 831
-        },
-        "endLoc": {
-          "line": 119,
-          "column": 2,
-          "position": 912
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 6,
-      "fragment": "= (value: string): Date => {\n  const date = new Date(`${value}T00:00:00.000Z`);\n  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));\n};\n\nconst monthsDiffInclusive",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/goal-progress.ts",
-        "start": 34,
-        "end": 39,
-        "startLoc": {
-          "line": 34,
-          "column": 2,
-          "position": 215
-        },
-        "endLoc": {
-          "line": 39,
-          "column": 20,
-          "position": 286
-        }
-      },
-      "secondFile": {
-        "name": "src/app/api/plan/push/route.ts",
-        "start": 60,
-        "end": 65,
-        "startLoc": {
-          "line": 60,
-          "column": 2,
-          "position": 564
-        },
-        "endLoc": {
-          "line": 65,
-          "column": 18,
-          "position": 635
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 9,
-      "fragment": "= (\n  input: YnabGoalProgressInput,\n): number => {\n  const available = resolveYnabAvailableBalance(input.balance);\n  const assigned = resolveGoalAssignedThisMonth(input);\n  const activity =\n    typeof input.activity === \"number\" && Number.isFinite(input.activity)\n      ? input.activity\n      : null",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/goal-progress.ts",
-        "start": 115,
-        "end": 123,
-        "startLoc": {
-          "line": 115,
-          "column": 2,
-          "position": 824
-        },
-        "endLoc": {
-          "line": 123,
-          "column": 5,
-          "position": 911
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/goal-progress.ts",
-        "start": 96,
-        "end": 104,
-        "startLoc": {
-          "line": 96,
-          "column": 2,
-          "position": 699
-        },
-        "endLoc": {
-          "line": 104,
-          "column": 2,
-          "position": 786
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 30,
-      "fragment": ";\n\nvi.mock(\"./client\", () => ({\n  createYnabClient: vi.fn(),\n}));\n\nconst mockedCreateYnabClient = vi.mocked(createYnabClient);\n\nconst createGoal = (overrides?: Partial<Tables<\"goals\">>): Tables<\"goals\"> => ({\n  id: \"goal-1\",\n  user_id: \"11111111-1111-1111-1111-111111111111\",\n  name: \"Gazebo\",\n  target_amount: 1_000,\n  deadline: \"2026-08-01\",\n  ynab_category_id: null,\n  status: \"active\",\n  notes: null,\n  created_at: \"2026-01-01T00:00:00.000Z\",\n  updated_at: \"2026-01-01T00:00:00.000Z\",\n  last_sync_status: \"synced\",\n  last_sync_error: null,\n  last_synced_at: null,\n  ...overrides,\n});\n\nbeforeEach(() => {\n  vi.clearAllMocks();\n});\n\nit(\"keeps linked category when name is already up to date\"",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 6,
-        "end": 35,
-        "startLoc": {
-          "line": 6,
-          "column": 23,
-          "position": 63
-        },
-        "endLoc": {
-          "line": 35,
-          "column": 56,
-          "position": 269
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
-        "start": 6,
-        "end": 35,
-        "startLoc": {
-          "line": 6,
-          "column": 31,
-          "position": 63
-        },
-        "endLoc": {
-          "line": 35,
-          "column": 52,
-          "position": 269
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 18,
-      "fragment": "});\n  const client = {\n    getCategoryGroups: vi\n      .fn()\n      .mockResolvedValue([{ id: \"group-1\", name: \"Goals\" }]),\n    createCategoryGroup: vi.fn(),\n    getCategories: vi.fn().mockResolvedValue([\n      {\n        id: \"cat-linked\",\n        name: \"Gazebo (2026-08)\",\n        category_group_id: \"group-1\",\n        goal_type: null,\n        goal_target: null,\n        goal_under_funded: null,\n      },\n    ]),\n    createCategory: vi.fn(),\n    updateCategoryName: vi.fn().",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 72,
-        "end": 89,
-        "startLoc": {
-          "line": 72,
-          "column": 3,
-          "position": 580
-        },
-        "endLoc": {
-          "line": 89,
-          "column": 2,
-          "position": 727
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 36,
-        "end": 53,
-        "startLoc": {
-          "line": 36,
-          "column": 2,
-          "position": 297
-        },
-        "endLoc": {
-          "line": 53,
-          "column": 2,
-          "position": 444
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": "),\n  };\n  mockedCreateYnabClient.mockReturnValue(client as never);\n\n  const categoryId = await ensureGoalCategoryLink({\n    token: \"token\",\n    budgetId: \"budget\",\n    goal,\n  });\n\n  expect(categoryId).toBe(\"cat-linked\");\n  expect(client.updateCategoryName).toHaveBeenCalledWith",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 96,
-        "end": 107,
-        "startLoc": {
-          "line": 96,
-          "column": 2,
-          "position": 776
-        },
-        "endLoc": {
-          "line": 107,
-          "column": 21,
-          "position": 854
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 53,
-        "end": 64,
-        "startLoc": {
-          "line": 53,
-          "column": 2,
-          "position": 443
-        },
-        "endLoc": {
-          "line": 64,
-          "column": 4,
-          "position": 521
+          "position": 498
         }
       }
     },
     {
       "format": "typescript",
       "lines": 17,
-      "fragment": ",\n        name: \"Gazebo (2026-08)\",\n        category_group_id: \"group-1\",\n        goal_type: null,\n        goal_target: null,\n        goal_under_funded: null,\n      },\n    ]),\n    createCategory: vi.fn(),\n    updateCategoryName: vi.fn(),\n  };\n  mockedCreateYnabClient.mockReturnValue(client as never);\n\n  const categoryId = await ensureGoalCategoryLink({\n    token: \"token\",\n    budgetId: \"budget\",\n    goal:",
+      "fragment": ",\n        category_group_id: \"group-goals\",\n      }),\n      hidden: false,\n      deleted: false,\n    },\n    categoryGroups: [{ id: \"group-goals\", name: \"Goals\" }],\n  });\n  mockedCreateYnabClient.mockReturnValue(client as never);\n\n  await hideManagedYnabCategoryForDeletedGoal({\n    token: \"token\",\n    budgetId: \"budget\",\n    goal,\n  });\n\n  expect(client.patchBudgetCategoryFields).not",
       "tokens": 0,
       "firstFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 156,
-        "end": 172,
+        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
+        "start": 112,
+        "end": 128,
         "startLoc": {
-          "line": 156,
-          "column": 15,
-          "position": 1252
+          "line": 112,
+          "column": 17,
+          "position": 892
         },
         "endLoc": {
-          "line": 172,
-          "column": 2,
-          "position": 1367
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 44,
-        "end": 60,
-        "startLoc": {
-          "line": 44,
-          "column": 13,
-          "position": 378
-        },
-        "endLoc": {
-          "line": 60,
-          "column": 2,
-          "position": 493
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 12,
-      "fragment": "),\n    updateCategoryName: vi.fn(),\n  };\n  mockedCreateYnabClient.mockReturnValue(client as never);\n\n  const categoryId = await ensureGoalCategoryLink({\n    token: \"token\",\n    budgetId: \"budget\",\n    goal: createGoal(),\n  });\n\n  expect(client.createCategoryGroup).not",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 164,
-        "end": 175,
-        "startLoc": {
-          "line": 164,
-          "column": 2,
-          "position": 1306
-        },
-        "endLoc": {
-          "line": 175,
-          "column": 4,
-          "position": 1388
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/goal-category-link.test.ts",
-        "start": 128,
-        "end": 139,
-        "startLoc": {
           "line": 128,
-          "column": 2,
-          "position": 1026
+          "column": 4,
+          "position": 1004
+        }
+      },
+      "secondFile": {
+        "name": "src/lib/ynab/hide-managed-goal-category.test.ts",
+        "start": 55,
+        "end": 71,
+        "startLoc": {
+          "line": 55,
+          "column": 8,
+          "position": 465
         },
         "endLoc": {
-          "line": 139,
+          "line": 71,
           "column": 21,
-          "position": 1108
+          "position": 577
         }
       }
     },
     {
       "format": "typescript",
-      "lines": 12,
-      "fragment": ", async () => {\n    const fetchMock = vi.fn(async (input: RequestInfo) => {\n      const url = String(input);\n      if (url.endsWith(\"/months\")) {\n        return new Response(\n          JSON.stringify({\n            data: {\n              months: [\n                { month: \"2024-01-01\", income: 1_000_000 },\n                { month: \"2024-02-01\", income: 2_000_000 },\n                { month: \"2024-03-01\", income: 3_000_000 },\n                {",
+      "lines": 8,
+      "fragment": ", async () => {\n    const fetchMock = vi.fn(\n      createYnabMonthsFetchMock({\n        months: [\n          { month: \"2024-01-01\", income: 1_000_000 },\n          { month: \"2024-02-01\", income: 2_000_000 },\n          { month: \"2024-03-01\", income: 3_000_000 },\n          {",
       "tokens": 0,
       "firstFile": {
         "name": "src/lib/ynab/client-months.test.ts",
-        "start": 75,
-        "end": 86,
+        "start": 56,
+        "end": 63,
         "startLoc": {
-          "line": 75,
+          "line": 56,
           "column": 53,
-          "position": 633
+          "position": 445
         },
         "endLoc": {
-          "line": 86,
+          "line": 63,
           "column": 2,
-          "position": 777
+          "position": 534
         }
       },
       "secondFile": {
         "name": "src/lib/ynab/client-months.test.ts",
-        "start": 10,
-        "end": 21,
+        "start": 15,
+        "end": 22,
         "startLoc": {
-          "line": 10,
+          "line": 15,
           "column": 78,
-          "position": 80
+          "position": 100
         },
         "endLoc": {
-          "line": 21,
+          "line": 22,
           "column": 2,
-          "position": 224
-        }
-      }
-    },
-    {
-      "format": "typescript",
-      "lines": 14,
-      "fragment": "}],\n              },\n            },\n          }),\n          { status: 200 },\n        );\n      }\n\n      return new Response(\"not found\", { status: 404 });\n    });\n    vi.stubGlobal(\"fetch\", fetchMock);\n\n    const client = createYnabClient(\"token\");\n    await",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/lib/ynab/client-months.test.ts",
-        "start": 102,
-        "end": 115,
-        "startLoc": {
-          "line": 102,
-          "column": 2,
-          "position": 946
-        },
-        "endLoc": {
-          "line": 115,
-          "column": 6,
-          "position": 1035
-        }
-      },
-      "secondFile": {
-        "name": "src/lib/ynab/client-months.test.ts",
-        "start": 34,
-        "end": 47,
-        "startLoc": {
-          "line": 34,
-          "column": 2,
-          "position": 328
-        },
-        "endLoc": {
-          "line": 47,
-          "column": 6,
-          "position": 417
+          "position": 189
         }
       }
     },
@@ -2136,7 +1488,7 @@
     {
       "format": "typescript",
       "lines": 7,
-      "fragment": ",\n  status: z.enum([\"active\", \"frozen\", \"completed\"]).default(\"active\"),\n  notes: z.string().trim().max(5000).nullable().optional(),\n  ynabCategoryId: z.string().trim().min(1).nullable().optional(),\n});\n\nconst updateGoalSchema",
+      "fragment": ",\n  status: z.enum([\"active\", \"frozen\", \"completed\"]).default(\"active\"),\n  notes: z.string().trim().max(5000).nullable().optional(),\n  ynabCategoryId: z.string().trim().min(1).nullable().optional(),\n});\n\nconst",
       "tokens": 0,
       "firstFile": {
         "name": "src/lib/repositories/goals-repo.ts",
@@ -2149,23 +1501,23 @@
         },
         "endLoc": {
           "line": 30,
-          "column": 17,
-          "position": 301
+          "column": 6,
+          "position": 299
         }
       },
       "secondFile": {
         "name": "src/app/api/goals/route.ts",
-        "start": 21,
-        "end": 27,
+        "start": 15,
+        "end": 21,
         "startLoc": {
-          "line": 21,
+          "line": 15,
           "column": 2,
-          "position": 210
+          "position": 163
         },
         "endLoc": {
-          "line": 27,
-          "column": 17,
-          "position": 300
+          "line": 21,
+          "column": 7,
+          "position": 251
         }
       }
     },
@@ -2202,42 +1554,6 @@
           "line": 198,
           "column": 17,
           "position": 1840
-        }
-      }
-    },
-    {
-      "format": "tsx",
-      "lines": 17,
-      "fragment": ";\n};\n\nconst formatMonth = (value: string): string => {\n  const parsed = new Date(value);\n  if (Number.isNaN(parsed.getTime())) {\n    return value;\n  }\n\n  return new Intl.DateTimeFormat(\"en-US\", {\n    month: \"short\",\n    year: \"numeric\",\n    timeZone: \"UTC\",\n  }).format(parsed);\n};\n\nexport const PlanConflicts",
-      "tokens": 0,
-      "firstFile": {
-        "name": "src/components/plan/plan-conflicts.tsx",
-        "start": 29,
-        "end": 45,
-        "startLoc": {
-          "line": 29,
-          "column": 2,
-          "position": 196
-        },
-        "endLoc": {
-          "line": 45,
-          "column": 14,
-          "position": 318
-        }
-      },
-      "secondFile": {
-        "name": "src/components/plan/plan-table.tsx",
-        "start": 15,
-        "end": 31,
-        "startLoc": {
-          "line": 15,
-          "column": 7,
-          "position": 130
-        },
-        "endLoc": {
-          "line": 31,
-          "column": 10,
-          "position": 252
         }
       }
     }

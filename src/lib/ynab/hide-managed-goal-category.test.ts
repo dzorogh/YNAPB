@@ -1,6 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-import type { Tables } from "@/types/supabase";
+import {
+  createMockYnabCategory,
+  createTestGoal,
+} from "@/lib/ynab/test-fixtures";
 
 import { createYnabClient } from "./client";
 import { hideManagedYnabCategoryForDeletedGoal } from "./hide-managed-goal-category";
@@ -11,21 +14,16 @@ vi.mock("./client", () => ({
 
 const mockedCreateYnabClient = vi.mocked(createYnabClient);
 
-const createGoal = (overrides?: Partial<Tables<"goals">>): Tables<"goals"> => ({
-  id: "goal-1",
-  user_id: "11111111-1111-1111-1111-111111111111",
-  name: "Gazebo",
-  target_amount: 1_000,
-  deadline: "2026-08-01",
-  ynab_category_id: null,
-  status: "active",
-  notes: null,
-  created_at: "2026-01-01T00:00:00.000Z",
-  updated_at: "2026-01-01T00:00:00.000Z",
-  last_sync_status: "synced",
-  last_sync_error: null,
-  last_synced_at: null,
-  ...overrides,
+const createHideCategoryClientMock = (params: {
+  category: ReturnType<typeof createMockYnabCategory> & {
+    hidden: boolean;
+    deleted: boolean;
+  };
+  categoryGroups: Array<{ id: string; name: string }>;
+}) => ({
+  getCategoryById: vi.fn().mockResolvedValue(params.category),
+  getCategoryGroups: vi.fn().mockResolvedValue(params.categoryGroups),
+  patchBudgetCategoryFields: vi.fn().mockResolvedValue({}),
 });
 
 beforeEach(() => {
@@ -43,32 +41,25 @@ it("skips cleanup when goal has no YNAB category link", async () => {
   await hideManagedYnabCategoryForDeletedGoal({
     token: "token",
     budgetId: "budget",
-    goal: createGoal(),
+    goal: createTestGoal(),
   });
 
   expect(client.getCategoryById).not.toHaveBeenCalled();
 });
 
 it("hides managed category under Goals group with canonical name", async () => {
-  const goal = createGoal({
-    ynab_category_id: "cat-1",
-  });
-  const client = {
-    getCategoryById: vi.fn().mockResolvedValue({
-      id: "cat-1",
-      name: "Gazebo (2026-08)",
-      category_group_id: "group-goals",
+  const goal = createTestGoal({ ynab_category_id: "cat-1" });
+  const client = createHideCategoryClientMock({
+    category: {
+      ...createMockYnabCategory({
+        id: "cat-1",
+        category_group_id: "group-goals",
+      }),
       hidden: false,
       deleted: false,
-      goal_type: null,
-      goal_target: null,
-      goal_under_funded: null,
-    }),
-    getCategoryGroups: vi
-      .fn()
-      .mockResolvedValue([{ id: "group-goals", name: "Goals" }]),
-    patchBudgetCategoryFields: vi.fn().mockResolvedValue({}),
-  };
+    },
+    categoryGroups: [{ id: "group-goals", name: "Goals" }],
+  });
   mockedCreateYnabClient.mockReturnValue(client as never);
 
   await hideManagedYnabCategoryForDeletedGoal({
@@ -80,33 +71,27 @@ it("hides managed category under Goals group with canonical name", async () => {
   expect(client.patchBudgetCategoryFields).toHaveBeenCalledWith(
     "budget",
     "cat-1",
-    {
-      hidden: true,
-    },
+    { hidden: true },
   );
 });
 
 it("does not hide user-linked categories outside Goals group", async () => {
-  const goal = createGoal({
-    ynab_category_id: "cat-1",
-  });
-  const client = {
-    getCategoryById: vi.fn().mockResolvedValue({
-      id: "cat-1",
-      name: "Groceries",
-      category_group_id: "group-life",
+  const goal = createTestGoal({ ynab_category_id: "cat-1" });
+  const client = createHideCategoryClientMock({
+    category: {
+      ...createMockYnabCategory({
+        id: "cat-1",
+        name: "Groceries",
+        category_group_id: "group-life",
+      }),
       hidden: false,
       deleted: false,
-      goal_type: null,
-      goal_target: null,
-      goal_under_funded: null,
-    }),
-    getCategoryGroups: vi.fn().mockResolvedValue([
+    },
+    categoryGroups: [
       { id: "group-goals", name: "Goals" },
       { id: "group-life", name: "Life" },
-    ]),
-    patchBudgetCategoryFields: vi.fn(),
-  };
+    ],
+  });
   mockedCreateYnabClient.mockReturnValue(client as never);
 
   await hideManagedYnabCategoryForDeletedGoal({
@@ -119,25 +104,19 @@ it("does not hide user-linked categories outside Goals group", async () => {
 });
 
 it("does not hide when category name mismatches canonical YNAPB name", async () => {
-  const goal = createGoal({
-    ynab_category_id: "cat-1",
-  });
-  const client = {
-    getCategoryById: vi.fn().mockResolvedValue({
-      id: "cat-1",
-      name: "Custom savings",
-      category_group_id: "group-goals",
+  const goal = createTestGoal({ ynab_category_id: "cat-1" });
+  const client = createHideCategoryClientMock({
+    category: {
+      ...createMockYnabCategory({
+        id: "cat-1",
+        name: "Custom savings",
+        category_group_id: "group-goals",
+      }),
       hidden: false,
       deleted: false,
-      goal_type: null,
-      goal_target: null,
-      goal_under_funded: null,
-    }),
-    getCategoryGroups: vi
-      .fn()
-      .mockResolvedValue([{ id: "group-goals", name: "Goals" }]),
-    patchBudgetCategoryFields: vi.fn(),
-  };
+    },
+    categoryGroups: [{ id: "group-goals", name: "Goals" }],
+  });
   mockedCreateYnabClient.mockReturnValue(client as never);
 
   await hideManagedYnabCategoryForDeletedGoal({

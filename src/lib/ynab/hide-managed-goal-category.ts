@@ -27,7 +27,7 @@ export const hideManagedYnabCategoryForDeletedGoal = async (params: {
 
   const client = createYnabClient(token);
 
-  let category;
+  let category: Awaited<ReturnType<typeof client.getCategoryById>>;
   try {
     category = await client.getCategoryById(budgetId, linkedId);
   } catch {

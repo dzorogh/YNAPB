@@ -1,3 +1,8 @@
+import {
+  monthStartFromDate,
+  monthsDiffInclusive,
+  normalizeToMonthStart,
+} from "@/lib/dates/month";
 import { parseYnabCategoryMonthFromName } from "@/lib/ynab/goal-category-link";
 
 /**
@@ -28,24 +33,6 @@ export const resolveYnabAvailableBalance = (balance: number | null): number => {
   return 0;
 };
 
-const monthStartFromDate = (value: Date): Date =>
-  new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1));
-
-const monthStartFromString = (value: string): Date => {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-};
-
-const monthsDiffInclusive = (
-  currentMonth: Date,
-  deadlineMonth: Date,
-): number => {
-  const yearDiff =
-    deadlineMonth.getUTCFullYear() - currentMonth.getUTCFullYear();
-  const monthDiff = deadlineMonth.getUTCMonth() - currentMonth.getUTCMonth();
-  return yearDiff * 12 + monthDiff + 1;
-};
-
 /**
  * Monthly Funding `goal_target` for YNAB.
  *
@@ -67,7 +54,7 @@ export const computeYnabMonthlyFundingTarget = ({
   now: Date;
 }): number => {
   const currentMonth = monthStartFromDate(now);
-  const deadlineMonth = monthStartFromString(deadline);
+  const deadlineMonth = normalizeToMonthStart(deadline);
   const monthsRemaining = monthsDiffInclusive(currentMonth, deadlineMonth);
   const remainingAmount =
     monthsRemaining <= 1
@@ -93,15 +80,20 @@ const resolveGoalAssignedThisMonth = (input: YnabGoalProgressInput): number => {
   return 0;
 };
 
+const readYnabActivity = (input: YnabGoalProgressInput): number | null => {
+  if (typeof input.activity === "number" && Number.isFinite(input.activity)) {
+    return input.activity;
+  }
+
+  return null;
+};
+
 const resolveCarryoverFromYnabIdentity = (
   input: YnabGoalProgressInput,
 ): number => {
   const available = resolveYnabAvailableBalance(input.balance);
   const assigned = resolveGoalAssignedThisMonth(input);
-  const activity =
-    typeof input.activity === "number" && Number.isFinite(input.activity)
-      ? input.activity
-      : 0;
+  const activity = readYnabActivity(input) ?? 0;
 
   return Math.max(0, available - assigned - activity);
 };
@@ -117,10 +109,7 @@ export const resolveCarryoverFromLastMonth = (
 ): number => {
   const available = resolveYnabAvailableBalance(input.balance);
   const assigned = resolveGoalAssignedThisMonth(input);
-  const activity =
-    typeof input.activity === "number" && Number.isFinite(input.activity)
-      ? input.activity
-      : null;
+  const activity = readYnabActivity(input);
 
   if (
     typeof input.prior_month_available === "number" &&

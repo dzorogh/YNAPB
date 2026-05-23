@@ -23,8 +23,7 @@ export const createGoalsGroupClientMock = (params: {
   createCategory: vi
     .fn()
     .mockResolvedValue(
-      params.createCategoryResult ??
-        createMockYnabCategory({ id: "cat-1" }),
+      params.createCategoryResult ?? createMockYnabCategory({ id: "cat-1" }),
     ),
   updateCategoryName: vi
     .fn()
