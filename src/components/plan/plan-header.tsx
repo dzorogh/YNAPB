@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleHelp, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,6 +18,11 @@ type BudgetSummary = {
   plannedIncome: number;
   obligations: number;
   available: number;
+  obligationBreakdown: Array<{
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+  }>;
 };
 
 type PlanHeaderProps = {
@@ -42,6 +48,87 @@ const resolveImportCooldownSeconds = (
   return Math.ceil((blockedUntil - now) / 1000);
 };
 
+const ObligationBreakdownDialog = ({
+  items,
+  isOpen,
+  onClose,
+}: {
+  items: BudgetSummary["obligationBreakdown"];
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Obligations breakdown"
+      tabIndex={-1}
+      onClick={onClose}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      }}
+    >
+      <Card
+        className="max-h-[80vh] w-full max-w-lg overflow-hidden"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <CardHeader className="gap-2 border-b">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-sm">Obligations breakdown</CardTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label="Close obligations breakdown"
+              onClick={onClose}
+            >
+              <X className="size-3.5" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Average assigned values from recent YNAB months used in obligations.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2 overflow-y-auto py-3">
+          {items.length > 0 ? (
+            <ul className="space-y-1">
+              {items.map((item) => (
+                <li
+                  key={item.categoryId}
+                  className="flex items-center justify-between gap-3 rounded-md border px-2 py-1.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium text-foreground">
+                      {item.categoryName}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {item.categoryId}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-semibold">
+                    {formatAmount(item.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No categories currently contribute to obligations.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
 export const PlanHeader = ({
   budget,
   needsSync,
@@ -55,6 +142,7 @@ export const PlanHeader = ({
   onOpenPushPreview,
 }: PlanHeaderProps) => {
   const [importCooldownSeconds, setImportCooldownSeconds] = useState(0);
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
 
   useEffect(() => {
     const updateCooldown = () => {
@@ -135,8 +223,17 @@ export const PlanHeader = ({
           </div>
           <div className="rounded-md border px-3 py-2">
             <dt className="text-muted-foreground">Obligations</dt>
-            <dd className="text-sm font-semibold">
-              {formatAmount(budget.obligations)}
+            <dd className="flex items-center justify-between gap-2 text-sm font-semibold">
+              <span>{formatAmount(budget.obligations)}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label="Open obligations breakdown"
+                onClick={() => setIsBreakdownModalOpen(true)}
+              >
+                <CircleHelp className="size-3.5 text-muted-foreground" />
+              </Button>
             </dd>
           </div>
           <div className="rounded-md border px-3 py-2">
@@ -157,6 +254,11 @@ export const PlanHeader = ({
           </Alert>
         ) : null}
       </CardContent>
+      <ObligationBreakdownDialog
+        items={budget.obligationBreakdown}
+        isOpen={isBreakdownModalOpen}
+        onClose={() => setIsBreakdownModalOpen(false)}
+      />
     </Card>
   );
 };
