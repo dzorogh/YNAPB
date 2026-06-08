@@ -93,7 +93,8 @@ const ObligationBreakdownDialog = ({
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Average assigned values from recent YNAB months used in obligations.
+            Includes only categories with YNAB goal/target; values are averaged
+            assigned amounts from recent months.
           </p>
         </CardHeader>
         <CardContent className="space-y-2 overflow-y-auto py-3">
