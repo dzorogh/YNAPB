@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildPushDiff } from "./push-mf";
+import { buildPushDiff, pushImmediateMonthlyFundingGoal } from "./push-mf";
 
 const ACTIVE = "active" as const;
 const FROZEN = "frozen" as const;
@@ -100,4 +100,59 @@ it("skips unchanged categories", () => {
   );
 
   expect(result).toEqual([]);
+});
+
+describe("pushImmediateMonthlyFundingGoal", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-10T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("raises goal_target to assigned when assigned exceeds calculated target", async () => {
+    const patchCalls: unknown[] = [];
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === "PATCH") {
+        patchCalls.push(JSON.parse(init.body as string));
+        return new Response(JSON.stringify({ data: {} }), { status: 200 });
+      }
+
+      return new Response(
+        JSON.stringify({
+          data: {
+            category: {
+              name: "Новая машина (2027-07)",
+              goal_target: 37_515_000,
+              balance: 406_529_000,
+              budgeted: 279_368_000,
+              activity: 0,
+            },
+          },
+        }),
+        { status: 200 },
+      );
+    });
+
+    const result = await pushImmediateMonthlyFundingGoal({
+      token: "token",
+      budgetId: "budget",
+      categoryId: "cat-car",
+      targetAmount: 1_500_000,
+      deadline: "2027-07-01",
+      fetchImpl,
+    });
+
+    expect(result).toBe("updated");
+    expect(patchCalls).toEqual([
+      {
+        category: {
+          goal_target: 279_368_000,
+        },
+      },
+    ]);
+  });
 });

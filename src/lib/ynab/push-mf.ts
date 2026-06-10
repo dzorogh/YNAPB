@@ -201,18 +201,21 @@ export const pushImmediateMonthlyFundingGoal = async ({
     pushMonth,
     categoryName: category.name,
   });
-  const nextAmount = useFullMonthFunding
-    ? resolveFullMonthFundingTarget({
+  const nextAmount = Math.max(
+    useFullMonthFunding
+      ? resolveFullMonthFundingTarget({
         targetAmount,
         carryoverFromLastMonth: amounts.carryoverFromLastMonth,
       })
-    : computeYnabMonthlyFundingTarget({
+      : computeYnabMonthlyFundingTarget({
         targetAmount,
         carryoverFromLastMonth: amounts.carryoverFromLastMonth,
         savedProgress: amounts.savedProgress,
         deadline,
         now,
-      });
+      }),
+    amounts.assignedThisMonth,
+  );
   const nextTarget = toMilliunits(nextAmount);
 
   if ((category.goalTarget ?? 0) === nextTarget) {

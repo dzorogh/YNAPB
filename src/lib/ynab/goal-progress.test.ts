@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildMonthlyFundingTargetsForPush,
@@ -183,5 +183,93 @@ describe("resolveGoalAmountsFromCategory", () => {
 
     expect(amounts.carryoverFromLastMonth).toBe(28_125);
     expect(amounts.currentBalance).toBe(202_656);
+    expect(amounts.assignedThisMonth).toBe(174_531);
+  });
+});
+
+describe("buildMonthlyFundingTargetsForPush assigned clamp", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-10T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const carCategory = new Map([
+    [
+      "cat-car",
+      {
+        balance: 406_529,
+        assigned: 279_368,
+        prior_month_available: 127_161,
+        activity: 0,
+      },
+    ],
+  ]);
+
+  it("raises target to assigned this month when assigned exceeds calculated target", () => {
+    const targets = buildMonthlyFundingTargetsForPush({
+      goals: [
+        {
+          id: "car",
+          targetAmount: 1_500_000,
+          deadline: "2027-07-01",
+          ynabCategoryId: "cat-car",
+        },
+      ],
+      categoriesById: carCategory,
+      pushMonth: "2026-06",
+      plannerAllocationForMonth: { car: 37_515 },
+    });
+
+    expect(targets.car).toBe(279_368);
+  });
+
+  it("does not clamp when push month is not the current calendar month", () => {
+    const targets = buildMonthlyFundingTargetsForPush({
+      goals: [
+        {
+          id: "car",
+          targetAmount: 1_500_000,
+          deadline: "2027-07-01",
+          ynabCategoryId: "cat-car",
+        },
+      ],
+      categoriesById: carCategory,
+      pushMonth: "2026-07",
+      plannerAllocationForMonth: { car: 37_515 },
+    });
+
+    expect(targets.car).toBe(37_515);
+  });
+
+  it("keeps calculated target when assigned is lower", () => {
+    const targets = buildMonthlyFundingTargetsForPush({
+      goals: [
+        {
+          id: "car",
+          targetAmount: 1_500_000,
+          deadline: "2027-07-01",
+          ynabCategoryId: "cat-car",
+        },
+      ],
+      categoriesById: new Map([
+        [
+          "cat-car",
+          {
+            balance: 150_000,
+            assigned: 20_000,
+            prior_month_available: 130_000,
+            activity: 0,
+          },
+        ],
+      ]),
+      pushMonth: "2026-06",
+      plannerAllocationForMonth: { car: 37_515 },
+    });
+
+    expect(targets.car).toBe(37_515);
   });
 });
