@@ -115,27 +115,29 @@ describe("pushImmediateMonthlyFundingGoal", () => {
 
   it("raises goal_target to assigned when assigned exceeds calculated target", async () => {
     const patchCalls: unknown[] = [];
-    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
-      if (init?.method === "PATCH") {
-        patchCalls.push(JSON.parse(init.body as string));
-        return new Response(JSON.stringify({ data: {} }), { status: 200 });
-      }
+    const fetchImpl = vi.fn(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === "PATCH") {
+          patchCalls.push(JSON.parse(init.body as string));
+          return new Response(JSON.stringify({ data: {} }), { status: 200 });
+        }
 
-      return new Response(
-        JSON.stringify({
-          data: {
-            category: {
-              name: "Новая машина (2027-07)",
-              goal_target: 37_515_000,
-              balance: 406_529_000,
-              budgeted: 279_368_000,
-              activity: 0,
+        return new Response(
+          JSON.stringify({
+            data: {
+              category: {
+                name: "Новая машина (2027-07)",
+                goal_target: 37_515_000,
+                balance: 406_529_000,
+                budgeted: 279_368_000,
+                activity: 0,
+              },
             },
-          },
-        }),
-        { status: 200 },
-      );
-    });
+          }),
+          { status: 200 },
+        );
+      },
+    );
 
     const result = await pushImmediateMonthlyFundingGoal({
       token: "token",

@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,26 +12,27 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
-    "idle",
-  );
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "signing-in" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setStatus("sending");
+    setStatus("signing-in");
     setError(null);
     const supabase = getSupabaseBrowserClient();
-    const { error: signInError } = await supabase.auth.signInWithOtp({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      password,
     });
     if (signInError) {
-      setError(signInError.message);
+      const message = signInError.message;
+      setError(message);
       setStatus("error");
+      toast.error("Sign in failed", { description: message });
       return;
     }
-    setStatus("sent");
+    window.location.assign("/");
   };
 
   return (
@@ -37,7 +40,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <h1 className="text-base font-medium leading-snug">Sign in</h1>
-          <p className="text-sm text-muted-foreground">Magic link via email.</p>
+          <p className="text-sm text-muted-foreground">
+            Email and password from your YNAPB account.
+          </p>
         </CardHeader>
         <CardContent>
           <form
@@ -50,21 +55,30 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                disabled={status === "sending" || status === "sent"}
+                disabled={status === "signing-in"}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={status === "signing-in"}
               />
             </div>
             <Button
               type="submit"
               className="w-full"
-              disabled={status === "sending" || status === "sent"}
+              disabled={status === "signing-in"}
             >
-              {status === "sending"
-                ? "Sending..."
-                : status === "sent"
-                  ? "Check your inbox"
-                  : "Send magic link"}
+              {status === "signing-in" ? "Signing in..." : "Sign in"}
             </Button>
             {error ? <p className="text-sm text-red-500">{error}</p> : null}
           </form>

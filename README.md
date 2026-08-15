@@ -8,7 +8,7 @@ Design and planning docs:
 
 ## What is implemented
 
-- Next.js app with App Router and Supabase authentication.
+- Next.js app with App Router and Supabase email/password authentication.
 - Goals management and plan calculation/push flow via API routes.
 - YNAB sync and encrypted token handling.
 - Unit, e2e, architecture, duplication, spelling, and security checks.
@@ -16,7 +16,7 @@ Design and planning docs:
 ## Prerequisites
 
 - Node.js 22+ and npm
-- Supabase project (cloud)
+- Self-hosted Supabase (`https://supabase.ynapb.indenbom.ru`) or a cloud project
 - YNAB Personal Access Token
 
 ## Local setup
@@ -31,11 +31,12 @@ Design and planning docs:
    - `ENCRYPTION_KEY` (base64, 32 bytes)
 3. Install dependencies:
    - `npm install`
-4. Apply Supabase migrations:
-   - `npx supabase link --project-ref <your-ref>` (one-time)
-   - `npx supabase db push`
+4. Apply Supabase migrations if the self-hosted database is empty:
+   - `npx supabase db push --db-url <self-hosted-postgres-url>`
 5. Start app:
    - `npm run dev`
+6. Open `/login` and sign in with the email and password of the migrated account.
+   Magic links are disabled: self-hosted SMTP is a stub, so mail is not delivered.
 
 ## Scripts
 
