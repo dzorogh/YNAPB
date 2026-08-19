@@ -103,3 +103,50 @@ it("reuses existing category in Goals group", async () => {
   expect(client.createCategoryGroup).not.toHaveBeenCalled();
   expect(client.createCategory).not.toHaveBeenCalled();
 });
+
+it("reuses and unhides a hidden category in Goals group", async () => {
+  const client = createGoalsGroupClientMock({
+    categories: [
+      createMockYnabCategory({
+        id: "cat-hidden",
+        name: "Gazebo (2026-08)",
+        hidden: true,
+      }),
+    ],
+  });
+  mockedCreateYnabClient.mockReturnValue(client as never);
+
+  await expectGoalCategoryLink({
+    goal: createTestGoal(),
+    expectedCategoryId: "cat-hidden",
+  });
+
+  expect(client.createCategory).not.toHaveBeenCalled();
+  expect(client.patchBudgetCategoryFields).toHaveBeenCalledWith(
+    "budget",
+    "cat-hidden",
+    { hidden: false },
+  );
+});
+
+it("unhides a linked hidden category before push", async () => {
+  const goal = createTestGoal({ ynab_category_id: "cat-linked" });
+  const client = createGoalsGroupClientMock({
+    categories: [
+      createMockYnabCategory({
+        id: "cat-linked",
+        name: "Gazebo (2026-08)",
+        hidden: true,
+      }),
+    ],
+  });
+  mockedCreateYnabClient.mockReturnValue(client as never);
+
+  await expectGoalCategoryLink({ goal, expectedCategoryId: "cat-linked" });
+  expect(client.createCategory).not.toHaveBeenCalled();
+  expect(client.patchBudgetCategoryFields).toHaveBeenCalledWith(
+    "budget",
+    "cat-linked",
+    { hidden: false },
+  );
+});

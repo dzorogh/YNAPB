@@ -96,8 +96,15 @@ type PatchCategoryResponseInner = {
   category: YnabCategory;
 };
 
+type GetCategoriesOptions = {
+  includeHidden?: boolean;
+};
+
 export type YnabClient = {
-  getCategories: (budgetId: string) => Promise<YnabCategory[]>;
+  getCategories: (
+    budgetId: string,
+    options?: GetCategoriesOptions,
+  ) => Promise<YnabCategory[]>;
   getCategoryGroups: (budgetId: string) => Promise<YnabCategoryGroup[]>;
   getCategoryById: (
     budgetId: string,
@@ -165,14 +172,18 @@ export const createYnabClient = (token: string): YnabClient => {
   };
 
   return {
-    getCategories: async (budgetId: string) => {
+    getCategories: async (budgetId: string, options?: GetCategoriesOptions) => {
       const data = await requestYnab<YnabCategoriesPayload>(
         token,
         `/budgets/${budgetId}/categories`,
       );
       return data.category_groups
         .flatMap((group) => group.categories)
-        .filter((category) => !category.deleted && !category.hidden);
+        .filter(
+          (category) =>
+            !category.deleted &&
+            (options?.includeHidden === true || !category.hidden),
+        );
     },
     getCategoryGroups: async (budgetId: string) => {
       const data = await requestYnab<YnabCategoryGroupsPayload>(

@@ -1,4 +1,4 @@
-import { createYnabClient } from "@/lib/ynab/client";
+import { createYnabClient, type YnabClient } from "@/lib/ynab/client";
 import type { Tables } from "@/types/supabase";
 
 type GoalRow = Tables<"goals">;
@@ -31,6 +31,18 @@ export const parseYnabCategoryMonthFromName = (name: string): string | null => {
 export const buildYnabGoalCategoryName = (goal: GoalRow): string =>
   `${goal.name} (${toDeadlineMonth(goal.deadline)})`;
 
+const ensureCategoryVisible = async (
+  client: YnabClient,
+  budgetId: string,
+  category: { id: string; hidden?: boolean },
+): Promise<void> => {
+  if (category.hidden === true) {
+    await client.patchBudgetCategoryFields(budgetId, category.id, {
+      hidden: false,
+    });
+  }
+};
+
 export const ensureGoalCategoryLink = async ({
   token,
   budgetId,
@@ -46,7 +58,9 @@ export const ensureGoalCategoryLink = async ({
   const targetGroup =
     existingGroup ?? (await client.createCategoryGroup(budgetId, groupName));
 
-  const categories = await client.getCategories(budgetId);
+  const categories = await client.getCategories(budgetId, {
+    includeHidden: true,
+  });
   const ynabGoalCategoryName = buildYnabGoalCategoryName(goal);
   const normalizedGoalName = normalizeName(ynabGoalCategoryName);
 
@@ -55,6 +69,7 @@ export const ensureGoalCategoryLink = async ({
       (category) => category.id === goal.ynab_category_id,
     );
     if (linkedCategory) {
+      await ensureCategoryVisible(client, budgetId, linkedCategory);
       const linkedNameNormalized = normalizeName(linkedCategory.name);
       if (linkedNameNormalized !== normalizedGoalName) {
         await client.updateCategoryName(
@@ -73,6 +88,7 @@ export const ensureGoalCategoryLink = async ({
       category.category_group_id === targetGroup.id,
   );
   if (existingCategory) {
+    await ensureCategoryVisible(client, budgetId, existingCategory);
     return existingCategory.id;
   }
 

@@ -26,6 +26,12 @@ import { getCache, isCacheStale } from "@/lib/repositories/ynab-cache-repo";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
 import { toYnabGoalProgressInput } from "@/lib/ynab/category-progress-input";
 import { buildMonthlyFundingTargetsForPush } from "@/lib/ynab/goal-progress";
+import { buildSyncErrorBody } from "@/lib/ynab/sync-error-response";
+import { YnabRequestError } from "@/lib/ynab/ynab-request";
+import {
+  finishYnabOperation,
+  startYnabOperation,
+} from "@/lib/ynab/ynab-request-log";
 import {
   buildPushDiff,
   pushMonthlyFundingGoals,
@@ -200,65 +206,75 @@ const applyDiffAndPersistSnapshot = async (params: {
     profile.ynab_token_ct,
     profile.ynab_token_iv,
   );
+  const pushOperationId = startYnabOperation("push");
   const activeGoals = canonical.goals.filter(
     (goal) => goal.status === "active",
   );
   let hasCategoryLinkChanges = false;
-  for (const goal of activeGoals) {
-    const ynabCategoryId = await ensureGoalCategoryLink({
-      token,
-      budgetId: profile.ynab_budget_id,
-      goal,
-    });
-    if (ynabCategoryId === goal.ynab_category_id) {
-      continue;
+  try {
+    for (const goal of activeGoals) {
+      const ynabCategoryId = await ensureGoalCategoryLink({
+        token,
+        budgetId: profile.ynab_budget_id,
+        goal,
+      });
+      if (ynabCategoryId === goal.ynab_category_id) {
+        continue;
+      }
+      await setGoalYnabCategoryId(userId, goal.id, ynabCategoryId);
+      hasCategoryLinkChanges = true;
     }
-    await setGoalYnabCategoryId(userId, goal.id, ynabCategoryId);
-    hasCategoryLinkChanges = true;
-  }
 
-  const effectiveCanonical = hasCategoryLinkChanges
-    ? await buildCanonicalPlanAndDiff(userId, month)
-    : canonical;
-  if ("errorResponse" in effectiveCanonical) {
-    return effectiveCanonical.errorResponse;
-  }
-  if (acceptedDiffHash !== effectiveCanonical.diffHash) {
-    return NextResponse.json(
+    const effectiveCanonical = hasCategoryLinkChanges
+      ? await buildCanonicalPlanAndDiff(userId, month)
+      : canonical;
+    if ("errorResponse" in effectiveCanonical) {
+      return effectiveCanonical.errorResponse;
+    }
+    if (acceptedDiffHash !== effectiveCanonical.diffHash) {
+      return NextResponse.json(
+        {
+          error: "Diff changed since preview. Please preview again.",
+          diff: effectiveCanonical.diff,
+          diffHash: effectiveCanonical.diffHash,
+        },
+        { status: 409 },
+      );
+    }
+    if (effectiveCanonical.diff.length > 0) {
+      await pushMonthlyFundingGoals({
+        token,
+        budgetId: profile.ynab_budget_id,
+        updates: effectiveCanonical.diff,
+      });
+    }
+
+    await createAndTrimPlanSnapshot(
+      userId,
       {
-        error: "Diff changed since preview. Please preview again.",
-        diff: effectiveCanonical.diff,
-        diffHash: effectiveCanonical.diffHash,
+        inputsHash: buildInputsHash({
+          month,
+          goals: effectiveCanonical.goals,
+          budget: effectiveCanonical.budget,
+          planResult: effectiveCanonical.planResult,
+        }),
+        result: effectiveCanonical.planResult,
       },
-      { status: 409 },
+      DEFAULT_PLAN_SNAPSHOT_KEEP,
     );
-  }
-  if (effectiveCanonical.diff.length > 0) {
-    await pushMonthlyFundingGoals({
-      token,
-      budgetId: profile.ynab_budget_id,
-      updates: effectiveCanonical.diff,
+
+    finishYnabOperation(pushOperationId, "ok");
+
+    return NextResponse.json({
+      applied: effectiveCanonical.diff.length,
+      diffHash: effectiveCanonical.diffHash,
     });
+  } catch (error) {
+    const failedAt =
+      error instanceof YnabRequestError ? `status ${error.status}` : null;
+    finishYnabOperation(pushOperationId, "failed", failedAt);
+    throw error;
   }
-
-  await createAndTrimPlanSnapshot(
-    userId,
-    {
-      inputsHash: buildInputsHash({
-        month,
-        goals: effectiveCanonical.goals,
-        budget: effectiveCanonical.budget,
-        planResult: effectiveCanonical.planResult,
-      }),
-      result: effectiveCanonical.planResult,
-    },
-    DEFAULT_PLAN_SNAPSHOT_KEEP,
-  );
-
-  return NextResponse.json({
-    applied: effectiveCanonical.diff.length,
-    diffHash: effectiveCanonical.diffHash,
-  });
 };
 
 export async function POST(request: Request) {
@@ -280,7 +296,7 @@ export async function POST(request: Request) {
         diffHash: canonical.diffHash,
       });
     }
-    return applyDiffAndPersistSnapshot({
+    return await applyDiffAndPersistSnapshot({
       userId,
       month: payload.month,
       acceptedDiffHash: payload.acceptedDiffHash,
@@ -291,6 +307,18 @@ export async function POST(request: Request) {
       return invalidPayloadResponse(error);
     }
 
-    return NextResponse.json({ error: "Failed to push plan" }, { status: 500 });
+    if (error instanceof YnabRequestError && error.status === 429) {
+      const body = buildSyncErrorBody(
+        error,
+        "YNAB rate limit reached. Wait a few minutes, then try again.",
+        error.operationId,
+      );
+      console.error("[YNAB] push failed with rate limit", body);
+      return NextResponse.json(body, { status: 429 });
+    }
+
+    const body = buildSyncErrorBody(error, "Failed to push plan");
+    console.error("[YNAB] push failed", body);
+    return NextResponse.json(body, { status: 500 });
   }
 }

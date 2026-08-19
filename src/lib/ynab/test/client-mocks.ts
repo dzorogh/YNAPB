@@ -28,4 +28,12 @@ export const createGoalsGroupClientMock = (params: {
   updateCategoryName: vi
     .fn()
     .mockResolvedValue(params.updateCategoryNameResult),
+  patchBudgetCategoryFields: vi
+    .fn()
+    .mockImplementation(async (_budgetId, categoryId, fields) =>
+      createMockYnabCategory({
+        id: categoryId,
+        hidden: fields.hidden ?? false,
+      }),
+    ),
 });
