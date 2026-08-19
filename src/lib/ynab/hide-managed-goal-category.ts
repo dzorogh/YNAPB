@@ -2,8 +2,8 @@ import { createYnabClient } from "@/lib/ynab/client";
 import type { Tables } from "@/types/supabase";
 
 import {
-  YNAP_DEFAULT_GOALS_GROUP_NAME,
   buildYnabGoalCategoryName,
+  isManagedGoalsGroupName,
   normalizeYnabComparableName,
 } from "./goal-category-link";
 
@@ -43,18 +43,15 @@ export const hideManagedYnabCategoryForDeletedGoal = async (params: {
   }
 
   const groups = await client.getCategoryGroups(budgetId);
-  const normalizedDefaultGroup = normalizeYnabComparableName(
-    YNAP_DEFAULT_GOALS_GROUP_NAME,
+  const managedGroupIds = new Set(
+    groups
+      .filter((group) => isManagedGoalsGroupName(group.name))
+      .map((group) => group.id),
   );
-  const goalsGroup = groups.find(
-    (group) =>
-      normalizeYnabComparableName(group.name) === normalizedDefaultGroup,
-  );
-  if (!goalsGroup) {
-    return;
-  }
-
-  if (category.category_group_id !== goalsGroup.id) {
+  if (
+    !category.category_group_id ||
+    !managedGroupIds.has(category.category_group_id)
+  ) {
     return;
   }
 

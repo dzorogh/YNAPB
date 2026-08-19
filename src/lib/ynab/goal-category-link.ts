@@ -7,11 +7,27 @@ type EnsureGoalCategoryLinkInput = {
   token: string;
   budgetId: string;
   goal: GoalRow;
+  /** @deprecated YNAPB now creates new categories in `YNAPB Goals`. */
   groupName?: string;
 };
 
-/** Group where YNAPB creates auto-linked monthly-funding categories. */
+/** Legacy group where early YNAPB categories may live. YNAB treats it as internal for creates. */
 export const YNAP_DEFAULT_GOALS_GROUP_NAME = "Goals";
+
+/** Writable group for new YNAPB-managed categories. */
+export const YNAP_WRITABLE_GOALS_GROUP_NAME = "YNAPB Goals";
+
+export const YNAP_MANAGED_GOALS_GROUP_NAMES = [
+  YNAP_DEFAULT_GOALS_GROUP_NAME,
+  YNAP_WRITABLE_GOALS_GROUP_NAME,
+] as const;
+
+export const isManagedGoalsGroupName = (name: string): boolean =>
+  YNAP_MANAGED_GOALS_GROUP_NAMES.some(
+    (groupName) =>
+      normalizeYnabComparableName(groupName) ===
+      normalizeYnabComparableName(name),
+  );
 
 export const normalizeYnabComparableName = (value: string): string =>
   value.trim().toLocaleLowerCase();
@@ -43,21 +59,27 @@ const ensureCategoryVisible = async (
   }
 };
 
+const findOrCreateWritableGoalsGroup = async (
+  client: YnabClient,
+  budgetId: string,
+): Promise<{ id: string; name: string }> => {
+  const categoryGroups = await client.getCategoryGroups(budgetId);
+  const normalizedWritableName = normalizeName(YNAP_WRITABLE_GOALS_GROUP_NAME);
+  const existingGroup = categoryGroups.find(
+    (group) => normalizeName(group.name) === normalizedWritableName,
+  );
+  return (
+    existingGroup ??
+    (await client.createCategoryGroup(budgetId, YNAP_WRITABLE_GOALS_GROUP_NAME))
+  );
+};
+
 export const ensureGoalCategoryLink = async ({
   token,
   budgetId,
   goal,
-  groupName = YNAP_DEFAULT_GOALS_GROUP_NAME,
 }: EnsureGoalCategoryLinkInput): Promise<string> => {
   const client = createYnabClient(token);
-  const categoryGroups = await client.getCategoryGroups(budgetId);
-  const normalizedGroupName = normalizeName(groupName);
-  const existingGroup = categoryGroups.find(
-    (group) => normalizeName(group.name) === normalizedGroupName,
-  );
-  const targetGroup =
-    existingGroup ?? (await client.createCategoryGroup(budgetId, groupName));
-
   const categories = await client.getCategories(budgetId, {
     includeHidden: true,
   });
@@ -83,18 +105,17 @@ export const ensureGoalCategoryLink = async ({
   }
 
   const existingCategory = categories.find(
-    (category) =>
-      normalizeName(category.name) === normalizedGoalName &&
-      category.category_group_id === targetGroup.id,
+    (category) => normalizeName(category.name) === normalizedGoalName,
   );
   if (existingCategory) {
     await ensureCategoryVisible(client, budgetId, existingCategory);
     return existingCategory.id;
   }
 
+  const writableGroup = await findOrCreateWritableGoalsGroup(client, budgetId);
   const createdCategory = await client.createCategory(
     budgetId,
-    targetGroup.id,
+    writableGroup.id,
     ynabGoalCategoryName,
   );
   return createdCategory.id;

@@ -63,7 +63,7 @@ it("renames linked category when goal name or deadline changed", async () => {
   );
 });
 
-it("creates Goals group and category when missing", async () => {
+it("creates YNAPB Goals group and category when missing", async () => {
   const client = createGoalsGroupClientMock({
     categoryGroups: [],
     categories: [],
@@ -76,7 +76,10 @@ it("creates Goals group and category when missing", async () => {
     expectedCategoryId: "cat-1",
   });
 
-  expect(client.createCategoryGroup).toHaveBeenCalledWith("budget", "Goals");
+  expect(client.createCategoryGroup).toHaveBeenCalledWith(
+    "budget",
+    "YNAPB Goals",
+  );
   expect(client.createCategory).toHaveBeenCalledWith(
     "budget",
     "group-1",
@@ -102,6 +105,32 @@ it("reuses existing category in Goals group", async () => {
 
   expect(client.createCategoryGroup).not.toHaveBeenCalled();
   expect(client.createCategory).not.toHaveBeenCalled();
+});
+
+it("reuses hidden category from any group by canonical name", async () => {
+  const client = createGoalsGroupClientMock({
+    categories: [
+      createMockYnabCategory({
+        id: "cat-other-group",
+        name: "Gazebo (2026-08)",
+        category_group_id: "other-group",
+        hidden: true,
+      }),
+    ],
+  });
+  mockedCreateYnabClient.mockReturnValue(client as never);
+
+  await expectGoalCategoryLink({
+    goal: createTestGoal(),
+    expectedCategoryId: "cat-other-group",
+  });
+
+  expect(client.createCategory).not.toHaveBeenCalled();
+  expect(client.patchBudgetCategoryFields).toHaveBeenCalledWith(
+    "budget",
+    "cat-other-group",
+    { hidden: false },
+  );
 });
 
 it("reuses and unhides a hidden category in Goals group", async () => {
