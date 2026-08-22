@@ -68,4 +68,20 @@ describe("ynab-request-log", () => {
       "/budgets/{budgetId}/categories",
     );
   });
+
+  it("redacts plan id in logged endpoints", () => {
+    const operationId = startYnabOperation("sync");
+    recordYnabRequest({
+      method: "GET",
+      endpoint: "/plans/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/categories",
+      attempt: 1,
+      status: 200,
+      durationMs: 50,
+      operationId,
+    });
+
+    expect(getYnabRequestLog(operationId)[0]?.endpoint).toBe(
+      "/plans/{planId}/categories",
+    );
+  });
 });

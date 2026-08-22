@@ -11,7 +11,7 @@ type GoalRow = Tables<"goals">;
 
 /**
  * When a YNAPB goal is removed, hide the linked YNAB category only if it was
- * created/managed by YNAPB (group "Goals" + canonical name). User-linked
+ * created/managed by YNAPB (group "YNAPB Goals" or legacy "Goals" + canonical name). User-linked
  * categories are left unchanged.
  */
 export const hideManagedYnabCategoryForDeletedGoal = async (params: {

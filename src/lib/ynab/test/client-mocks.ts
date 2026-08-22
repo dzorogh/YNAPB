@@ -14,11 +14,11 @@ export const createGoalsGroupClientMock = (params: {
   getCategoryGroups: vi
     .fn()
     .mockResolvedValue(
-      params.categoryGroups ?? [{ id: "group-1", name: "Goals" }],
+      params.categoryGroups ?? [{ id: "group-1", name: "YNAPB Goals" }],
     ),
   createCategoryGroup: vi
     .fn()
-    .mockResolvedValue({ id: "group-1", name: "Goals" }),
+    .mockResolvedValue({ id: "group-1", name: "YNAPB Goals" }),
   getCategories: vi.fn().mockResolvedValue(params.categories ?? []),
   createCategory: vi
     .fn()

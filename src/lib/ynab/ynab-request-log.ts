@@ -43,7 +43,9 @@ const operationMeta = new Map<string, OperationMeta>();
 const isDevelopment = (): boolean => process.env.NODE_ENV === "development";
 
 const redactEndpoint = (endpoint: string): string =>
-  endpoint.replace(/\/budgets\/[0-9a-f-]{36}/gi, "/budgets/{budgetId}");
+  endpoint
+    .replace(/\/budgets\/[0-9a-f-]{36}/gi, "/budgets/{budgetId}")
+    .replace(/\/plans\/[0-9a-f-]{36}/gi, "/plans/{planId}");
 
 const formatRequestLine = (entry: YnabRequestLogEntry): string => {
   const retrySuffix =

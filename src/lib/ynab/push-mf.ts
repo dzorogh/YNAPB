@@ -1,3 +1,15 @@
+import {
+  createOfficialYnabApis,
+  runOfficialYnabCall,
+} from "@/lib/ynab/official-api";
+
+import {
+  computeYnabMonthlyFundingTarget,
+  resolveFullMonthFundingTarget,
+  resolveGoalAmountsFromCategory,
+  shouldUseFullMonthFundingForPush,
+} from "./goal-progress";
+
 type PushableGoalStatus = "active" | "frozen" | "completed";
 
 type PushableGoal = {
@@ -34,13 +46,6 @@ type PushMonthlyFundingGoalsInput = {
   fetchImpl?: typeof fetch;
 };
 
-import {
-  computeYnabMonthlyFundingTarget,
-  resolveFullMonthFundingTarget,
-  resolveGoalAmountsFromCategory,
-  shouldUseFullMonthFundingForPush,
-} from "./goal-progress";
-
 type PushImmediateMonthlyFundingGoalInput = {
   token: string;
   budgetId: string;
@@ -50,8 +55,6 @@ type PushImmediateMonthlyFundingGoalInput = {
   fetchImpl?: typeof fetch;
 };
 
-const YNAB_API_BASE = "https://api.ynab.com/v1";
-
 const toMilliunits = (amount: number): number => Math.round(amount * 1000);
 const fromMilliunits = (amount: number): number => amount / 1000;
 
@@ -59,7 +62,7 @@ const fetchYnabCategory = async ({
   token,
   budgetId,
   categoryId,
-  fetchImpl = fetch,
+  fetchImpl,
 }: {
   token: string;
   budgetId: string;
@@ -72,39 +75,18 @@ const fetchYnabCategory = async ({
   budgeted: number;
   activity: number;
 }> => {
-  const response = await fetchImpl(
-    `${YNAB_API_BASE}/budgets/${budgetId}/categories/${categoryId}`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    },
+  const apis = createOfficialYnabApis(token, fetchImpl);
+  const payload = await runOfficialYnabCall(() =>
+    apis.categories.getCategoryById(budgetId, categoryId),
   );
-
-  if (!response.ok) {
-    throw new Error(`YNAB request failed with status ${response.status}`);
-  }
-
-  const payload = (await response.json()) as {
-    data: {
-      category: {
-        name: string;
-        goal_target: number | null;
-        balance: number | null;
-        budgeted: number | null;
-        activity: number | null;
-      };
-    };
-  };
+  const category = payload.data.category;
 
   return {
-    name: payload.data.category.name,
-    goalTarget: payload.data.category.goal_target,
-    balance: payload.data.category.balance ?? 0,
-    budgeted: payload.data.category.budgeted ?? 0,
-    activity: payload.data.category.activity ?? 0,
+    name: category.name,
+    goalTarget: category.goal_target ?? null,
+    balance: category.balance ?? 0,
+    budgeted: category.budgeted ?? 0,
+    activity: category.activity ?? 0,
   };
 };
 
@@ -149,28 +131,17 @@ export const pushMonthlyFundingGoals = async ({
   token,
   budgetId,
   updates,
-  fetchImpl = fetch,
+  fetchImpl,
 }: PushMonthlyFundingGoalsInput): Promise<void> => {
+  const apis = createOfficialYnabApis(token, fetchImpl);
   for (const update of updates) {
-    const response = await fetchImpl(
-      `${YNAB_API_BASE}/budgets/${budgetId}/categories/${update.categoryId}`,
-      {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+    await runOfficialYnabCall(() =>
+      apis.categories.updateCategory(budgetId, update.categoryId, {
+        category: {
+          goal_target: update.next,
         },
-        body: JSON.stringify({
-          category: {
-            goal_target: update.next,
-          },
-        }),
-      },
+      }),
     );
-
-    if (!response.ok) {
-      throw new Error(`YNAB request failed with status ${response.status}`);
-    }
   }
 };
 
@@ -180,7 +151,7 @@ export const pushImmediateMonthlyFundingGoal = async ({
   categoryId,
   targetAmount,
   deadline,
-  fetchImpl = fetch,
+  fetchImpl,
 }: PushImmediateMonthlyFundingGoalInput): Promise<"updated" | "unchanged"> => {
   const category = await fetchYnabCategory({
     token,

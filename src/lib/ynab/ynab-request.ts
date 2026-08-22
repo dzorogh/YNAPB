@@ -71,6 +71,77 @@ const parseRetryAfterSeconds = (response: Response): number | null => {
 const resolveRequestMethod = (options?: RequestInit): string =>
   typeof options?.method === "string" ? options.method.toUpperCase() : "GET";
 
+const resolveRequestUrl = (input: RequestInfo | URL): string => {
+  if (typeof input === "string") {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.href;
+  }
+  return input.url;
+};
+
+const toLogEndpoint = (url: string): string => {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return url;
+  }
+};
+
+/** Rate-limited fetch for the official YNAB SDK (`fetchApi`). */
+export const createRateLimitedYnabFetch = (
+  fetchImpl?: typeof fetch,
+): typeof fetch => {
+  if (fetchImpl) {
+    return fetchImpl;
+  }
+
+  const runFetch: typeof fetch = (input, init) => fetch(input, init);
+
+  return (async (input, init) =>
+    enqueueYnabRequest(async () => {
+      const method = resolveRequestMethod(init);
+      const endpoint = toLogEndpoint(resolveRequestUrl(input));
+
+      let { response, retryAfterSeconds } = await (async () => {
+        const startedAt = Date.now();
+        const nextResponse = await runFetch(input, init);
+        const nextRetryAfter = parseRetryAfterSeconds(nextResponse);
+        recordYnabRequest({
+          method,
+          endpoint,
+          attempt: 1,
+          status: nextResponse.status,
+          durationMs: Date.now() - startedAt,
+          retryAfterSeconds: nextRetryAfter,
+        });
+        return {
+          response: nextResponse,
+          retryAfterSeconds: nextRetryAfter,
+        };
+      })();
+
+      if (response.status === 429 && retryAfterSeconds !== null) {
+        await sleep(retryAfterSeconds * 1000);
+        const startedAt = Date.now();
+        response = await runFetch(input, init);
+        retryAfterSeconds = parseRetryAfterSeconds(response);
+        recordYnabRequest({
+          method,
+          endpoint,
+          attempt: 2,
+          status: response.status,
+          durationMs: Date.now() - startedAt,
+          retryAfterSeconds,
+        });
+      }
+
+      return response;
+    })) as typeof fetch;
+};
+
 const fetchYnabOnce = async (
   token: string,
   endpoint: string,
