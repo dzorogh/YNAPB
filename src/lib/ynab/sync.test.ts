@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { createYnabClient } from "./client";
 import { syncYnabData, type YnabDataClient } from "./sync";
 
 const BASELINE_MONTHS = 2;
@@ -219,5 +220,105 @@ describe("syncYnabData", () => {
     });
 
     expect(result.operationId).toMatch(/^sync:/);
+  });
+
+  it("keeps current-month category money when a later month is unassigned", async () => {
+    const category = {
+      id: "cat-gazebo",
+      category_group_id: "group-goals",
+      name: "Gazebo",
+      hidden: false,
+      deleted: false,
+      goal_type: "MF",
+      goal_target: 220_000_000,
+      goal_under_funded: 17_344_000,
+      budgeted: 174_531_000,
+      activity: -166_000_000,
+      balance: 36_656_000,
+    };
+    const monthShell = {
+      income: 100_000_000,
+      budgeted: 0,
+      activity: 0,
+      to_be_budgeted: 0,
+      deleted: false,
+    };
+    const fetchMock = async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/categories")) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              category_groups: [
+                {
+                  id: "group-goals",
+                  name: "Goals",
+                  hidden: false,
+                  deleted: false,
+                  categories: [category],
+                },
+              ],
+              server_knowledge: 1,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      if (url.endsWith("/months")) {
+        return new Response(
+          JSON.stringify({
+            data: {
+              months: [
+                { month: "2026-08-01", ...monthShell },
+                { month: "2026-09-01", ...monthShell },
+                { month: "2026-10-01", ...monthShell },
+              ],
+              server_knowledge: 1,
+            },
+          }),
+          { status: 200 },
+        );
+      }
+
+      const month = url.split("/").at(-1) ?? "";
+      const budgeted = month === "2026-09-01" ? 174_531_000 : 0;
+      const balance = month === "2026-09-01" ? 36_656_000 : 0;
+      const activity = month === "2026-09-01" ? -166_000_000 : 0;
+      return new Response(
+        JSON.stringify({
+          data: {
+            month: {
+              month,
+              ...monthShell,
+              categories: [
+                {
+                  ...category,
+                  budgeted,
+                  activity,
+                  balance,
+                },
+              ],
+            },
+          },
+        }),
+        { status: 200 },
+      );
+    };
+
+    const result = await syncYnabData({
+      token: TEST_TOKEN,
+      budgetId: TEST_BUDGET_ID,
+      baselineMonths: BASELINE_MONTHS,
+      skipCurrencyLookup: true,
+      client: createYnabClient(TEST_TOKEN, fetchMock),
+    });
+
+    expect(result.categories[0]).toMatchObject({
+      id: "cat-gazebo",
+      balance: 36_656,
+      activity: -166_000,
+      assigned: 174_531,
+    });
   });
 });

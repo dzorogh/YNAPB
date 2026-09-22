@@ -28,6 +28,12 @@ type YnabCategory = {
   goal_target: number | null;
   goal_target_month?: string | null;
   goal_under_funded: number | null;
+  /** Assigned in the current plan month, milliunits. */
+  budgeted?: number | null;
+  /** Activity in the current plan month, milliunits. */
+  activity?: number | null;
+  /** Available in the current plan month, milliunits. */
+  balance?: number | null;
 };
 
 /** Fields accepted by the official SDK `updateCategory`. */
@@ -102,6 +108,9 @@ const toClientCategory = (category: Category): YnabCategory => ({
   goal_target: category.goal_target ?? null,
   goal_target_month: category.goal_target_month,
   goal_under_funded: category.goal_under_funded ?? null,
+  budgeted: category.budgeted ?? null,
+  activity: category.activity ?? null,
+  balance: category.balance ?? null,
 });
 
 const toExistingCategory = (
