@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { refreshSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/auth/callback", "/auth/dev-login"];
 const E2E_AUTH_BYPASS_HEADER = "x-e2e-auth";
 const E2E_AUTH_BYPASS_VALUE = "1";
 

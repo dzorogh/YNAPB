@@ -80,6 +80,16 @@ export default function LoginPage() {
             >
               {status === "signing-in" ? "Signing in..." : "Sign in"}
             </Button>
+            {process.env.NODE_ENV === "development" ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.assign("/auth/dev-login")}
+              >
+                Dev: quick sign in
+              </Button>
+            ) : null}
             {error ? <p className="text-sm text-red-500">{error}</p> : null}
           </form>
         </CardContent>
