@@ -145,6 +145,37 @@ export const pushMonthlyFundingGoals = async ({
   }
 };
 
+/** Writes current-month assigned amounts; decreases go first to free money. */
+export const pushAssignedMoves = async ({
+  token,
+  budgetId,
+  month,
+  moves,
+  fetchImpl,
+}: {
+  token: string;
+  budgetId: string;
+  /** `YYYY-MM` of the budget month. */
+  month: string;
+  moves: MonthlyFundingDiffItem[];
+  fetchImpl?: typeof fetch;
+}): Promise<void> => {
+  const apis = createOfficialYnabApis(token, fetchImpl);
+  const ordered = [...moves].sort(
+    (left, right) => left.next - left.current - (right.next - right.current),
+  );
+  for (const move of ordered) {
+    await runOfficialYnabCall(() =>
+      apis.categories.updateMonthCategory(
+        budgetId,
+        `${month}-01`,
+        move.categoryId,
+        { category: { budgeted: move.next } },
+      ),
+    );
+  }
+};
+
 export const pushImmediateMonthlyFundingGoal = async ({
   token,
   budgetId,

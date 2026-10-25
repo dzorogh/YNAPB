@@ -268,6 +268,7 @@ export const buildMonthlyFundingTargetsForPush = ({
   categoryGoalTargetsById,
   pushMonth,
   plannerAllocationForMonth,
+  clampToAssigned = true,
 }: {
   goals: Array<{
     id: string;
@@ -282,8 +283,18 @@ export const buildMonthlyFundingTargetsForPush = ({
   /** `YYYY-MM` of the month being pushed. */
   pushMonth: string;
   plannerAllocationForMonth: Record<string, number>;
+  /** When false, returns the planned amounts without raising them to assigned. */
+  clampToAssigned?: boolean;
 }): Record<string, number> => {
   const targets: Record<string, number> = {};
+  const finalizeTarget = (assignedThisMonth: number, target: number): number =>
+    clampToAssigned
+      ? clampTargetToAssignedThisMonthForCurrentMonth({
+          pushMonth,
+          assignedThisMonth,
+          target,
+        })
+      : target;
 
   for (const goal of goals) {
     const categoryName = goal.ynabCategoryId
@@ -302,11 +313,10 @@ export const buildMonthlyFundingTargetsForPush = ({
         categoryName,
       })
     ) {
-      targets[goal.id] = clampTargetToAssignedThisMonthForCurrentMonth({
-        pushMonth,
-        assignedThisMonth: amounts.assignedThisMonth,
-        target: Math.max(0, plannerAllocationForMonth[goal.id] ?? 0),
-      });
+      targets[goal.id] = finalizeTarget(
+        amounts.assignedThisMonth,
+        Math.max(0, plannerAllocationForMonth[goal.id] ?? 0),
+      );
       continue;
     }
 
@@ -327,11 +337,7 @@ export const buildMonthlyFundingTargetsForPush = ({
       nextTarget = Math.max(nextTarget, currentYnabTarget);
     }
 
-    targets[goal.id] = clampTargetToAssignedThisMonthForCurrentMonth({
-      pushMonth,
-      assignedThisMonth: amounts.assignedThisMonth,
-      target: nextTarget,
-    });
+    targets[goal.id] = finalizeTarget(amounts.assignedThisMonth, nextTarget);
   }
 
   return targets;

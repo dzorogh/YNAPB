@@ -14,7 +14,7 @@ import { PlanTable } from "@/components/plan/plan-table";
 import { PlanTimeline } from "@/components/plan/plan-timeline";
 import {
   PushDiffDialog,
-  type PushDiffRow,
+  type PushPreview,
 } from "@/components/plan/push-diff-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,7 +92,8 @@ type YnabSyncErrorDetails = {
 };
 
 type PushPreviewResponse = {
-  diff: PushDiffRow[];
+  diff: PushPreview["targets"];
+  assignedMoves?: PushPreview["assignedMoves"];
   diffHash: string;
 };
 
@@ -289,7 +290,7 @@ type MainPlanViewProps = {
   isPreviewLoading: boolean;
   onOpenPushPreview: () => Promise<void>;
   isPushDialogOpen: boolean;
-  pushDiffRows: PushDiffRow[];
+  pushPreview: PushPreview;
   isApplyingPush: boolean;
   onClosePushDialog: () => void;
   onApplyPushDiff: () => Promise<void>;
@@ -318,7 +319,7 @@ const MainPlanView = ({
   isPreviewLoading,
   onOpenPushPreview,
   isPushDialogOpen,
-  pushDiffRows,
+  pushPreview,
   isApplyingPush,
   onClosePushDialog,
   onApplyPushDiff,
@@ -377,7 +378,7 @@ const MainPlanView = ({
     />
     <PushDiffDialog
       isOpen={isPushDialogOpen}
-      diffRows={pushDiffRows}
+      preview={pushPreview}
       onCancel={onClosePushDialog}
       onConfirm={onApplyPushDiff}
       isApplying={isApplyingPush}
@@ -700,13 +701,13 @@ const usePlanData = () => {
 const usePushPreview = ({
   monthKey,
   setPushStatus,
-  setPushDiffRows,
+  setPushPreview,
   setPreviewDiffHash,
   setIsPushDialogOpen,
 }: {
   monthKey: string;
   setPushStatus: (status: PushStatus) => void;
-  setPushDiffRows: (rows: PushDiffRow[]) => void;
+  setPushPreview: (preview: PushPreview) => void;
   setPreviewDiffHash: (value: string | null) => void;
   setIsPushDialogOpen: (value: boolean) => void;
 }) => {
@@ -730,7 +731,10 @@ const usePushPreview = ({
         return;
       }
       const payload = (await response.json()) as PushPreviewResponse;
-      setPushDiffRows(payload.diff);
+      setPushPreview({
+        targets: payload.diff,
+        assignedMoves: payload.assignedMoves ?? [],
+      });
       setPreviewDiffHash(payload.diffHash);
       setIsPushDialogOpen(true);
     } catch {
@@ -746,7 +750,7 @@ const usePushPreview = ({
     monthKey,
     setIsPushDialogOpen,
     setPreviewDiffHash,
-    setPushDiffRows,
+    setPushPreview,
     setPushStatus,
   ]);
 
@@ -864,14 +868,17 @@ export default function PlanPage() {
   });
   const [pushStatus, setPushStatus] = useState<PushStatus>(null);
   const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
-  const [pushDiffRows, setPushDiffRows] = useState<PushDiffRow[]>([]);
+  const [pushPreview, setPushPreview] = useState<PushPreview>({
+    targets: [],
+    assignedMoves: [],
+  });
   const [previewDiffHash, setPreviewDiffHash] = useState<string | null>(null);
   const goalsCrudStatus = goalsCrud.status;
   const clearGoalsCrudStatus = goalsCrud.clearStatus;
   const { isPreviewLoading, handleOpenPushPreview } = usePushPreview({
     monthKey,
     setPushStatus,
-    setPushDiffRows,
+    setPushPreview,
     setPreviewDiffHash,
     setIsPushDialogOpen,
   });
@@ -968,7 +975,7 @@ export default function PlanPage() {
         isPreviewLoading={isPreviewLoading}
         onOpenPushPreview={handleOpenPushPreview}
         isPushDialogOpen={isPushDialogOpen}
-        pushDiffRows={pushDiffRows}
+        pushPreview={pushPreview}
         isApplyingPush={isApplyingPush}
         onClosePushDialog={handleClosePushDialog}
         onApplyPushDiff={handleApplyPushDiff}

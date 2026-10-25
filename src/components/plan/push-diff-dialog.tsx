@@ -13,22 +13,36 @@ export type PushDiffRow = {
   next: number;
 };
 
+export type PushPreview = {
+  targets: PushDiffRow[];
+  /** Current-month assigned changes between goal categories. */
+  assignedMoves: PushDiffRow[];
+};
+
 type PushDiffDialogProps = {
   isOpen: boolean;
-  diffRows: PushDiffRow[];
+  preview: PushPreview;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
   isApplying: boolean;
 };
 
-const PushDiffTable = ({ diffRows }: { diffRows: PushDiffRow[] }) => (
+const PushDiffTable = ({
+  diffRows,
+  currentLabel,
+  nextLabel,
+}: {
+  diffRows: PushDiffRow[];
+  currentLabel: string;
+  nextLabel: string;
+}) => (
   <div className="max-h-[55vh] overflow-auto rounded-md border">
     <table className="w-full min-w-[560px] text-sm">
       <thead className="sticky top-0 bg-muted/80 backdrop-blur">
         <tr className="border-b text-left">
           <th className="px-3 py-2 font-medium">Category</th>
-          <th className="px-3 py-2 font-medium">Current target</th>
-          <th className="px-3 py-2 font-medium">Next target</th>
+          <th className="px-3 py-2 font-medium">{currentLabel}</th>
+          <th className="px-3 py-2 font-medium">{nextLabel}</th>
         </tr>
       </thead>
       <tbody>
@@ -75,12 +89,12 @@ const PushWarning = () => (
 );
 
 const PushDiffDialogBody = ({
-  diffRows,
+  preview,
   isApplying,
   onCancel,
   onConfirm,
 }: {
-  diffRows: PushDiffRow[];
+  preview: PushPreview;
   isApplying: boolean;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
@@ -94,11 +108,28 @@ const PushDiffDialogBody = ({
     </CardHeader>
 
     <CardContent className="space-y-4">
-      {diffRows.length === 0 ? (
+      {preview.targets.length === 0 && preview.assignedMoves.length === 0 ? (
         <NoChangesState />
-      ) : (
-        <PushDiffTable diffRows={diffRows} />
-      )}
+      ) : null}
+      {preview.assignedMoves.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Money assigned above plan this month moves to goals that are short.
+          </p>
+          <PushDiffTable
+            diffRows={preview.assignedMoves}
+            currentLabel="Assigned now"
+            nextLabel="Assigned after"
+          />
+        </div>
+      ) : null}
+      {preview.targets.length > 0 ? (
+        <PushDiffTable
+          diffRows={preview.targets}
+          currentLabel="Current target"
+          nextLabel="Next target"
+        />
+      ) : null}
       <PushWarning />
 
       <div className="flex items-center justify-end gap-2">
@@ -126,7 +157,7 @@ const PushDiffDialogBody = ({
 
 export const PushDiffDialog = ({
   isOpen,
-  diffRows,
+  preview,
   onCancel,
   onConfirm,
   isApplying,
@@ -143,7 +174,7 @@ export const PushDiffDialog = ({
       aria-label="YNAB push confirmation"
     >
       <PushDiffDialogBody
-        diffRows={diffRows}
+        preview={preview}
         isApplying={isApplying}
         onCancel={onCancel}
         onConfirm={onConfirm}

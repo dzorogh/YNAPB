@@ -22,7 +22,18 @@ import {
   DEFAULT_PLAN_SNAPSHOT_KEEP,
 } from "@/lib/repositories/plan-snapshots-repo";
 import { getProfile } from "@/lib/repositories/profile-repo";
-import { getCache, isCacheStale } from "@/lib/repositories/ynab-cache-repo";
+import {
+  type CachedCategoryPatch,
+  type CachedYnabCategory,
+  getCache,
+  isCacheStale,
+  patchCachedCategories,
+} from "@/lib/repositories/ynab-cache-repo";
+import type { Json } from "@/types/supabase";
+import {
+  type AssignedMove,
+  rebalanceAssignedToTargets,
+} from "@/lib/ynab/assigned-rebalance";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
 import { toYnabGoalProgressInput } from "@/lib/ynab/category-progress-input";
 import { buildMonthlyFundingTargetsForPush } from "@/lib/ynab/goal-progress";
@@ -34,6 +45,7 @@ import {
 } from "@/lib/ynab/ynab-request-log";
 import {
   buildPushDiff,
+  pushAssignedMoves,
   pushMonthlyFundingGoals,
   sortMonthlyFundingDiff,
   type MonthlyFundingDiffItem,
@@ -54,8 +66,199 @@ const pushPayloadSchema = z.union([previewPayloadSchema, applyPayloadSchema]);
 const hashValue = (value: unknown): string =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-const buildDiffHash = (month: string, diff: MonthlyFundingDiffItem[]): string =>
-  hashValue({ month, diff: sortMonthlyFundingDiff(diff) });
+const buildDiffHash = (
+  month: string,
+  diff: MonthlyFundingDiffItem[],
+  assignedMoves: AssignedMove[],
+): string =>
+  assignedMoves.length === 0
+    ? hashValue({ month, diff: sortMonthlyFundingDiff(diff) })
+    : hashValue({
+        month,
+        diff: sortMonthlyFundingDiff(diff),
+        assignedMoves: sortMonthlyFundingDiff(assignedMoves),
+      });
+
+const toMilliunits = (amount: number): number => Math.round(amount * 1000);
+
+const MAX_REBALANCE_PASSES = 5;
+
+type PlanInputs = {
+  goals: Awaited<ReturnType<typeof listGoals>>;
+  cache: NonNullable<Awaited<ReturnType<typeof getCache>>>;
+  incomeSettings: Awaited<ReturnType<typeof getIncomeSettings>>;
+};
+
+const computeMonthTargets = (
+  inputs: PlanInputs,
+  categories: CachedYnabCategory[],
+  month: string,
+) => {
+  const computation = buildPlanComputation({
+    goals: inputs.goals,
+    cache: { ...inputs.cache, categories: categories as unknown as Json },
+    incomeSettings: inputs.incomeSettings,
+  });
+  const targetMonth = monthStartFromKey(month);
+  const allocationForMonth = computation.planResult.allocations.find(
+    (allocation) =>
+      monthKeyFromDate(allocation.month) === monthKeyFromDate(targetMonth),
+  );
+  if (!allocationForMonth) {
+    return null;
+  }
+
+  const goalsById = new Map(inputs.goals.map((goal) => [goal.id, goal]));
+  const params = {
+    goals: computation.plannerGoals.map((goal) => {
+      const sourceGoal = goalsById.get(goal.id);
+      if (!sourceGoal) {
+        throw new Error(`Goal ${goal.id} is missing from planner input`);
+      }
+
+      return {
+        id: goal.id,
+        targetAmount: goal.targetAmount,
+        deadline: sourceGoal.deadline,
+        ynabCategoryId: goal.ynabCategoryId,
+      };
+    }),
+    categoriesById: new Map(
+      computation.categories.map((category) => [
+        category.id,
+        toYnabGoalProgressInput(category),
+      ]),
+    ),
+    categoryNamesById: new Map(
+      computation.categories.map((category) => [category.id, category.name]),
+    ),
+    categoryGoalTargetsById: new Map(
+      computation.categories.map((category) => [
+        category.id,
+        category.goal_target,
+      ]),
+    ),
+    pushMonth: month,
+    plannerAllocationForMonth: allocationForMonth.perGoal,
+  };
+
+  return {
+    computation,
+    targets: buildMonthlyFundingTargetsForPush(params),
+    planned: buildMonthlyFundingTargetsForPush({
+      ...params,
+      clampToAssigned: false,
+    }),
+  };
+};
+
+type MonthTargets = NonNullable<ReturnType<typeof computeMonthTargets>>;
+
+/** Goal categories in planner priority order (earliest deadline first). */
+const toRebalanceGoals = (monthTargets: MonthTargets) => {
+  const categoriesById = new Map(
+    monthTargets.computation.categories.map((category) => [
+      category.id,
+      category,
+    ]),
+  );
+
+  return [...monthTargets.computation.plannerGoals]
+    .sort(
+      (left, right) =>
+        left.deadline.getTime() - right.deadline.getTime() ||
+        left.createdAt.getTime() - right.createdAt.getTime(),
+    )
+    .flatMap((goal) => {
+      const category = goal.ynabCategoryId
+        ? categoriesById.get(goal.ynabCategoryId)
+        : undefined;
+      if (!category) {
+        return [];
+      }
+
+      return [
+        {
+          categoryId: category.id,
+          assigned: toMilliunits(Math.max(0, category.assigned ?? 0)),
+          planned: toMilliunits(monthTargets.planned[goal.id] ?? 0),
+          target: toMilliunits(monthTargets.targets[goal.id] ?? 0),
+        },
+      ];
+    });
+};
+
+const withAssigned = (
+  categories: CachedYnabCategory[],
+  nextAssigned: Map<string, number>,
+): CachedYnabCategory[] =>
+  categories.map((category) => {
+    const next = nextAssigned.get(category.id);
+    const current = Math.max(0, category.assigned ?? 0);
+    if (next === undefined || toMilliunits(current) === next) {
+      return category;
+    }
+
+    const delta = next / 1000 - current;
+    return {
+      ...category,
+      assigned: next / 1000,
+      balance: (category.balance ?? 0) + delta,
+    };
+  });
+
+/**
+ * In the current month, moves money assigned above plan in one goal into
+ * goals still short of their target, then recomputes the plan until stable.
+ */
+const rebalanceCurrentMonth = (
+  inputs: PlanInputs,
+  categories: CachedYnabCategory[],
+  month: string,
+) => {
+  let current = categories;
+  for (let pass = 0; pass < MAX_REBALANCE_PASSES; pass++) {
+    const monthTargets = computeMonthTargets(inputs, current, month);
+    if (!monthTargets) {
+      return current;
+    }
+
+    const goals = toRebalanceGoals(monthTargets);
+    const nextAssigned = rebalanceAssignedToTargets(goals);
+    const changed = goals.some(
+      (goal) => nextAssigned.get(goal.categoryId) !== goal.assigned,
+    );
+    if (!changed) {
+      return current;
+    }
+
+    current = withAssigned(current, nextAssigned);
+  }
+
+  return current;
+};
+
+const buildAssignedMoves = (
+  before: CachedYnabCategory[],
+  after: CachedYnabCategory[],
+): AssignedMove[] => {
+  const beforeById = new Map(before.map((category) => [category.id, category]));
+
+  return sortMonthlyFundingDiff(
+    after.flatMap((category) => {
+      const previous = beforeById.get(category.id);
+      const current = toMilliunits(previous?.assigned ?? 0);
+      const next = toMilliunits(category.assigned ?? 0);
+      if (!previous || current === next) {
+        return [];
+      }
+
+      return [
+        { categoryId: category.id, categoryName: category.name, current, next },
+      ];
+    }),
+  );
+};
 
 const buildInputsHash = (params: {
   month: string;
@@ -96,13 +299,14 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     } as const;
   }
 
-  const computation = buildPlanComputation({ goals, cache, incomeSettings });
-  const targetMonth = monthStartFromKey(month);
-  const allocationForMonth = computation.planResult.allocations.find(
-    (allocation) =>
-      monthKeyFromDate(allocation.month) === monthKeyFromDate(targetMonth),
-  );
-  if (!allocationForMonth) {
+  const inputs: PlanInputs = { goals, cache, incomeSettings };
+  const syncedCategories = buildPlanComputation(inputs).categories;
+  const categories =
+    month === monthKeyFromDate(new Date())
+      ? rebalanceCurrentMonth(inputs, syncedCategories, month)
+      : syncedCategories;
+  const monthTargets = computeMonthTargets(inputs, categories, month);
+  if (!monthTargets) {
     return {
       errorResponse: NextResponse.json(
         { error: "Requested month is outside the planning horizon" },
@@ -111,42 +315,9 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     } as const;
   }
 
-  const goalsById = new Map(goals.map((goal) => [goal.id, goal]));
-  const categoriesById = new Map(
-    computation.categories.map((category) => [
-      category.id,
-      toYnabGoalProgressInput(category),
-    ]),
-  );
-  const categoryNamesById = new Map(
-    computation.categories.map((category) => [category.id, category.name]),
-  );
-  const categoryGoalTargetsById = new Map(
-    computation.categories.map((category) => [
-      category.id,
-      category.goal_target,
-    ]),
-  );
-  const monthlyFundingTargets = buildMonthlyFundingTargetsForPush({
-    goals: computation.plannerGoals.map((goal) => {
-      const sourceGoal = goalsById.get(goal.id);
-      if (!sourceGoal) {
-        throw new Error(`Goal ${goal.id} is missing from planner input`);
-      }
-
-      return {
-        id: goal.id,
-        targetAmount: goal.targetAmount,
-        deadline: sourceGoal.deadline,
-        ynabCategoryId: goal.ynabCategoryId,
-      };
-    }),
-    categoriesById,
-    categoryNamesById,
-    categoryGoalTargetsById,
-    pushMonth: month,
-    plannerAllocationForMonth: allocationForMonth.perGoal,
-  });
+  const { computation } = monthTargets;
+  const monthlyFundingTargets = monthTargets.targets;
+  const assignedMoves = buildAssignedMoves(syncedCategories, categories);
 
   const diff = buildPushDiff({
     goals: goals.map((goal) => ({
@@ -166,9 +337,36 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     goals,
     budget: computation.budget,
     planResult: computation.planResult,
+    categories,
     diff,
-    diffHash: buildDiffHash(month, diff),
+    assignedMoves,
+    diffHash: buildDiffHash(month, diff, assignedMoves),
   } as const;
+};
+
+const buildCachePatches = (
+  assignedMoves: AssignedMove[],
+  diff: MonthlyFundingDiffItem[],
+  categories: CachedYnabCategory[],
+): Map<string, CachedCategoryPatch> => {
+  const categoriesById = new Map(
+    categories.map((category) => [category.id, category]),
+  );
+  const patches = new Map<string, CachedCategoryPatch>();
+  for (const move of assignedMoves) {
+    const category = categoriesById.get(move.categoryId);
+    patches.set(move.categoryId, {
+      assigned: move.next / 1000,
+      balance: category?.balance ?? null,
+    });
+  }
+  for (const item of diff) {
+    patches.set(item.categoryId, {
+      ...patches.get(item.categoryId),
+      goal_target: item.next / 1000,
+    });
+  }
+  return patches;
 };
 
 const applyDiffAndPersistSnapshot = async (params: {
@@ -241,6 +439,14 @@ const applyDiffAndPersistSnapshot = async (params: {
         { status: 409 },
       );
     }
+    if (effectiveCanonical.assignedMoves.length > 0) {
+      await pushAssignedMoves({
+        token,
+        budgetId: profile.ynab_budget_id,
+        month,
+        moves: effectiveCanonical.assignedMoves,
+      });
+    }
     if (effectiveCanonical.diff.length > 0) {
       await pushMonthlyFundingGoals({
         token,
@@ -248,6 +454,14 @@ const applyDiffAndPersistSnapshot = async (params: {
         updates: effectiveCanonical.diff,
       });
     }
+    await patchCachedCategories(
+      userId,
+      buildCachePatches(
+        effectiveCanonical.assignedMoves,
+        effectiveCanonical.diff,
+        effectiveCanonical.categories,
+      ),
+    );
 
     await createAndTrimPlanSnapshot(
       userId,
@@ -266,7 +480,9 @@ const applyDiffAndPersistSnapshot = async (params: {
     finishYnabOperation(pushOperationId, "ok");
 
     return NextResponse.json({
-      applied: effectiveCanonical.diff.length,
+      applied:
+        effectiveCanonical.diff.length +
+        effectiveCanonical.assignedMoves.length,
       diffHash: effectiveCanonical.diffHash,
     });
   } catch (error) {
@@ -293,6 +509,7 @@ export async function POST(request: Request) {
     if (payload.mode === "preview") {
       return NextResponse.json({
         diff: canonical.diff,
+        assignedMoves: canonical.assignedMoves,
         diffHash: canonical.diffHash,
       });
     }

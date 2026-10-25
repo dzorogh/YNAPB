@@ -161,3 +161,31 @@ export const upsertCache = async (
 
   return data;
 };
+
+export type CachedCategoryPatch = Partial<
+  Pick<CachedYnabCategory, "assigned" | "balance" | "goal_target">
+>;
+
+/** Applies local edits after a push so the next preview sees YNAB's new state. */
+export const patchCachedCategories = async (
+  userId: string,
+  patches: Map<string, CachedCategoryPatch>,
+): Promise<void> => {
+  if (patches.size === 0) {
+    return;
+  }
+
+  const cache = await getCache(userId);
+  if (!cache) {
+    return;
+  }
+
+  const categories = parseCachedCategories(cache.categories).map(
+    (category) => ({ ...category, ...patches.get(category.id) }),
+  );
+  await upsertCache(userId, {
+    categories: categories as unknown as Json,
+    incomeHistory: cache.income_history,
+    syncedAt: new Date(cache.synced_at).toISOString(),
+  });
+};
