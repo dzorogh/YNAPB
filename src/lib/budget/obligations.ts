@@ -29,7 +29,8 @@ export const computeMonthlyBudget = ({
       (accumulator, value) => accumulator + value,
       0,
     );
-    return Math.round(sum / category.assigned_history.length);
+    // Money moved out of a category is not a monthly obligation.
+    return Math.max(0, Math.round(sum / category.assigned_history.length));
   };
 
   const obligationBreakdown: ObligationItem[] = categories

@@ -63,6 +63,14 @@ describe("computeMonthlyBudget", () => {
         deleted: false,
       },
       {
+        id: "refund",
+        name: "Refund",
+        goal_type: "NEED",
+        assigned_history: [-9_000, 0, 3_000],
+        hidden: false,
+        deleted: false,
+      },
+      {
         id: "old-credit",
         name: "Old Credit",
         goal_type: "DEBT",
@@ -100,6 +108,11 @@ describe("computeMonthlyBudget", () => {
         categoryId: "food",
         categoryName: "Food",
         amount: 2_500,
+      },
+      {
+        categoryId: "refund",
+        categoryName: "Refund",
+        amount: 0,
       },
     ]);
   });
