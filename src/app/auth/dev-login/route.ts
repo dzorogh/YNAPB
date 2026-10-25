@@ -9,8 +9,18 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(req: NextRequest) {
   const email = process.env.DEV_LOGIN_EMAIL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (process.env.NODE_ENV !== "development" || !email || !serviceRoleKey) {
+  if (process.env.NODE_ENV !== "development") {
     return new NextResponse("Not found", { status: 404 });
+  }
+  if (!email || !serviceRoleKey) {
+    const missingVariables = [
+      ...(!email ? ["DEV_LOGIN_EMAIL"] : []),
+      ...(!serviceRoleKey ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
+    ];
+    return new NextResponse(
+      `Dev login is not configured: missing ${missingVariables.join(" and ")}. Add the variable(s) to .env.local and restart next dev.`,
+      { status: 503 },
+    );
   }
 
   const admin = createClient(getSupabaseUrl(), serviceRoleKey, {
