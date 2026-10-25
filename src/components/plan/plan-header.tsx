@@ -63,7 +63,7 @@ const ObligationBreakdownDialog = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Obligations breakdown"
@@ -174,15 +174,22 @@ export const PlanHeader = ({
       : "Import from YNAB";
 
   return (
-    <Card size="sm">
-      <CardHeader className="gap-2 border-b">
-        <CardTitle className="text-sm">Plan overview</CardTitle>
-        <CardAction>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+    <Card>
+      <CardHeader className="flex flex-col gap-4 border-b pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle className="text-base font-semibold">
+            Plan overview
+          </CardTitle>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Monthly budget driving your goal allocations.
+          </p>
+        </div>
+        <CardAction className="w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="secondary"
               disabled={isImportDisabled}
               aria-label="Import latest categories and income from YNAB"
               onClick={() => void onSyncYnab()}
@@ -192,7 +199,7 @@ export const PlanHeader = ({
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="ghost"
               disabled={isRefreshing || isSyncingYnab}
               aria-label="Recalculate plan from cached YNAB data"
               onClick={() => void onRefresh()}
@@ -210,22 +217,25 @@ export const PlanHeader = ({
             </Button>
           </div>
         </CardAction>
-        <p className="text-xs text-muted-foreground">
-          Budget values drive allocation and conflict detection.
-        </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <dl className="grid gap-2 text-xs sm:grid-cols-3">
-          <div className="rounded-md border px-3 py-2">
-            <dt className="text-muted-foreground">Planned income</dt>
-            <dd className="text-sm font-semibold">
+      <CardContent className="space-y-5">
+        <dl className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[10px] bg-background/60 px-4 py-4">
+            <dt className="text-xs font-medium text-muted-foreground">
+              Planned income
+            </dt>
+            <dd className="mt-2 font-mono text-xl font-medium tracking-[-0.025em] tabular-nums">
               {formatAmount(budget.plannedIncome)}
             </dd>
           </div>
-          <div className="rounded-md border px-3 py-2">
-            <dt className="text-muted-foreground">Obligations</dt>
-            <dd className="flex items-center justify-between gap-2 text-sm font-semibold">
-              <span>{formatAmount(budget.obligations)}</span>
+          <div className="rounded-[10px] bg-background/60 px-4 py-4">
+            <dt className="text-xs font-medium text-muted-foreground">
+              Obligations
+            </dt>
+            <dd className="mt-1 flex items-center justify-between gap-2">
+              <span className="font-mono text-xl font-medium tracking-[-0.025em] tabular-nums">
+                {formatAmount(budget.obligations)}
+              </span>
               <Button
                 type="button"
                 variant="ghost"
@@ -233,24 +243,28 @@ export const PlanHeader = ({
                 aria-label="Open obligations breakdown"
                 onClick={() => setIsBreakdownModalOpen(true)}
               >
-                <CircleHelp className="size-3.5 text-muted-foreground" />
+                <CircleHelp className="size-4 text-muted-foreground" />
               </Button>
             </dd>
           </div>
-          <div className="rounded-md border px-3 py-2">
-            <dt className="text-muted-foreground">Available for goals</dt>
-            <dd className="text-sm font-semibold">
+          <div className="rounded-[10px] border border-primary/20 bg-accent/60 px-4 py-4">
+            <dt className="text-xs font-medium text-accent-foreground/75">
+              Available for goals
+            </dt>
+            <dd className="mt-2 font-mono text-xl font-medium tracking-[-0.025em] text-primary tabular-nums">
               {formatAmount(budget.available)}
             </dd>
           </div>
         </dl>
 
         {needsSync ? (
-          <Alert className="py-2">
-            <AlertTitle>YNAB sync recommended</AlertTitle>
+          <Alert className="border-warning/30 bg-warning/5 py-3">
+            <AlertTitle className="text-warning">
+              YNAB sync recommended
+            </AlertTitle>
             <AlertDescription>
-              Cached YNAB data is stale. Use Import from YNAB, then Recalculate
-              if needed.
+              Cached YNAB data is stale. Import the latest data, then
+              recalculate if needed.
             </AlertDescription>
           </Alert>
         ) : null}

@@ -1,7 +1,7 @@
 "use client";
 
+import { WalletCards } from "lucide-react";
 import { useState, type FormEvent } from "react";
-
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -36,64 +36,82 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <h1 className="text-base font-medium leading-snug">Sign in</h1>
-          <p className="text-sm text-muted-foreground">
-            Email and password from your YNAPB account.
+    <main className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <span className="mb-4 flex size-12 items-center justify-center rounded-[14px] bg-primary text-primary-foreground">
+            <WalletCards className="size-6" aria-hidden="true" />
+          </span>
+          <p className="text-lg font-semibold tracking-[-0.02em]">YNAPB</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your financial plans, clearly mapped.
           </p>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(event) => void handleSubmit(event)}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                disabled={status === "signing-in"}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                disabled={status === "signing-in"}
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={status === "signing-in"}
+        </div>
+        <Card className="py-6">
+          <CardHeader className="px-6">
+            <h1 className="text-xl font-semibold tracking-[-0.02em]">
+              Sign in
+            </h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Use the email and password from your YNAPB account.
+            </p>
+          </CardHeader>
+          <CardContent className="px-6">
+            <form
+              onSubmit={(event) => void handleSubmit(event)}
+              className="space-y-5"
             >
-              {status === "signing-in" ? "Signing in..." : "Sign in"}
-            </Button>
-            {process.env.NODE_ENV === "development" ? (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  disabled={status === "signing-in"}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={status === "signing-in"}
+                />
+              </div>
               <Button
-                type="button"
-                variant="outline"
+                type="submit"
                 className="w-full"
-                onClick={() => window.location.assign("/auth/dev-login")}
+                disabled={status === "signing-in"}
               >
-                Dev: quick sign in
+                {status === "signing-in" ? "Signing in..." : "Sign in"}
               </Button>
-            ) : null}
-            {error ? <p className="text-sm text-red-500">{error}</p> : null}
-          </form>
-        </CardContent>
-      </Card>
+              {process.env.NODE_ENV === "development" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.location.assign("/auth/dev-login")}
+                >
+                  Dev: quick sign in
+                </Button>
+              ) : null}
+              {error ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              ) : null}
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }

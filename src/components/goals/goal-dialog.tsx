@@ -70,7 +70,7 @@ export const GoalDialog = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label={titleByMode[mode]}
@@ -83,7 +83,7 @@ export const GoalDialog = ({
       }}
     >
       <Card
-        className="w-full max-w-lg"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
       >
         <CardHeader className="space-y-1">

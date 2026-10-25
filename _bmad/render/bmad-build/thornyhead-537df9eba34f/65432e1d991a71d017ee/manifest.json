@@ -1,0 +1,50 @@
+{
+  "generation_hash": "65432e1d991a71d017ee",
+  "inputs": {
+    "jinja2_version": "3.1.6",
+    "project_root": "/Users/dzorogh/Develop/worktrees/YNAPB/thornyhead",
+    "renderer_sha256": "82b4d567c335a596d086d94b4772d0a4a9e09065f84b45c3647276593d02552c",
+    "resolved_values": {
+      "config.core.output_folder": "/Users/dzorogh/Develop/worktrees/YNAPB/thornyhead/_bmad-output",
+      "customization.workflow.activation_steps_append": [],
+      "customization.workflow.activation_steps_prepend": [],
+      "customization.workflow.on_complete": "",
+      "customization.workflow.open_plan": "",
+      "customization.workflow.persistent_facts": [],
+      "customization.workflow.review": "none",
+      "customization.workflow.route": "oneshot",
+      "initiative_folder": "/Users/dzorogh/Develop/worktrees/YNAPB/thornyhead/_bmad-output/initiative-interface-redesign"
+    },
+    "skill_root": "/Users/dzorogh/.agents/skills/bmad-build",
+    "source_sha256": {
+      "plan-template.md": "d8b2b886839573c30b5cab5fc256fd8a3050ddb9ab64117b5651dce2406e2077",
+      "references/claims-check.md": "6cb20a86d819b95272876bca0dffef59ca07ba6a373d804295066751043867c0",
+      "references/deletion-check.md": "0f1f124e4e957147e89164a272b10bedc694ad0d9ad2618c8610ac74ee9cb0da",
+      "review-prompts/edge-case-hunter.md": "b909fe0ec8e4daaf2550d0ec783618c5146261d0dbc0e054698ce00d0905a3d1",
+      "review-prompts/verification-gap.md": "859930110817293bf9d25bd6df093f094cdc50fe6b8359e3720aee6dba96e17a",
+      "step-01-clarify-and-route.md": "abf395fb9cb3fd07c635622522bb1f6d59041eabd0dc7be79078cb759aef11da",
+      "step-02-plan.md": "44a0242450a0f316756d0f9abc6dbde6473e5f05742c9d97cf12531679693991",
+      "step-03-implement.md": "df1a0f8a8fdb524581d371505a12a33a25d5150ecb442a58a9d8145d2b284954",
+      "step-04-review.md": "5e2e3b5bd166bf8fa835a21ba27b147cf4c6373fbf2b712a4c251968f3805169",
+      "step-05-present.md": "8c3a4f5e627524b05c3f1db4850b6ab68ae6930d8046c340a3e1590dccc4ed61",
+      "step-oneshot.md": "1313ccda88e42fc813ed585bd2f3794480c33cb40dea674cb45ca860310dbf9e",
+      "workflow.md": "a4a1fed8a1d374b5ff8ac5613211a2e31d7e89743d1b153348ae6fe9ce36ec80"
+    }
+  },
+  "outputs": {
+    "plan-template.md": "d8b2b886839573c30b5cab5fc256fd8a3050ddb9ab64117b5651dce2406e2077",
+    "references/claims-check.md": "6cb20a86d819b95272876bca0dffef59ca07ba6a373d804295066751043867c0",
+    "references/deletion-check.md": "0f1f124e4e957147e89164a272b10bedc694ad0d9ad2618c8610ac74ee9cb0da",
+    "review-prompts/edge-case-hunter.md": "b909fe0ec8e4daaf2550d0ec783618c5146261d0dbc0e054698ce00d0905a3d1",
+    "review-prompts/verification-gap.md": "859930110817293bf9d25bd6df093f094cdc50fe6b8359e3720aee6dba96e17a",
+    "step-01-clarify-and-route.md": "b86b623e0c3923081699e1e9d3b0c5641aa71d3672327edd13c0f658f0731df8",
+    "step-02-plan.md": "389b992ca5e38808bca1bffaf789872af0ac9806192c8a7fc591e3f5d78a5d07",
+    "step-oneshot.md": "469a88c29a70ae91a106887ab4f94389648a64007f7a4aa9df90b4b9a0a5bf6c",
+    "workflow.md": "c07f6d0fe39d507d89869f8c44b97b2624dc6ba980193be3953ac703d2bd16cd"
+  },
+  "project_root": "/Users/dzorogh/Develop/worktrees/YNAPB/thornyhead",
+  "project_slug": "thornyhead",
+  "root_hash": "537df9eba34f",
+  "schema_version": 1,
+  "skill": "bmad-build"
+}

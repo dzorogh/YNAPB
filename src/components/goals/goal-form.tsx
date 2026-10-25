@@ -197,7 +197,7 @@ const GoalFormFields = ({
       <Label htmlFor={`${idPrefix}-status`}>Status</Label>
       <select
         id={`${idPrefix}-status`}
-        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="flex h-10 w-full rounded-[10px] border border-input bg-background/60 px-3 py-2 text-sm outline-none transition-colors hover:border-muted-foreground/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
         value={values.status}
         onChange={(event) =>
           onChange("status", event.target.value as GoalStatus)
@@ -214,7 +214,7 @@ const GoalFormFields = ({
       <Label htmlFor={`${idPrefix}-notes`}>Notes</Label>
       <textarea
         id={`${idPrefix}-notes`}
-        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="min-h-24 w-full rounded-[10px] border border-input bg-background/60 px-3 py-2 text-sm outline-none transition-colors hover:border-muted-foreground/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20"
         value={values.notes}
         onChange={(event) => onChange("notes", event.target.value)}
         disabled={isDisabled}

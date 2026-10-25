@@ -210,7 +210,7 @@ const isLikelyMissingYnabConnection = (payload: ApiPlanResponse): boolean => {
 };
 
 const LoadingPlanState = () => (
-  <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
+  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 md:p-8">
     <Card>
       <CardHeader>
         <CardTitle>Plan</CardTitle>
@@ -223,7 +223,7 @@ const LoadingPlanState = () => (
 );
 
 const EmptyPlanState = ({ onRetry }: { onRetry: RefreshHandler }) => (
-  <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
+  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 md:p-8">
     <Card>
       <CardHeader>
         <CardTitle>Plan</CardTitle>
@@ -249,7 +249,7 @@ const EmptyPlanState = ({ onRetry }: { onRetry: RefreshHandler }) => (
 );
 
 const MissingConnectionPlanState = () => (
-  <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 md:p-8">
+  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 md:p-8">
     <Card>
       <CardHeader>
         <CardTitle>Connect YNAB first</CardTitle>
@@ -324,11 +324,13 @@ const MainPlanView = ({
   onClosePushDialog,
   onApplyPushDiff,
 }: MainPlanViewProps) => (
-  <main className="mx-auto flex w-full max-w-6xl flex-col gap-3 p-4 md:p-8">
-    <header className="space-y-0.5">
-      <h1 className="text-xl font-semibold md:text-2xl">Plan</h1>
-      <p className="text-sm text-muted-foreground">
-        Review calculated allocations, timeline, and conflict warnings.
+  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 sm:p-6 md:p-8">
+    <header className="space-y-2">
+      <p className="text-xs font-medium text-primary">Financial workspace</p>
+      <h1 className="text-3xl font-semibold tracking-[-0.03em]">Your plan</h1>
+      <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+        See what your budget can support, adjust goal deadlines, and review
+        changes before sending them to YNAB.
       </p>
     </header>
     <PlanHeader
@@ -1096,7 +1098,7 @@ const DeleteGoalDialog = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Delete goal confirmation"

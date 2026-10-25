@@ -327,7 +327,7 @@ const HistoricalIncomeSection = ({
   canSubmit,
   onUseAverage,
 }: HistoricalIncomeSectionProps) => (
-  <div className="rounded-md border p-3">
+  <div className="rounded-[10px] bg-background/60 p-4">
     <p className="text-sm font-medium">Historical income</p>
     <p className="mt-1 text-sm text-muted-foreground">
       {historicalAverageIncome === null

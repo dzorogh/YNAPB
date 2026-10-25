@@ -1,5 +1,7 @@
 "use client";
 
+import { CheckCircle2 } from "lucide-react";
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMonthLabel } from "@/lib/formatting/month-label";
@@ -36,14 +38,17 @@ export const PlanConflicts = ({
 }: PlanConflictsProps) => {
   if (conflicts.length === 0 && tbdWarnings.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Conflicts and warnings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No conflicts detected.
-          </p>
+      <Card size="sm">
+        <CardContent className="flex items-center gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
+            <CheckCircle2 className="size-4" aria-hidden="true" />
+          </span>
+          <div>
+            <CardTitle className="text-sm">Conflicts and warnings</CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              No conflicts detected. Your current plan is internally consistent.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );

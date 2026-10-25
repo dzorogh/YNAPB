@@ -57,32 +57,54 @@ export const PlanTable = ({ allocations, goals }: PlanTableProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Monthly allocation</CardTitle>
+        <CardTitle className="text-base font-semibold">
+          Monthly allocation
+        </CardTitle>
+        <p className="text-xs leading-5 text-muted-foreground">
+          Calculated contributions by month, with any money left unallocated.
+        </p>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-[10px] border">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead>
+            <thead className="bg-muted/60">
               <tr className="border-b">
-                <th className="py-2 pr-3 font-medium">Month</th>
+                <th className="h-11 px-4 font-medium text-muted-foreground">
+                  Month
+                </th>
                 {goalIds.map((goalId) => (
-                  <th key={goalId} className="py-2 pr-3 font-medium">
+                  <th
+                    key={goalId}
+                    className="h-11 px-4 text-right font-medium text-muted-foreground"
+                  >
                     {goalsById.get(goalId) ?? goalId}
                   </th>
                 ))}
-                <th className="py-2 font-medium">Unallocated</th>
+                <th className="h-11 px-4 text-right font-medium text-muted-foreground">
+                  Unallocated
+                </th>
               </tr>
             </thead>
             <tbody>
               {visibleRows.map((row) => (
-                <tr key={row.month} className="border-b last:border-b-0">
-                  <td className="py-2 pr-3">{formatMonthLabel(row.month)}</td>
+                <tr
+                  key={row.month}
+                  className="border-b transition-colors last:border-b-0 hover:bg-muted/25"
+                >
+                  <td className="h-11 px-4 font-medium">
+                    {formatMonthLabel(row.month)}
+                  </td>
                   {goalIds.map((goalId) => (
-                    <td key={`${row.month}-${goalId}`} className="py-2 pr-3">
+                    <td
+                      key={`${row.month}-${goalId}`}
+                      className="h-11 px-4 text-right font-mono text-[13px] tabular-nums"
+                    >
                       {formatAmount(row.perGoal[goalId] ?? 0)}
                     </td>
                   ))}
-                  <td className="py-2">{formatAmount(row.unallocated)}</td>
+                  <td className="h-11 px-4 text-right font-mono text-[13px] text-primary tabular-nums">
+                    {formatAmount(row.unallocated)}
+                  </td>
                 </tr>
               ))}
             </tbody>

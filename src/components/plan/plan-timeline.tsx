@@ -179,10 +179,23 @@ export const PlanTimeline = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Timeline</CardTitle>
+          <CardTitle className="text-base font-semibold">Timeline</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">No goals to display.</p>
+        <CardContent className="flex flex-col items-start gap-4 py-4">
+          <div>
+            <p className="text-sm font-medium">No goals to display.</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Create your first goal to see deadlines and monthly contributions.
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={onOpenCreateGoal}
+            disabled={areGoalActionsDisabled}
+            aria-label="Create goal"
+          >
+            Create goal
+          </Button>
         </CardContent>
       </Card>
     );
@@ -191,10 +204,16 @@ export const PlanTimeline = ({
   return (
     <Card className="min-w-0">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle>Timeline</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-base font-semibold">Timeline</CardTitle>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Goal balances and deadlines across your planning horizon.
+            </p>
+          </div>
           <Button
             type="button"
+            size="sm"
             onClick={onOpenCreateGoal}
             disabled={areGoalActionsDisabled}
             aria-label="Create goal"
@@ -206,7 +225,7 @@ export const PlanTimeline = ({
       <CardContent className="min-w-0 space-y-3 overflow-hidden">
         <div className="w-full max-w-full overflow-x-auto overscroll-x-none overscroll-y-none">
           <div
-            className="space-y-1.5 rounded-md border bg-background py-2"
+            className="space-y-1.5 rounded-md border bg-card py-2"
             style={{
               minWidth: `${Math.max(900, INFO_COLUMN_WIDTH + visibleHorizonMonths * MONTH_WIDTH + GRID_GAP_PX)}px`,
             }}
@@ -220,7 +239,7 @@ export const PlanTimeline = ({
                 gridTemplateColumns: `${INFO_COLUMN_WIDTH}px ${visibleHorizonMonths * MONTH_WIDTH}px`,
               }}
             >
-              <div className="sticky left-0 z-20 min-h-full self-stretch border-b bg-background" />
+              <div className="sticky left-0 z-20 min-h-full self-stretch border-b bg-card" />
               <div
                 className="grid"
                 style={{
