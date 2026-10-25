@@ -163,7 +163,10 @@ export const upsertCache = async (
 };
 
 export type CachedCategoryPatch = Partial<
-  Pick<CachedYnabCategory, "assigned" | "balance" | "goal_target">
+  Pick<
+    CachedYnabCategory,
+    "assigned" | "balance" | "goal_target" | "goal_target_month"
+  >
 >;
 
 /** Applies local edits after a push so the next preview sees YNAB's new state. */

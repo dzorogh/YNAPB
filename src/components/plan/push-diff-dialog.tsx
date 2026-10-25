@@ -11,6 +11,7 @@ export type PushDiffRow = {
   categoryName: string;
   current: number;
   next: number;
+  clearsTargetDate?: boolean;
 };
 
 export type PushPreview = {
@@ -55,7 +56,14 @@ const PushDiffTable = ({
               </div>
             </td>
             <td className="px-3 py-2">{formatAmount(row.current / 1000)}</td>
-            <td className="px-3 py-2">{formatAmount(row.next / 1000)}</td>
+            <td className="px-3 py-2">
+              {formatAmount(row.next / 1000)}
+              {row.clearsTargetDate ? (
+                <div className="text-xs text-muted-foreground">
+                  Removes target date
+                </div>
+              ) : null}
+            </td>
           </tr>
         ))}
       </tbody>

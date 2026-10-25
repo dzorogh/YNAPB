@@ -15,7 +15,12 @@ const buildInput = (overrides?: {
     ynabCategoryId: string | null;
   }>;
   allocationForMonth?: Record<string, number>;
-  categories?: Array<{ id: string; name: string; goalTarget: number | null }>;
+  categories?: Array<{
+    id: string;
+    name: string;
+    goalTarget: number | null;
+    goalTargetMonth?: string | null;
+  }>;
 }) => ({
   goals: overrides?.goals ?? [],
   allocationForMonth: overrides?.allocationForMonth ?? {},
@@ -153,8 +158,36 @@ describe("pushImmediateMonthlyFundingGoal", () => {
       {
         category: {
           goal_target: 279_368_000,
+          goal_target_date: null,
         },
       },
     ]);
   });
+});
+
+it("includes categories with a YNAB target date to clear it", () => {
+  const result = buildPushDiff(
+    buildInput({
+      goals: [{ id: GOAL_ONE, status: ACTIVE, ynabCategoryId: CAT_ONE }],
+      allocationForMonth: { [GOAL_ONE]: 100 },
+      categories: [
+        {
+          id: CAT_ONE,
+          name: "Category One",
+          goalTarget: 100,
+          goalTargetMonth: "2027-08-01",
+        },
+      ],
+    }),
+  );
+
+  expect(result).toEqual([
+    {
+      categoryId: CAT_ONE,
+      categoryName: "Category One",
+      current: 100_000,
+      next: 100_000,
+      clearsTargetDate: true,
+    },
+  ]);
 });

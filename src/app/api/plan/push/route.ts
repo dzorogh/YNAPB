@@ -330,6 +330,7 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
       id: category.id,
       name: category.name,
       goalTarget: category.goal_target,
+      goalTargetMonth: category.goal_target_month,
     })),
   });
 
@@ -364,6 +365,7 @@ const buildCachePatches = (
     patches.set(item.categoryId, {
       ...patches.get(item.categoryId),
       goal_target: item.next / 1000,
+      goal_target_month: null,
     });
   }
   return patches;

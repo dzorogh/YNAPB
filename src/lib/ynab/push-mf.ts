@@ -24,6 +24,8 @@ type YnabCategoryForPush = {
   id: string;
   name: string;
   goalTarget: number | null;
+  /** YNAB target date; YNAPB targets are plain monthly, so push clears it. */
+  goalTargetMonth?: string | null;
 };
 
 export type MonthlyFundingDiffItem = {
@@ -31,6 +33,7 @@ export type MonthlyFundingDiffItem = {
   categoryName: string;
   current: number;
   next: number;
+  clearsTargetDate?: true;
 };
 
 type BuildPushDiffInput = {
@@ -120,9 +123,12 @@ export const buildPushDiff = ({
         categoryName: category.name,
         current,
         next,
+        ...(category.goalTargetMonth
+          ? { clearsTargetDate: true as const }
+          : {}),
       };
     })
-    .filter((item) => item.current !== item.next);
+    .filter((item) => item.current !== item.next || item.clearsTargetDate);
 
   return sortMonthlyFundingDiff(diff);
 };
@@ -139,6 +145,8 @@ export const pushMonthlyFundingGoals = async ({
       apis.categories.updateCategory(budgetId, update.categoryId, {
         category: {
           goal_target: update.next,
+          // SDK types omit null, but YNAB clears the date when it is sent.
+          goal_target_date: null as unknown as string,
         },
       }),
     );
