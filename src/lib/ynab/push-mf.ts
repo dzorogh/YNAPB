@@ -3,13 +3,6 @@ import {
   runOfficialYnabCall,
 } from "@/lib/ynab/official-api";
 
-import {
-  computeYnabMonthlyFundingTarget,
-  resolveFullMonthFundingTarget,
-  resolveGoalAmountsFromCategory,
-  shouldUseFullMonthFundingForPush,
-} from "./goal-progress";
-
 type PushableGoalStatus = "active" | "frozen" | "completed";
 
 type PushableGoal = {
@@ -49,49 +42,7 @@ type PushMonthlyFundingGoalsInput = {
   fetchImpl?: typeof fetch;
 };
 
-type PushImmediateMonthlyFundingGoalInput = {
-  token: string;
-  budgetId: string;
-  categoryId: string;
-  targetAmount: number;
-  deadline: string;
-  fetchImpl?: typeof fetch;
-};
-
 const toMilliunits = (amount: number): number => Math.round(amount * 1000);
-const fromMilliunits = (amount: number): number => amount / 1000;
-
-const fetchYnabCategory = async ({
-  token,
-  budgetId,
-  categoryId,
-  fetchImpl,
-}: {
-  token: string;
-  budgetId: string;
-  categoryId: string;
-  fetchImpl?: typeof fetch;
-}): Promise<{
-  name: string;
-  goalTarget: number | null;
-  balance: number;
-  budgeted: number;
-  activity: number;
-}> => {
-  const apis = createOfficialYnabApis(token, fetchImpl);
-  const payload = await runOfficialYnabCall(() =>
-    apis.categories.getCategoryById(budgetId, categoryId),
-  );
-  const category = payload.data.category;
-
-  return {
-    name: category.name,
-    goalTarget: category.goal_target ?? null,
-    balance: category.balance ?? 0,
-    budgeted: category.budgeted ?? 0,
-    activity: category.activity ?? 0,
-  };
-};
 
 export const sortMonthlyFundingDiff = (
   diff: MonthlyFundingDiffItem[],
@@ -182,69 +133,4 @@ export const pushAssignedMoves = async ({
       ),
     );
   }
-};
-
-export const pushImmediateMonthlyFundingGoal = async ({
-  token,
-  budgetId,
-  categoryId,
-  targetAmount,
-  deadline,
-  fetchImpl,
-}: PushImmediateMonthlyFundingGoalInput): Promise<"updated" | "unchanged"> => {
-  const category = await fetchYnabCategory({
-    token,
-    budgetId,
-    categoryId,
-    fetchImpl,
-  });
-  const progressInput = {
-    balance: fromMilliunits(category.balance),
-    assigned: fromMilliunits(category.budgeted),
-    activity: fromMilliunits(category.activity),
-  };
-  const amounts = resolveGoalAmountsFromCategory(progressInput);
-  const now = new Date();
-  const pushMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  const useFullMonthFunding = shouldUseFullMonthFundingForPush({
-    goalDeadline: deadline,
-    pushMonth,
-    categoryName: category.name,
-  });
-  const nextAmount = Math.max(
-    useFullMonthFunding
-      ? resolveFullMonthFundingTarget({
-        targetAmount,
-        carryoverFromLastMonth: amounts.carryoverFromLastMonth,
-      })
-      : computeYnabMonthlyFundingTarget({
-        targetAmount,
-        carryoverFromLastMonth: amounts.carryoverFromLastMonth,
-        savedProgress: amounts.savedProgress,
-        deadline,
-        now,
-      }),
-    amounts.assignedThisMonth,
-  );
-  const nextTarget = toMilliunits(nextAmount);
-
-  if ((category.goalTarget ?? 0) === nextTarget) {
-    return "unchanged";
-  }
-
-  await pushMonthlyFundingGoals({
-    token,
-    budgetId,
-    updates: [
-      {
-        categoryId,
-        categoryName: category.name,
-        current: category.goalTarget ?? 0,
-        next: nextTarget,
-      },
-    ],
-    fetchImpl,
-  });
-
-  return "updated";
 };

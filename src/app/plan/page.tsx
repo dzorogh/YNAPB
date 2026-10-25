@@ -675,6 +675,14 @@ const usePlanData = () => {
           return;
         }
 
+        const data = (await response.json()) as { sync?: GoalSyncResponse };
+        if (data.sync?.status === "error") {
+          toast.error("Deadline saved, YNAB update failed", {
+            description:
+              data.sync.message ??
+              "Monthly targets could not be updated. Try Push to YNAB again.",
+          });
+        }
         snapshotDeadlinesRef.current = null;
         // Keep draft in sync with what we persisted; otherwise stale drag
         // previews override server deadlines and conflicts never clear.
@@ -1009,7 +1017,32 @@ export default function PlanPage() {
 type ErrorResponse = { error?: string };
 
 type GoalsResponse = { goals: GoalRecord[] };
-type GoalResponse = { goal: GoalRecord };
+type GoalSyncResponse = {
+  status: "synced" | "error" | "skipped";
+  message?: string;
+};
+type GoalResponse = { goal: GoalRecord; sync?: GoalSyncResponse };
+
+const goalMutationStatus = (
+  title: string,
+  sync?: GoalSyncResponse,
+): PushStatus =>
+  sync?.status === "error"
+    ? {
+        tone: "error",
+        title: `${title}, YNAB update failed`,
+        message:
+          sync.message ??
+          "Monthly targets could not be updated. Try Push to YNAB again.",
+      }
+    : {
+        tone: "success",
+        title,
+        message:
+          sync?.status === "synced"
+            ? "Monthly targets updated. Use Push to YNAB to redistribute assigned money."
+            : "Goal saved successfully.",
+      };
 
 const normalizeGoalPayload = (values: GoalFormValues) => ({
   name: values.name.trim(),
@@ -1176,11 +1209,7 @@ const useGoalsCrud = ({
         }
         const data = (await response.json()) as GoalResponse;
         setGoals((current) => [data.goal, ...current]);
-        setStatus({
-          tone: "success",
-          title: "Goal created",
-          message: "Goal added successfully.",
-        });
+        setStatus(goalMutationStatus("Goal created", data.sync));
         setIsCreateGoalModalOpen(false);
         await fetchGoals(true);
         await onAfterMutation();
@@ -1217,11 +1246,7 @@ const useGoalsCrud = ({
           current.map((goal) => (goal.id === data.goal.id ? data.goal : goal)),
         );
         setEditingGoal(null);
-        setStatus({
-          tone: "success",
-          title: "Goal updated",
-          message: "Goal updated successfully.",
-        });
+        setStatus(goalMutationStatus("Goal updated", data.sync));
         await fetchGoals(true);
         await onAfterMutation();
       } finally {
@@ -1249,6 +1274,7 @@ const useGoalsCrud = ({
         });
         return;
       }
+      const data = (await response.json()) as { sync?: GoalSyncResponse };
       setGoals((current) =>
         current.filter((item) => item.id !== deletingGoal.id),
       );
@@ -1256,11 +1282,7 @@ const useGoalsCrud = ({
         setEditingGoal(null);
       }
       setDeletingGoal(null);
-      setStatus({
-        tone: "success",
-        title: "Goal deleted",
-        message: "Goal removed successfully.",
-      });
+      setStatus(goalMutationStatus("Goal deleted", data.sync));
       await onAfterMutation();
     } finally {
       setDeletingGoalId(null);

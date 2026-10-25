@@ -1,5 +1,4 @@
 import {
-  monthKeyFromDate,
   monthStartFromDate,
   monthsDiffInclusive,
   normalizeToMonthStart,
@@ -199,26 +198,6 @@ const deadlineMonthKey = (deadline: string): string => deadline.slice(0, 7);
 const pushMonthKey = (pushMonth: string): string => pushMonth.slice(0, 7);
 
 /**
- * When pushing MF for the current calendar month, never set goal_target below
- * what is already assigned — YNAB marks that as Overfunded.
- */
-const clampTargetToAssignedThisMonthForCurrentMonth = ({
-  pushMonth,
-  assignedThisMonth,
-  target,
-}: {
-  pushMonth: string;
-  assignedThisMonth: number;
-  target: number;
-}): number => {
-  if (pushMonthKey(pushMonth) !== monthKeyFromDate(new Date())) {
-    return target;
-  }
-
-  return Math.max(target, assignedThisMonth);
-};
-
-/**
  * Whether this push should set MF to `target - carryover` (finish funding now).
  *
  * True when the push month matches the goal deadline month, or when the linked
@@ -265,10 +244,8 @@ export const buildMonthlyFundingTargetsForPush = ({
   goals,
   categoriesById,
   categoryNamesById,
-  categoryGoalTargetsById,
   pushMonth,
   plannerAllocationForMonth,
-  clampToAssigned = true,
 }: {
   goals: Array<{
     id: string;
@@ -278,23 +255,11 @@ export const buildMonthlyFundingTargetsForPush = ({
   }>;
   categoriesById: Map<string, YnabGoalProgressInput | null>;
   categoryNamesById?: Map<string, string>;
-  /** Current YNAB MF `goal_target` from cache (milliunits already converted). */
-  categoryGoalTargetsById?: Map<string, number | null>;
   /** `YYYY-MM` of the month being pushed. */
   pushMonth: string;
   plannerAllocationForMonth: Record<string, number>;
-  /** When false, returns the planned amounts without raising them to assigned. */
-  clampToAssigned?: boolean;
 }): Record<string, number> => {
   const targets: Record<string, number> = {};
-  const finalizeTarget = (assignedThisMonth: number, target: number): number =>
-    clampToAssigned
-      ? clampTargetToAssignedThisMonthForCurrentMonth({
-          pushMonth,
-          assignedThisMonth,
-          target,
-        })
-      : target;
 
   for (const goal of goals) {
     const categoryName = goal.ynabCategoryId
@@ -313,31 +278,16 @@ export const buildMonthlyFundingTargetsForPush = ({
         categoryName,
       })
     ) {
-      targets[goal.id] = finalizeTarget(
-        amounts.assignedThisMonth,
-        Math.max(0, plannerAllocationForMonth[goal.id] ?? 0),
-      );
+      targets[goal.id] = Math.max(0, plannerAllocationForMonth[goal.id] ?? 0);
       continue;
     }
 
-    let nextTarget = resolveFullMonthFundingTarget({
+    const nextTarget = resolveFullMonthFundingTarget({
       targetAmount: goal.targetAmount,
       carryoverFromLastMonth: amounts.carryoverFromLastMonth,
     });
 
-    const currentYnabTarget =
-      goal.ynabCategoryId && categoryGoalTargetsById
-        ? categoryGoalTargetsById.get(goal.ynabCategoryId)
-        : null;
-    if (
-      typeof currentYnabTarget === "number" &&
-      Number.isFinite(currentYnabTarget) &&
-      amounts.savedProgress >= goal.targetAmount - 1
-    ) {
-      nextTarget = Math.max(nextTarget, currentYnabTarget);
-    }
-
-    targets[goal.id] = finalizeTarget(amounts.assignedThisMonth, nextTarget);
+    targets[goal.id] = nextTarget;
   }
 
   return targets;

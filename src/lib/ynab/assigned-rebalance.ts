@@ -7,7 +7,7 @@ export type RebalanceGoalCategory = {
   assigned: number;
   /** Planner amount for this month, not raised to assigned. */
   planned: number;
-  /** MF target that YNAPB pushes (planned, raised to assigned). */
+  /** Monthly target that YNAPB pushes; may be below assigned. */
   target: number;
 };
 

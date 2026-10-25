@@ -4,6 +4,7 @@ import { ZodError, z } from "zod";
 import {
   finalizeGoalMutationResponse,
   syncGoalWithYnab,
+  syncGoalsWithYnab,
 } from "@/lib/api/goals/ynab-goal-sync";
 import { getCurrentUserId } from "@/lib/api/auth";
 import { invalidPayloadResponse, unauthorizedResponse } from "@/lib/api/http";
@@ -114,8 +115,12 @@ export async function DELETE(
     }
 
     await deleteGoal(userId, id);
+    const sync = await syncGoalsWithYnab(userId, []);
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, sync: { status: sync.status, message: sync.message } },
+      { status: 200 },
+    );
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(

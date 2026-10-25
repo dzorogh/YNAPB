@@ -9,7 +9,7 @@ import {
   unauthorizedResponse,
 } from "@/lib/api/http";
 import { decryptToken } from "@/lib/crypto";
-import { monthKeyFromDate, monthStartFromKey } from "@/lib/dates/month";
+import { monthKeyFromDate } from "@/lib/dates/month";
 import type { PlanResult } from "@/lib/planner/types";
 import { buildPlanComputation } from "@/lib/plan/plan-computation";
 import {
@@ -29,14 +29,12 @@ import {
   isCacheStale,
   patchCachedCategories,
 } from "@/lib/repositories/ynab-cache-repo";
-import type { Json } from "@/types/supabase";
 import {
   type AssignedMove,
   rebalanceAssignedToTargets,
 } from "@/lib/ynab/assigned-rebalance";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
-import { toYnabGoalProgressInput } from "@/lib/ynab/category-progress-input";
-import { buildMonthlyFundingTargetsForPush } from "@/lib/ynab/goal-progress";
+import { computeMonthTargets, type PlanInputs } from "@/lib/plan/month-targets";
 import { buildSyncErrorBody } from "@/lib/ynab/sync-error-response";
 import { YnabRequestError } from "@/lib/ynab/ynab-request";
 import {
@@ -83,75 +81,6 @@ const toMilliunits = (amount: number): number => Math.round(amount * 1000);
 
 const MAX_REBALANCE_PASSES = 5;
 
-type PlanInputs = {
-  goals: Awaited<ReturnType<typeof listGoals>>;
-  cache: NonNullable<Awaited<ReturnType<typeof getCache>>>;
-  incomeSettings: Awaited<ReturnType<typeof getIncomeSettings>>;
-};
-
-const computeMonthTargets = (
-  inputs: PlanInputs,
-  categories: CachedYnabCategory[],
-  month: string,
-) => {
-  const computation = buildPlanComputation({
-    goals: inputs.goals,
-    cache: { ...inputs.cache, categories: categories as unknown as Json },
-    incomeSettings: inputs.incomeSettings,
-  });
-  const targetMonth = monthStartFromKey(month);
-  const allocationForMonth = computation.planResult.allocations.find(
-    (allocation) =>
-      monthKeyFromDate(allocation.month) === monthKeyFromDate(targetMonth),
-  );
-  if (!allocationForMonth) {
-    return null;
-  }
-
-  const goalsById = new Map(inputs.goals.map((goal) => [goal.id, goal]));
-  const params = {
-    goals: computation.plannerGoals.map((goal) => {
-      const sourceGoal = goalsById.get(goal.id);
-      if (!sourceGoal) {
-        throw new Error(`Goal ${goal.id} is missing from planner input`);
-      }
-
-      return {
-        id: goal.id,
-        targetAmount: goal.targetAmount,
-        deadline: sourceGoal.deadline,
-        ynabCategoryId: goal.ynabCategoryId,
-      };
-    }),
-    categoriesById: new Map(
-      computation.categories.map((category) => [
-        category.id,
-        toYnabGoalProgressInput(category),
-      ]),
-    ),
-    categoryNamesById: new Map(
-      computation.categories.map((category) => [category.id, category.name]),
-    ),
-    categoryGoalTargetsById: new Map(
-      computation.categories.map((category) => [
-        category.id,
-        category.goal_target,
-      ]),
-    ),
-    pushMonth: month,
-    plannerAllocationForMonth: allocationForMonth.perGoal,
-  };
-
-  return {
-    computation,
-    targets: buildMonthlyFundingTargetsForPush(params),
-    planned: buildMonthlyFundingTargetsForPush({
-      ...params,
-      clampToAssigned: false,
-    }),
-  };
-};
-
 type MonthTargets = NonNullable<ReturnType<typeof computeMonthTargets>>;
 
 /** Goal categories in planner priority order (earliest deadline first). */
@@ -181,7 +110,7 @@ const toRebalanceGoals = (monthTargets: MonthTargets) => {
         {
           categoryId: category.id,
           assigned: toMilliunits(Math.max(0, category.assigned ?? 0)),
-          planned: toMilliunits(monthTargets.planned[goal.id] ?? 0),
+          planned: toMilliunits(monthTargets.targets[goal.id] ?? 0),
           target: toMilliunits(monthTargets.targets[goal.id] ?? 0),
         },
       ];

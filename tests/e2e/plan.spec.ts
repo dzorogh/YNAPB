@@ -197,6 +197,73 @@ test.describe("plan page states with e2e auth bypass", () => {
     extraHTTPHeaders: AUTH_BYPASS_HEADERS,
   });
 
+  for (const syncStatus of ["synced", "error"] as const) {
+    test(`creating a goal reports target sync ${syncStatus} without applying Push`, async ({
+      page,
+    }) => {
+      let pushRequests = 0;
+      await page.route(PLAN_CALCULATE_API_PATTERN, (route) =>
+        route.fulfill({
+          json: buildCalculatedState(),
+        }),
+      );
+      await page.route("**/api/goals", (route) =>
+        route.fulfill({
+          json:
+            route.request().method() === "POST"
+              ? {
+                  goal: {
+                    id: "vacation",
+                    name: "Vacation",
+                    deadline: "2026-12-01",
+                    status: "active",
+                  },
+                  sync: {
+                    status: syncStatus,
+                    message:
+                      syncStatus === "error"
+                        ? "YNAB is unavailable."
+                        : undefined,
+                  },
+                }
+              : { goals: [] },
+        }),
+      );
+      await page.route(PLAN_PUSH_API_PATTERN, (route) => {
+        pushRequests++;
+        return route.fulfill({
+          status: 500,
+          json: { error: "Unexpected Push" },
+        });
+      });
+      await page.goto(PLAN_PATH);
+      await page
+        .getByRole("button", { name: "Create goal", exact: true })
+        .click();
+      const dialog = page.getByRole("dialog", {
+        name: "Create goal",
+        exact: true,
+      });
+      await dialog.getByLabel("Name", { exact: true }).fill("Vacation");
+      await dialog.getByLabel("Target amount").fill("300000");
+      await dialog.getByLabel("Deadline").fill("2026-12-01");
+      await dialog
+        .getByRole("button", { name: "Create goal", exact: true })
+        .click();
+
+      await expect(dialog).not.toBeVisible();
+      const toast = page.locator("[data-sonner-toast]");
+      await expect(toast).toContainText(
+        syncStatus === "synced"
+          ? "Monthly targets updated. Use Push to YNAB to redistribute assigned money."
+          : "Goal created, YNAB update failed",
+      );
+      if (syncStatus === "error")
+        await expect(toast).toContainText("YNAB is unavailable.");
+      expect(pushRequests).toBe(0);
+    });
+  }
+
   test("plan renders YNAB connect state", async ({ page }) => {
     await page.route(PLAN_CALCULATE_API_PATTERN, async (route) => {
       await route.fulfill({

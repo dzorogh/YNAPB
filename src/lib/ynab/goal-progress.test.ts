@@ -151,7 +151,6 @@ describe("buildMonthlyFundingTargetsForPush", () => {
         },
       ],
       categoriesById: staleCache,
-      categoryGoalTargetsById: new Map([["cat-gazebo", 191_875]]),
       pushMonth: "2026-05",
       plannerAllocationForMonth: { gazebo: 166_000 },
     });
@@ -187,7 +186,7 @@ describe("resolveGoalAmountsFromCategory", () => {
   });
 });
 
-describe("buildMonthlyFundingTargetsForPush assigned clamp", () => {
+describe("buildMonthlyFundingTargetsForPush overfunding", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-10T12:00:00.000Z"));
@@ -209,7 +208,7 @@ describe("buildMonthlyFundingTargetsForPush assigned clamp", () => {
     ],
   ]);
 
-  it("raises target to assigned this month when assigned exceeds calculated target", () => {
+  it("keeps planned target below assigned so the surplus remains visible", () => {
     const targets = buildMonthlyFundingTargetsForPush({
       goals: [
         {
@@ -224,10 +223,10 @@ describe("buildMonthlyFundingTargetsForPush assigned clamp", () => {
       plannerAllocationForMonth: { car: 37_515 },
     });
 
-    expect(targets.car).toBe(279_368);
+    expect(targets.car).toBe(37_515);
   });
 
-  it("does not clamp when push month is not the current calendar month", () => {
+  it("uses planned target for future months too", () => {
     const targets = buildMonthlyFundingTargetsForPush({
       goals: [
         {

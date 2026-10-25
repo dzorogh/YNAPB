@@ -6,7 +6,7 @@ import {
 } from "@/lib/repositories/goals-repo";
 import { getProfile } from "@/lib/repositories/profile-repo";
 import { ensureGoalCategoryLink } from "@/lib/ynab/goal-category-link";
-import { pushImmediateMonthlyFundingGoal } from "@/lib/ynab/push-mf";
+import { syncPlanTargets } from "@/lib/api/goals/sync-plan-targets";
 import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
 import type { Tables } from "@/types/supabase";
 
@@ -22,48 +22,66 @@ export const syncGoalWithYnab = async (
   userId: string,
   goal: GoalRow,
 ): Promise<GoalSyncResult> => {
-  if (goal.status !== "active") {
-    return { status: "skipped" };
-  }
+  const result = await syncGoalsWithYnab(userId, [goal]);
+  return {
+    status: result.status,
+    message: result.message,
+    goal: result.goals[0],
+  };
+};
 
-  const profile = await getProfile(userId);
-  if (
-    !profile?.ynab_budget_id ||
-    !profile.ynab_token_ct ||
-    !profile.ynab_token_iv
-  ) {
-    return {
-      status: "error",
-      message: "YNAB connection is not configured.",
-    };
-  }
+/** Batch deadline edits also refresh the plan only once, after all links exist. */
+export const syncGoalsWithYnab = async (
+  userId: string,
+  goals: GoalRow[],
+): Promise<GoalSyncResult & { goals: GoalRow[] }> => {
+  const linkedGoals = [...goals];
 
   try {
+    const profile = await getProfile(userId);
+    if (
+      !profile?.ynab_budget_id ||
+      !profile.ynab_token_ct ||
+      !profile.ynab_token_iv
+    ) {
+      return {
+        status: "error",
+        message: "YNAB connection is not configured.",
+        goals: linkedGoals,
+      };
+    }
     const token = await decryptToken(
       profile.ynab_token_ct,
       profile.ynab_token_iv,
     );
-    const ynabCategoryId = await ensureGoalCategoryLink({
+    for (const [index, goal] of goals.entries()) {
+      if (goal.status !== "active") continue;
+      const ynabCategoryId = await ensureGoalCategoryLink({
+        token,
+        budgetId: profile.ynab_budget_id,
+        goal,
+      });
+      if (ynabCategoryId !== goal.ynab_category_id) {
+        linkedGoals[index] = await setGoalYnabCategoryId(
+          userId,
+          goal.id,
+          ynabCategoryId,
+        );
+      }
+    }
+    await syncPlanTargets(userId, {
       token,
       budgetId: profile.ynab_budget_id,
-      goal,
     });
-    const linkedGoal =
-      ynabCategoryId === goal.ynab_category_id
-        ? goal
-        : await setGoalYnabCategoryId(userId, goal.id, ynabCategoryId);
-    await pushImmediateMonthlyFundingGoal({
-      token,
-      budgetId: profile.ynab_budget_id,
-      categoryId: ynabCategoryId,
-      targetAmount: linkedGoal.target_amount,
-      deadline: linkedGoal.deadline,
-    });
-    return { status: "synced", goal: linkedGoal };
+    return { status: "synced", goals: linkedGoals };
   } catch (error) {
     return {
       status: "error",
-      message: toUserFacingYnabError(error, "Failed to sync goal to YNAB."),
+      message: toUserFacingYnabError(
+        error,
+        "Failed to update monthly targets in YNAB.",
+      ),
+      goals: linkedGoals,
     };
   }
 };
