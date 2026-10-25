@@ -38,7 +38,7 @@ Calm, specific and financially neutral. Lead with the result and next action.
 - **App shell:** desktop rail and compact mobile navigation expose Plan and Settings in the same order. Active destination has `aria-current="page"`.
 - **Plan header:** concise explanation and grouped actions. Push to YNAB uses `{colors.primary}`; import and recalculate use quieter variants. Loading disables only conflicting operations.
 - **Budget summary:** planned income, obligations and available for goals remain visible together. Obligations details opens one dialog at a time.
-- **Timeline:** create, edit, delete and drag behavior remains. Drag shows a live preview; Escape restores the snapshot. A nearby text instruction explains the gesture and offers form-based editing as an alternative.
+- **Timeline:** create, edit, delete and desktop drag behavior remains. Drag shows a live preview; Escape restores the snapshot. On smaller screens, a compact goal list shows savings progress and deadlines while the edit form provides deadline changes without horizontal scrolling.
 - **Monthly allocation:** month first, goal contributions next, unallocated last. Amounts use tabular numbers and align right. Empty states direct the user to goal creation.
 - **Dialogs:** destructive confirmation names the goal and irreversible consequence. Apply is unavailable until a valid preview exists.
 - **Toasts:** operational success/error messages use sonner; descriptions carry actionable details.
@@ -78,7 +78,7 @@ WCAG 2.2 AA. Normal text reaches 4.5:1, large text and meaningful component boun
 
 ### Review and adjust the monthly plan — Alex, evening budget review
 
-1. Alex opens Plan and immediately sees planned income, obligations and the mint available-for-goals total.
+1. Alex opens Plan and immediately sees planned income, obligations and the iris available-for-goals total.
 2. Stale data, if present, appears beside Import rather than competing with the plan.
 3. Alex drags a goal deadline and sees allocation and conflicts update in preview.
 4. **Climax:** the plan visibly reflects the new deadline; Alex commits it, then opens Push to YNAB and reviews the exact diff before applying.

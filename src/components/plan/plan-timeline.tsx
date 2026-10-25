@@ -1,15 +1,14 @@
 "use client";
 /* eslint-disable max-lines-per-function */
 
-import { useEffect, useMemo, useRef, type PointerEvent } from "react";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { type PointerEvent, useEffect, useMemo, useRef } from "react";
 import {
   buildGoalTimelineRowState,
   PlanTimelineGoalRow,
   type TimelineGoal,
 } from "@/components/plan/plan-timeline-goal-row";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type PlanTimelineProps = {
   goals: TimelineGoal[];
@@ -223,9 +222,9 @@ export const PlanTimeline = ({
         </div>
       </CardHeader>
       <CardContent className="min-w-0 space-y-3 overflow-hidden">
-        <div className="w-full max-w-full overflow-x-auto overscroll-x-none overscroll-y-none">
+        <div className="w-full max-w-full lg:overflow-x-auto lg:overscroll-x-none lg:overscroll-y-none">
           <div
-            className="space-y-1.5 rounded-md border bg-card py-2"
+            className="rounded-md max-lg:min-w-0! lg:space-y-1.5 lg:border lg:bg-card lg:py-2"
             style={{
               minWidth: `${Math.max(900, INFO_COLUMN_WIDTH + visibleHorizonMonths * MONTH_WIDTH + GRID_GAP_PX)}px`,
             }}
@@ -234,7 +233,7 @@ export const PlanTimeline = ({
             onPointerUp={handleDragEnd}
           >
             <div
-              className="grid items-end gap-3"
+              className="hidden items-end gap-3 lg:grid"
               style={{
                 gridTemplateColumns: `${INFO_COLUMN_WIDTH}px ${visibleHorizonMonths * MONTH_WIDTH}px`,
               }}
@@ -281,7 +280,10 @@ export const PlanTimeline = ({
             ))}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground lg:hidden">
+          Open a goal to change its deadline.
+        </p>
+        <p className="hidden text-xs text-muted-foreground lg:block">
           Drag the handle at the end of each goal bar. Press Esc to rollback
           drag preview.
         </p>

@@ -110,9 +110,7 @@ export const buildGoalTimelineRowState = (params: {
       Boolean(completedAtIso) && canBeCompletedEarlier && canApplyGoalDeadline,
     barToneClass: isUnreachable
       ? "bg-destructive/70"
-      : canBeCompletedEarlier
-        ? "bg-warning/75"
-        : "bg-primary/80",
+      : "bg-primary/70",
   };
 };
 
@@ -155,15 +153,15 @@ export const PlanTimelineGoalRow = ({
 
   return (
     <div
-      className="grid items-center gap-3 rounded-lg py-2 transition-colors hover:bg-muted/30"
+      className="grid items-center gap-3 border-b py-4 transition-colors last:border-b-0 max-lg:grid-cols-1! lg:rounded-lg lg:border-b-0 lg:py-2 lg:hover:bg-muted/30"
       style={{
         gridTemplateColumns: `${INFO_COLUMN_WIDTH}px ${visibleHorizonMonths * MONTH_WIDTH}px`,
       }}
     >
-      <div className="sticky left-0 z-10 min-w-0 rounded-lg bg-card px-2 py-1 pr-3">
-        <div className="grid gap-1.5">
-          <div className="flex items-start justify-between gap-2">
-            <p className="min-w-0 truncate text-sm font-semibold leading-tight">
+      <div className="min-w-0 rounded-lg bg-card lg:sticky lg:left-0 lg:z-10 lg:px-2 lg:py-1 lg:pr-3">
+        <div className="grid gap-2 lg:gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <p className="min-w-0 truncate text-[15px] font-semibold leading-tight lg:text-sm">
               {goal.name}
             </p>
             <div className="flex shrink-0 gap-1">
@@ -171,27 +169,28 @@ export const PlanTimelineGoalRow = ({
                 type="button"
                 variant="ghost"
                 size="icon-xs"
+                className="size-11 text-muted-foreground hover:text-foreground lg:size-7"
                 onClick={() => onOpenEditGoal(goal.id)}
                 disabled={areGoalActionsDisabled}
                 aria-label={`Edit goal ${goal.name}`}
               >
-                <Pencil className="size-3.5" aria-hidden="true" />
+                <Pencil className="size-4 lg:size-3.5" aria-hidden="true" />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                className="size-11 text-muted-foreground hover:bg-destructive/10 hover:text-destructive lg:size-7"
                 onClick={() => onOpenDeleteGoal(goal.id)}
                 disabled={areGoalActionsDisabled}
                 aria-label={`Delete goal ${goal.name}`}
               >
-                <Trash2 className="size-3.5" aria-hidden="true" />
+                <Trash2 className="size-4 lg:size-3.5" aria-hidden="true" />
               </Button>
             </div>
           </div>
-          <div className="flex items-end justify-between gap-2">
-            <p className="truncate font-mono text-[11px] text-muted-foreground tabular-nums">
+          <div className="flex items-center justify-between gap-3">
+            <p className="truncate font-mono text-xs text-muted-foreground tabular-nums lg:text-[11px]">
               {formatAmount(goal.currentBalance)} /{" "}
               {formatAmount(goal.targetAmount)} ·{" "}
               {formatGoalProgressPercent(
@@ -199,13 +198,34 @@ export const PlanTimelineGoalRow = ({
                 goal.targetAmount,
               )}
             </p>
-            <p className="shrink-0 text-[11px] text-muted-foreground">
+            <p className="shrink-0 text-xs text-muted-foreground lg:text-[11px]">
               {formatDeadlineLabel(effectiveDeadline)}
             </p>
           </div>
+          <div
+            className="h-1 overflow-hidden rounded-full bg-muted lg:hidden"
+            role="progressbar"
+            aria-label={`Progress for ${goal.name}`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Number.parseInt(
+              formatGoalProgressPercent(goal.currentBalance, goal.targetAmount),
+              10,
+            )}
+          >
+            <div
+              className="h-full rounded-full bg-primary/80"
+              style={{
+                width: formatGoalProgressPercent(
+                  goal.currentBalance,
+                  goal.targetAmount,
+                ),
+              }}
+            />
+          </div>
         </div>
         {isUnreachable ? (
-          <div className="flex flex-wrap items-center gap-2 pt-2">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2 lg:mt-2 lg:py-1.5">
             <p className="text-xs text-destructive">
               {earliestAchievableIso
                 ? `Move deadline to ${formatAchievableMonth(earliestAchievableIso)}`
@@ -214,8 +234,9 @@ export const PlanTimelineGoalRow = ({
             {earliestAchievableIso ? (
               <Button
                 type="button"
-                variant="outline"
-                size="xs"
+                variant="ghost"
+                size="sm"
+                className="-mr-2 min-h-11 px-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive lg:min-h-7"
                 onClick={() =>
                   void onDeadlineCommit(
                     goal.id,
@@ -231,15 +252,15 @@ export const PlanTimelineGoalRow = ({
           </div>
         ) : null}
         {canBeCompletedEarlier && typeof completedAtIso === "string" ? (
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <p className="text-xs text-warning">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2 lg:mt-2 lg:py-1.5">
+            <p className="text-xs text-primary">
               Possible earlier: {formatAchievableMonth(completedAtIso)}
             </p>
             <Button
               type="button"
-              variant="outline"
-              size="xs"
-              className="border-warning/30 text-warning hover:bg-warning/10 hover:text-warning"
+              variant="ghost"
+              size="sm"
+              className="-mr-2 min-h-11 px-2 text-xs text-primary hover:bg-primary/10 hover:text-primary lg:min-h-7"
               onClick={() =>
                 void onDeadlineCommit(
                   goal.id,
@@ -254,7 +275,7 @@ export const PlanTimelineGoalRow = ({
           </div>
         ) : null}
       </div>
-      <div className="relative h-9 overflow-visible rounded-lg border bg-muted/40">
+      <div className="relative hidden h-9 overflow-visible rounded-lg border bg-muted/40 lg:block">
         <div className="absolute inset-px overflow-hidden rounded-[7px]">
           <div
             className={`h-full rounded-[6px] transition-colors ${barToneClass}`}
