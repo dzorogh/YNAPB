@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { M, goal, budget } from "./fixtures";
-import { computePlan } from "./planner";
+import { computePlan, findEarlierDeadlines } from "./planner";
 
 const expectRangeAllocation = (
   perMonth: ReturnType<typeof computePlan>["allocations"],
@@ -308,5 +308,36 @@ describe("planner - deterministic tie-break", () => {
       (result.allocations[0]?.perGoal.earlier ?? 0) >=
       (result.allocations[0]?.perGoal.later ?? 0);
     expect(earlierFirst).toBe(true);
+  });
+});
+
+describe("planner - earlier deadlines", () => {
+  it("suggests the earliest deadline that keeps every goal reachable", () => {
+    const result = findEarlierDeadlines({
+      goals: [
+        goal({ id: "small", targetAmount: 300_000, deadline: M(2026, 12) }),
+        goal({ id: "big", targetAmount: 1_000_000, deadline: M(2027, 12) }),
+      ],
+      budget: budget(100_000),
+      startMonth: M(2026, 1),
+      horizonMonths: 24,
+    });
+
+    expect(result.small).toEqual(M(2026, 3));
+    expect(result.big).toEqual(M(2027, 1));
+  });
+
+  it("suggests nothing while a goal is unreachable", () => {
+    const result = findEarlierDeadlines({
+      goals: [
+        goal({ id: "small", targetAmount: 300_000, deadline: M(2027, 12) }),
+        goal({ id: "huge", targetAmount: 5_000_000, deadline: M(2026, 6) }),
+      ],
+      budget: budget(100_000),
+      startMonth: M(2026, 1),
+      horizonMonths: 24,
+    });
+
+    expect(result).toEqual({});
   });
 });

@@ -71,7 +71,7 @@ export const buildGoalTimelineRowState = (params: {
   goal: TimelineGoal;
   draftDeadlines: Record<string, string>;
   unreachableByGoalId: Record<string, string | null>;
-  completionByGoalId: Record<string, string | null>;
+  earlierDeadlineByGoalId: Record<string, string | null>;
   isRecalculating: boolean;
   areGoalActionsDisabled: boolean;
   visibleHorizonMonths: number;
@@ -83,7 +83,7 @@ export const buildGoalTimelineRowState = (params: {
     params.resolveDeadlineBoundaryIndex(effectiveDeadline);
   const earliestAchievableIso = params.unreachableByGoalId[params.goal.id];
   const isUnreachable = typeof earliestAchievableIso !== "undefined";
-  const completedAtIso = params.completionByGoalId[params.goal.id];
+  const completedAtIso = params.earlierDeadlineByGoalId[params.goal.id];
   const canBeCompletedEarlier =
     !isUnreachable &&
     typeof completedAtIso === "string" &&

@@ -16,7 +16,7 @@ type PlanTimelineProps = {
   startMonthIso: string;
   horizonMonths: number;
   unreachableByGoalId: Record<string, string | null>;
-  completionByGoalId: Record<string, string | null>;
+  earlierDeadlineByGoalId: Record<string, string | null>;
   draftDeadlines: Record<string, string>;
   isRecalculating: boolean;
   onOpenCreateGoal: () => void;
@@ -64,7 +64,7 @@ export const PlanTimeline = ({
   startMonthIso,
   horizonMonths,
   unreachableByGoalId,
-  completionByGoalId,
+  earlierDeadlineByGoalId,
   draftDeadlines,
   isRecalculating,
   onOpenCreateGoal,
@@ -245,7 +245,7 @@ export const PlanTimeline = ({
                   goal,
                   draftDeadlines,
                   unreachableByGoalId,
-                  completionByGoalId,
+                  earlierDeadlineByGoalId,
                   isRecalculating,
                   areGoalActionsDisabled,
                   visibleHorizonMonths,

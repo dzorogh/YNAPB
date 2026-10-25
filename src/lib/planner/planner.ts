@@ -247,3 +247,39 @@ function computeEarliestAchievable(
   if (monthsFromStart > 1_200) return null;
   return addMonths(input.startMonth, monthsFromStart);
 }
+
+const hasUnreachableGoals = (input: PlanInput): boolean =>
+  computePlan(input).conflicts.some(
+    (conflict) => conflict.type === "unreachable",
+  );
+
+/**
+ * Earliest deadline per goal that still keeps every goal reachable, when it is
+ * before the current deadline. Empty while any goal is already unreachable.
+ */
+export function findEarlierDeadlines(input: PlanInput): Record<string, Date> {
+  if (hasUnreachableGoals(input)) return {};
+
+  const result: Record<string, Date> = {};
+  for (const goalItem of input.goals) {
+    if (goalItem.status !== "active") continue;
+    if (goalItem.targetAmount - goalItem.savedProgress <= 0) continue;
+
+    for (
+      let month = input.startMonth;
+      isBeforeMonth(month, goalItem.deadline);
+      month = addMonths(month, 1)
+    ) {
+      const candidate = month;
+      const goals = input.goals.map((other) =>
+        other.id === goalItem.id ? { ...other, deadline: candidate } : other,
+      );
+      if (!hasUnreachableGoals({ ...input, goals })) {
+        result[goalItem.id] = candidate;
+        break;
+      }
+    }
+  }
+
+  return result;
+}

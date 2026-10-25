@@ -18,7 +18,7 @@ import {
 } from "@/components/plan/push-diff-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { computePlan } from "@/lib/planner/planner";
+import { computePlan, findEarlierDeadlines } from "@/lib/planner/planner";
 import type { PlanResult as DomainPlanResult } from "@/lib/planner/types";
 import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
 
@@ -270,7 +270,7 @@ const MissingConnectionPlanState = () => (
 type MainPlanViewProps = {
   planData: ApiPlanResponse;
   unreachableByGoalId: UnreachableByGoalId;
-  completionByGoalId: Record<string, string | null>;
+  earlierDeadlineByGoalId: Record<string, string | null>;
   allocations: ApiPlanResponse["planResult"]["allocations"];
   activeGoals: ApiPlanResponse["goals"];
   deadlineDrafts: DeadlineDraftMap;
@@ -299,7 +299,7 @@ type MainPlanViewProps = {
 const MainPlanView = ({
   planData,
   unreachableByGoalId,
-  completionByGoalId,
+  earlierDeadlineByGoalId,
   allocations,
   activeGoals,
   deadlineDrafts,
@@ -349,7 +349,7 @@ const MainPlanView = ({
         startMonthIso={planData.startMonth}
         horizonMonths={planData.horizonMonths}
         unreachableByGoalId={unreachableByGoalId}
-        completionByGoalId={completionByGoalId}
+        earlierDeadlineByGoalId={earlierDeadlineByGoalId}
         draftDeadlines={deadlineDrafts}
         isRecalculating={isRefreshing}
         onOpenCreateGoal={onOpenCreateGoal}
@@ -541,6 +541,23 @@ const usePlanData = () => {
       }),
     );
   }, [planData, plannerInputGoals]);
+  const earlierDeadlineByGoalId = useMemo(() => {
+    if (!planData) {
+      return {};
+    }
+    const earlier = findEarlierDeadlines({
+      goals: plannerInputGoals,
+      budget: planData.budget,
+      startMonth: new Date(planData.startMonth),
+      horizonMonths: planData.horizonMonths,
+    });
+    return Object.fromEntries(
+      Object.entries(earlier).map(([goalId, month]) => [
+        goalId,
+        month.toISOString(),
+      ]),
+    );
+  }, [planData, plannerInputGoals]);
   const unreachableByGoalId = useMemo(() => {
     const conflicts = previewPlanResult?.conflicts ?? [];
     return conflicts
@@ -685,6 +702,7 @@ const usePlanData = () => {
     planData,
     activeGoals,
     unreachableByGoalId,
+    earlierDeadlineByGoalId,
     deadlineDrafts,
     previewPlanResult,
     loadPlan,
@@ -850,6 +868,7 @@ export default function PlanPage() {
     planData,
     activeGoals,
     unreachableByGoalId,
+    earlierDeadlineByGoalId,
     deadlineDrafts,
     previewPlanResult,
     loadPlan,
@@ -956,7 +975,7 @@ export default function PlanPage() {
         planData={{ ...planData, planResult: previewPlanResult }}
         activeGoals={activeGoals}
         unreachableByGoalId={unreachableByGoalId}
-        completionByGoalId={previewPlanResult.completionMap}
+        earlierDeadlineByGoalId={earlierDeadlineByGoalId}
         allocations={allocations}
         deadlineDrafts={deadlineDrafts}
         isRefreshing={isRefreshing}
