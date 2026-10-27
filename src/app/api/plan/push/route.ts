@@ -308,17 +308,23 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     computation.categories.map((category) => [category.id, category]),
   );
   const monthlyFundingTargets = Object.fromEntries(
-    computation.plannerGoals.map((goal) => [
-      goal.id,
-      resolveMonthlyTarget(
-        categoriesById.get(goal.ynabCategoryId ?? "") ?? {
-          assigned: null,
-          goal_target: null,
-          goal_target_month: null,
-        },
-        monthTargets.targets[goal.id] ?? 0,
-      ),
-    ]),
+    computation.plannerGoals.map((goal) => {
+      const category = categoriesById.get(goal.ynabCategoryId ?? "");
+      return [
+        goal.id,
+        Math.max(
+          resolveMonthlyTarget(
+            category ?? {
+              assigned: null,
+              goal_target: null,
+              goal_target_month: null,
+            },
+            monthTargets.targets[goal.id] ?? 0,
+          ),
+          category?.assigned ?? 0,
+        ),
+      ];
+    }),
   );
   const assignedMoves = buildAssignedMoves(
     syncedCategories,

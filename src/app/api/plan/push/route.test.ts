@@ -162,8 +162,15 @@ describe("Push after automatic target updates", () => {
     );
     expect(response.status).toBe(200);
     const preview = await response.json();
-    // Filling the month target must not shrink it and create false overfunding.
-    expect(preview.diff).toEqual([]);
+    // The target follows the final assigned amount to avoid overfunding.
+    expect(preview.diff).toEqual([
+      {
+        categoryId: "house",
+        categoryName: "house",
+        current: 171_428_571,
+        next: 600_000_000,
+      },
+    ]);
     expect(preview.assignedMoves).toEqual([
       {
         categoryId: "house",
@@ -315,6 +322,33 @@ describe("Push after automatic target updates", () => {
       available: 150_000_000,
       remaining: 0,
     });
+  });
+
+  it("raises targets to cover existing assigned money when RTA is empty", async () => {
+    setAssigned("house", 367_229);
+    setAssigned("vacation", 300_000);
+    cache.ready_to_assign = 0;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.assignedMoves).toEqual([]);
+    expect(preview.readyToAssignMoves).toEqual([]);
+    expect(preview.diff).toEqual([
+      {
+        categoryId: "house",
+        categoryName: "house",
+        current: 171_428_571,
+        next: 367_229_000,
+      },
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 100_000_000,
+        next: 300_000_000,
+      },
+    ]);
   });
 
   it("does not preserve a date-based target as a monthly target", async () => {
