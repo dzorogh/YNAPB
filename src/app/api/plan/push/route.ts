@@ -91,6 +91,20 @@ const MAX_REBALANCE_PASSES = 5;
 
 type MonthTargets = NonNullable<ReturnType<typeof computeMonthTargets>>;
 
+const resolveMonthlyTarget = (
+  category: Pick<
+    CachedYnabCategory,
+    "assigned" | "goal_target" | "goal_target_month"
+  >,
+  planned: number,
+): number => {
+  const currentTarget = category.goal_target ?? 0;
+  return category.goal_target_month === null &&
+    currentTarget >= (category.assigned ?? 0)
+    ? Math.max(planned, currentTarget)
+    : planned;
+};
+
 /** Goal categories in planner priority order (earliest deadline first). */
 const toRebalanceGoals = (
   monthTargets: MonthTargets,
@@ -125,15 +139,19 @@ const toRebalanceGoals = (
 
       const assigned = toMilliunits(category.assigned ?? 0);
       const balance = toMilliunits(category.balance ?? 0);
+      const monthlyTarget = resolveMonthlyTarget(
+        category,
+        monthTargets.targets[goal.id] ?? 0,
+      );
       return [
         {
           categoryId: category.id,
           assigned,
           balance,
-          planned: toMilliunits(monthTargets.targets[goal.id] ?? 0),
+          planned: toMilliunits(monthlyTarget),
           target: useFullGoalDeficit
             ? assigned + toMilliunits(goal.targetAmount) - balance
-            : toMilliunits(monthTargets.targets[goal.id] ?? 0),
+            : toMilliunits(monthlyTarget),
         },
       ];
     });
@@ -286,7 +304,22 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
   }
 
   const { computation } = monthTargets;
-  const monthlyFundingTargets = monthTargets.targets;
+  const categoriesById = new Map(
+    computation.categories.map((category) => [category.id, category]),
+  );
+  const monthlyFundingTargets = Object.fromEntries(
+    computation.plannerGoals.map((goal) => [
+      goal.id,
+      resolveMonthlyTarget(
+        categoriesById.get(goal.ynabCategoryId ?? "") ?? {
+          assigned: null,
+          goal_target: null,
+          goal_target_month: null,
+        },
+        monthTargets.targets[goal.id] ?? 0,
+      ),
+    ]),
+  );
   const assignedMoves = buildAssignedMoves(
     syncedCategories,
     rebalancedCategories,
@@ -316,6 +349,19 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     remaining: availableReadyToAssign - allocatedReadyToAssign,
   };
   const appliedMoves = combineAssignedMoves(assignedMoves, readyToAssignMoves);
+  const goalIdsByCategoryId = new Map(
+    computation.plannerGoals.map((goal) => [goal.ynabCategoryId, goal.id]),
+  );
+  const pushFundingTargets = { ...monthlyFundingTargets };
+  for (const move of readyToAssignMoves) {
+    const goalId = goalIdsByCategoryId.get(move.categoryId);
+    if (goalId) {
+      pushFundingTargets[goalId] = Math.max(
+        pushFundingTargets[goalId] ?? 0,
+        move.next / 1000,
+      );
+    }
+  }
 
   const diff = buildPushDiff({
     goals: goals.map((goal) => ({
@@ -323,7 +369,7 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
       status: goal.status,
       ynabCategoryId: goal.ynab_category_id,
     })),
-    allocationForMonth: monthlyFundingTargets,
+    allocationForMonth: pushFundingTargets,
     categories: computation.categories.map((category) => ({
       id: category.id,
       name: category.name,

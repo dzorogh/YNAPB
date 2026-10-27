@@ -246,6 +246,14 @@ describe("Push after automatic target updates", () => {
         next: 128_571_429,
       },
     ]);
+    expect(preview.diff).toEqual([
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 100_000_000,
+        next: 128_571_429,
+      },
+    ]);
 
     await callPush(
       request({
@@ -272,11 +280,15 @@ describe("Push after automatic target updates", () => {
         ],
       }),
     );
+    expect(pushMonthlyFundingGoals).toHaveBeenCalledWith(
+      expect.objectContaining({ updates: preview.diff }),
+    );
 
     const repeated = await callPush(
       request({ mode: "preview", month: "2026-10" }),
     );
     expect(await repeated.json()).toMatchObject({
+      diff: [],
       assignedMoves: [],
       readyToAssignMoves: [],
       readyToAssign: { available: 0, remaining: 0 },
@@ -303,6 +315,35 @@ describe("Push after automatic target updates", () => {
       available: 150_000_000,
       remaining: 0,
     });
+  });
+
+  it("does not preserve a date-based target as a monthly target", async () => {
+    setAssigned("house", 171_428.571);
+    setAssigned("vacation", 100_000);
+    cache.categories = parseCachedCategories(cache.categories).map(
+      (category) =>
+        category.id === "vacation"
+          ? {
+              ...category,
+              goal_target: 300_000,
+              goal_target_month: "2026-12-01",
+            }
+          : category,
+    ) as Json;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.diff).toEqual([
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 300_000_000,
+        next: 100_000_000,
+        clearsTargetDate: true,
+      },
+    ]);
   });
 
   it("does not assign RTA to auto-frozen overdue goals", async () => {
