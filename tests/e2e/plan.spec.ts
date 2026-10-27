@@ -330,7 +330,9 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
     await expect(page.getByText(/Tied deadline conflict/)).toBeVisible();
   });
 
-  test("push preview dialog opens and shows diff rows", async ({ page }) => {
+  test("push preview separates RTA and applies only after confirmation", async ({
+    page,
+  }) => {
     await page.route(PLAN_CALCULATE_API_PATTERN, async (route) => {
       await route.fulfill({
         status: 200,
@@ -351,15 +353,49 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
             diff: [
               {
                 categoryId: VACATION_CATEGORY_ID,
+                categoryName: "Vacation",
                 current: 50000,
                 next: 120000,
               },
+              ...Array.from({ length: 20 }, (_, index) => ({
+                categoryId: `cat-target-${index}`,
+                categoryName: `Target ${index}`,
+                current: 0,
+                next: 1000,
+              })),
+            ],
+            assignedMoves: [
               {
                 categoryId: EMERGENCY_CATEGORY_ID,
-                current: 75000,
-                next: 100000,
+                categoryName: "Emergency",
+                current: 75_000_000,
+                next: 100_000_000,
               },
+              ...Array.from({ length: 20 }, (_, index) => ({
+                categoryId: `cat-rebalance-${index}`,
+                categoryName: `Rebalance ${index}`,
+                current: 0,
+                next: 1000,
+              })),
             ],
+            readyToAssignMoves: [
+              {
+                categoryId: "cat-buffer",
+                categoryName: "Buffer",
+                current: 0,
+                next: 100_000_000,
+              },
+              ...Array.from({ length: 20 }, (_, index) => ({
+                categoryId: `cat-rta-${index}`,
+                categoryName: `RTA ${index}`,
+                current: 0,
+                next: 1000,
+              })),
+            ],
+            readyToAssign: {
+              available: 395_800_000,
+              remaining: 295_800_000,
+            },
           }),
         });
         return;
@@ -368,10 +404,11 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
       await route.fulfill({
         status: 200,
         contentType: JSON_CONTENT_TYPE,
-        body: JSON.stringify({ applied: 2 }),
+        body: JSON.stringify({ applied: 3 }),
       });
     });
 
+    await page.setViewportSize({ width: 800, height: 500 });
     await page.goto(PLAN_PATH);
 
     await page
@@ -382,7 +419,51 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("cat-vacation")).toBeVisible();
     await expect(dialog.getByText("cat-emergency")).toBeVisible();
+    await expect(dialog.getByText("cat-buffer")).toBeVisible();
     await expect(dialog.getByText("Current target")).toBeVisible();
     await expect(dialog.getByText("Next target")).toBeVisible();
+    await expect(dialog.getByText(/^Ready to Assign:/)).toContainText("395");
+    await expect(dialog.getByText(/Assigning to goals:/)).toContainText("100");
+    await expect(dialog.getByText(/Remaining Ready to Assign:/)).toContainText(
+      "295",
+    );
+
+    await dialog
+      .getByRole("button", { name: "Apply YNAB push changes" })
+      .click();
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator("[data-sonner-toast]")).toContainText(
+      "Push completed",
+    );
+  });
+
+  test("push preview shows an empty state and disables apply", async ({
+    page,
+  }) => {
+    await page.route(PLAN_CALCULATE_API_PATTERN, (route) =>
+      route.fulfill({ json: buildCalculatedState() }),
+    );
+    await page.route(PLAN_PUSH_API_PATTERN, (route) =>
+      route.fulfill({
+        json: {
+          diffHash: "empty-hash",
+          diff: [],
+          assignedMoves: [],
+          readyToAssignMoves: [],
+          readyToAssign: { available: 0, remaining: 0 },
+        },
+      }),
+    );
+
+    await page.goto(PLAN_PATH);
+    await page
+      .getByRole("button", { name: "Push goals to YNAB for current month" })
+      .click();
+
+    const dialog = page.getByRole("dialog", { name: "YNAB push confirmation" });
+    await expect(dialog.getByText("No changes to apply")).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "Apply YNAB push changes" }),
+    ).toBeDisabled();
   });
 });

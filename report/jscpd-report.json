@@ -1,36 +1,48 @@
 {
   "statistics": {
-    "detectionDate": "2026-05-23T01:02:54.302Z",
+    "detectionDate": "2026-10-27T08:00:05.218Z",
     "formats": {
       "typescript": {
         "sources": {
           "src/app/api/ynab/sync/route.ts": {
-            "lines": 158,
-            "tokens": 1285,
+            "lines": 159,
+            "tokens": 1294,
             "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
+            "clones": 1,
+            "duplicatedLines": 13,
+            "duplicatedTokens": 100,
+            "percentage": 8.18,
+            "percentageTokens": 7.73,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/plan/push/route.ts": {
-            "lines": 295,
-            "tokens": 2478,
+            "lines": 549,
+            "tokens": 4587,
             "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
+            "clones": 1,
+            "duplicatedLines": 13,
+            "duplicatedTokens": 100,
+            "percentage": 2.37,
+            "percentageTokens": 2.18,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/api/plan/push/route.test.ts": {
+            "lines": 424,
+            "tokens": 3852,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 8,
+            "duplicatedTokens": 89,
+            "percentage": 1.89,
+            "percentageTokens": 2.31,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/app/api/plan/deadlines/route.ts": {
-            "lines": 45,
-            "tokens": 415,
+            "lines": 73,
+            "tokens": 641,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -53,20 +65,20 @@
             "newClones": 0
           },
           "src/app/api/goals/[id]/route.ts": {
-            "lines": 135,
-            "tokens": 1222,
+            "lines": 140,
+            "tokens": 1274,
             "sources": 1,
             "clones": 2,
             "duplicatedLines": 22,
             "duplicatedTokens": 202,
-            "percentage": 16.3,
-            "percentageTokens": 16.53,
+            "percentage": 15.71,
+            "percentageTokens": 15.86,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/lib/ynab/test/months-fetch-mock.ts": {
-            "lines": 45,
-            "tokens": 501,
+            "lines": 49,
+            "tokens": 512,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -89,8 +101,8 @@
             "newClones": 0
           },
           "src/lib/ynab/test/client-mocks.ts": {
-            "lines": 30,
-            "tokens": 278,
+            "lines": 38,
+            "tokens": 343,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -101,8 +113,56 @@
             "newClones": 0
           },
           "src/lib/api/goals/ynab-goal-sync.ts": {
-            "lines": 121,
-            "tokens": 953,
+            "lines": 139,
+            "tokens": 1102,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/api/goals/sync-plan-targets.ts": {
+            "lines": 74,
+            "tokens": 632,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/api/goals/sync-plan-targets.test.ts": {
+            "lines": 206,
+            "tokens": 2006,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 8,
+            "duplicatedTokens": 89,
+            "percentage": 3.88,
+            "percentageTokens": 4.44,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/auth/dev-login/route.ts": {
+            "lines": 49,
+            "tokens": 520,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/app/auth/dev-login/route.test.ts": {
+            "lines": 47,
+            "tokens": 428,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -173,8 +233,8 @@
             "newClones": 0
           },
           "src/lib/ynab/ynab-request.ts": {
-            "lines": 224,
-            "tokens": 1814,
+            "lines": 295,
+            "tokens": 2429,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -197,8 +257,8 @@
             "newClones": 0
           },
           "src/lib/ynab/ynab-request-log.ts": {
-            "lines": 213,
-            "tokens": 2002,
+            "lines": 215,
+            "tokens": 2014,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -209,8 +269,8 @@
             "newClones": 0
           },
           "src/lib/ynab/ynab-request-log.test.ts": {
-            "lines": 70,
-            "tokens": 457,
+            "lines": 86,
+            "tokens": 565,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -233,8 +293,8 @@
             "newClones": 0
           },
           "src/lib/ynab/sync.ts": {
-            "lines": 122,
-            "tokens": 1038,
+            "lines": 126,
+            "tokens": 1062,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -245,8 +305,8 @@
             "newClones": 0
           },
           "src/lib/ynab/sync.test.ts": {
-            "lines": 222,
-            "tokens": 1754,
+            "lines": 347,
+            "tokens": 2727,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -268,9 +328,33 @@
             "newDuplicatedLines": 0,
             "newClones": 0
           },
+          "src/lib/ynab/ready-to-assign.ts": {
+            "lines": 23,
+            "tokens": 279,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/ready-to-assign.test.ts": {
+            "lines": 71,
+            "tokens": 710,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
           "src/lib/ynab/push-mf.ts": {
-            "lines": 236,
-            "tokens": 1829,
+            "lines": 138,
+            "tokens": 1144,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -281,8 +365,20 @@
             "newClones": 0
           },
           "src/lib/ynab/push-mf.test.ts": {
-            "lines": 102,
-            "tokens": 969,
+            "lines": 168,
+            "tokens": 1493,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/official-api.ts": {
+            "lines": 57,
+            "tokens": 412,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -293,20 +389,20 @@
             "newClones": 0
           },
           "src/lib/ynab/map.ts": {
-            "lines": 182,
-            "tokens": 1658,
+            "lines": 195,
+            "tokens": 1794,
             "sources": 1,
             "clones": 1,
             "duplicatedLines": 11,
             "duplicatedTokens": 107,
-            "percentage": 6.04,
-            "percentageTokens": 6.45,
+            "percentage": 5.64,
+            "percentageTokens": 5.96,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/lib/ynab/map.test.ts": {
-            "lines": 65,
-            "tokens": 539,
+            "lines": 90,
+            "tokens": 730,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -317,8 +413,8 @@
             "newClones": 0
           },
           "src/lib/ynab/hide-managed-goal-category.ts": {
-            "lines": 79,
-            "tokens": 532,
+            "lines": 76,
+            "tokens": 525,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -341,8 +437,8 @@
             "newClones": 0
           },
           "src/lib/ynab/goal-progress.ts": {
-            "lines": 305,
-            "tokens": 2067,
+            "lines": 293,
+            "tokens": 1966,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -353,8 +449,8 @@
             "newClones": 0
           },
           "src/lib/ynab/goal-progress.test.ts": {
-            "lines": 186,
-            "tokens": 1347,
+            "lines": 273,
+            "tokens": 1932,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -365,8 +461,8 @@
             "newClones": 0
           },
           "src/lib/ynab/goal-category-link.ts": {
-            "lines": 84,
-            "tokens": 720,
+            "lines": 144,
+            "tokens": 1154,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -377,20 +473,20 @@
             "newClones": 0
           },
           "src/lib/ynab/goal-category-link.test.ts": {
-            "lines": 104,
-            "tokens": 776,
+            "lines": 206,
+            "tokens": 1531,
             "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
+            "clones": 2,
+            "duplicatedLines": 22,
+            "duplicatedTokens": 172,
+            "percentage": 10.68,
+            "percentageTokens": 11.23,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/lib/ynab/client.ts": {
-            "lines": 282,
-            "tokens": 2236,
+            "lines": 269,
+            "tokens": 2372,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -401,20 +497,44 @@
             "newClones": 0
           },
           "src/lib/ynab/client-months.test.ts": {
-            "lines": 76,
-            "tokens": 699,
+            "lines": 83,
+            "tokens": 733,
             "sources": 1,
             "clones": 2,
-            "duplicatedLines": 14,
-            "duplicatedTokens": 178,
-            "percentage": 18.42,
-            "percentageTokens": 25.46,
+            "duplicatedLines": 12,
+            "duplicatedTokens": 170,
+            "percentage": 14.46,
+            "percentageTokens": 23.19,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/lib/ynab/category-progress-input.ts": {
             "lines": 16,
             "tokens": 131,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/assigned-rebalance.ts": {
+            "lines": 56,
+            "tokens": 519,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/ynab/assigned-rebalance.test.ts": {
+            "lines": 89,
+            "tokens": 983,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -473,14 +593,14 @@
             "newClones": 0
           },
           "src/lib/repositories/ynab-cache-repo.ts": {
-            "lines": 162,
-            "tokens": 1657,
+            "lines": 207,
+            "tokens": 2092,
             "sources": 1,
             "clones": 1,
             "duplicatedLines": 11,
             "duplicatedTokens": 107,
-            "percentage": 6.79,
-            "percentageTokens": 6.46,
+            "percentage": 5.31,
+            "percentageTokens": 5.11,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
@@ -545,8 +665,8 @@
             "newClones": 0
           },
           "src/lib/planner/planner.ts": {
-            "lines": 248,
-            "tokens": 2556,
+            "lines": 284,
+            "tokens": 2892,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -557,8 +677,8 @@
             "newClones": 0
           },
           "src/lib/planner/planner.test.ts": {
-            "lines": 311,
-            "tokens": 3069,
+            "lines": 342,
+            "tokens": 3427,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -583,6 +703,18 @@
           "src/lib/plan/plan-computation.ts": {
             "lines": 72,
             "tokens": 634,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/lib/plan/month-targets.ts": {
+            "lines": 96,
+            "tokens": 871,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -641,8 +773,8 @@
             "newClones": 0
           },
           "src/lib/budget/obligations.ts": {
-            "lines": 56,
-            "tokens": 482,
+            "lines": 57,
+            "tokens": 493,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -653,8 +785,8 @@
             "newClones": 0
           },
           "src/lib/budget/obligations.test.ts": {
-            "lines": 105,
-            "tokens": 761,
+            "lines": 118,
+            "tokens": 849,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -762,7 +894,7 @@
           },
           "src/proxy.ts": {
             "lines": 33,
-            "tokens": 286,
+            "tokens": 289,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -774,14 +906,14 @@
           }
         },
         "total": {
-          "lines": 6137,
-          "tokens": 52854,
-          "sources": 64,
-          "clones": 6,
-          "duplicatedLines": 60,
-          "duplicatedTokens": 584,
-          "percentage": 0.98,
-          "percentageTokens": 1.1,
+          "lines": 8225,
+          "tokens": 71652,
+          "sources": 75,
+          "clones": 9,
+          "duplicatedLines": 91,
+          "duplicatedTokens": 855,
+          "percentage": 1.11,
+          "percentageTokens": 1.19,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -789,20 +921,8 @@
       "javascript": {
         "sources": {
           "src/app/(auth)/login/page.tsx": {
-            "lines": 17,
-            "tokens": 144,
-            "sources": 1,
-            "clones": 0,
-            "duplicatedLines": 0,
-            "duplicatedTokens": 0,
-            "percentage": 0,
-            "percentageTokens": 0,
-            "newDuplicatedLines": 0,
-            "newClones": 0
-          },
-          "src/components/ui/sonner.tsx": {
-            "lines": 7,
-            "tokens": 86,
+            "lines": 40,
+            "tokens": 314,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -885,8 +1005,8 @@
             "newClones": 0
           },
           "src/components/plan/push-diff-dialog.tsx": {
-            "lines": 113,
-            "tokens": 851,
+            "lines": 167,
+            "tokens": 1323,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -897,8 +1017,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-timeline.tsx": {
-            "lines": 62,
-            "tokens": 387,
+            "lines": 86,
+            "tokens": 548,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -909,8 +1029,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-timeline-goal-row.tsx": {
-            "lines": 78,
-            "tokens": 579,
+            "lines": 98,
+            "tokens": 684,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -921,8 +1041,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-table.tsx": {
-            "lines": 12,
-            "tokens": 154,
+            "lines": 22,
+            "tokens": 164,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -933,8 +1053,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-header.tsx": {
-            "lines": 21,
-            "tokens": 152,
+            "lines": 195,
+            "tokens": 1443,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -957,8 +1077,8 @@
             "newClones": 0
           },
           "src/components/layout/app-shell.tsx": {
-            "lines": 9,
-            "tokens": 58,
+            "lines": 21,
+            "tokens": 155,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1018,9 +1138,9 @@
           }
         },
         "total": {
-          "lines": 902,
-          "tokens": 6565,
-          "sources": 19,
+          "lines": 1212,
+          "tokens": 8785,
+          "sources": 18,
           "clones": 0,
           "duplicatedLines": 0,
           "duplicatedTokens": 0,
@@ -1033,8 +1153,8 @@
       "tsx": {
         "sources": {
           "src/app/(auth)/login/page.tsx": {
-            "lines": 74,
-            "tokens": 668,
+            "lines": 116,
+            "tokens": 1029,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1045,8 +1165,8 @@
             "newClones": 0
           },
           "src/components/ui/sonner.tsx": {
-            "lines": 30,
-            "tokens": 234,
+            "lines": 35,
+            "tokens": 249,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1129,8 +1249,8 @@
             "newClones": 0
           },
           "src/components/plan/push-diff-dialog.tsx": {
-            "lines": 152,
-            "tokens": 1196,
+            "lines": 227,
+            "tokens": 1771,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1141,32 +1261,32 @@
             "newClones": 0
           },
           "src/components/plan/plan-timeline.tsx": {
-            "lines": 271,
-            "tokens": 2364,
+            "lines": 292,
+            "tokens": 2551,
             "sources": 1,
             "clones": 2,
             "duplicatedLines": 17,
             "duplicatedTokens": 195,
-            "percentage": 6.27,
-            "percentageTokens": 8.25,
+            "percentage": 5.82,
+            "percentageTokens": 7.64,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/components/plan/plan-timeline-goal-row.tsx": {
-            "lines": 277,
-            "tokens": 2219,
+            "lines": 295,
+            "tokens": 2314,
             "sources": 1,
             "clones": 2,
             "duplicatedLines": 17,
             "duplicatedTokens": 195,
-            "percentage": 6.14,
-            "percentageTokens": 8.79,
+            "percentage": 5.76,
+            "percentageTokens": 8.43,
             "newDuplicatedLines": 0,
             "newClones": 0
           },
           "src/components/plan/plan-table.tsx": {
-            "lines": 93,
-            "tokens": 924,
+            "lines": 115,
+            "tokens": 996,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1177,8 +1297,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-header.tsx": {
-            "lines": 161,
-            "tokens": 1220,
+            "lines": 278,
+            "tokens": 2022,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1189,8 +1309,8 @@
             "newClones": 0
           },
           "src/components/plan/plan-conflicts.tsx": {
-            "lines": 98,
-            "tokens": 745,
+            "lines": 103,
+            "tokens": 824,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1201,8 +1321,8 @@
             "newClones": 0
           },
           "src/components/layout/app-shell.tsx": {
-            "lines": 72,
-            "tokens": 525,
+            "lines": 119,
+            "tokens": 920,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1237,8 +1357,8 @@
             "newClones": 0
           },
           "src/app/settings/page.tsx": {
-            "lines": 14,
-            "tokens": 130,
+            "lines": 15,
+            "tokens": 145,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1298,14 +1418,14 @@
           }
         },
         "total": {
-          "lines": 2539,
-          "tokens": 19362,
+          "lines": 2892,
+          "tokens": 21958,
           "sources": 22,
           "clones": 2,
           "duplicatedLines": 17,
           "duplicatedTokens": 195,
-          "percentage": 0.67,
-          "percentageTokens": 1.01,
+          "percentage": 0.59,
+          "percentageTokens": 0.89,
           "newDuplicatedLines": 0,
           "newClones": 0
         }
@@ -1313,8 +1433,8 @@
       "css": {
         "sources": {
           "src/app/globals.css": {
-            "lines": 129,
-            "tokens": 1434,
+            "lines": 120,
+            "tokens": 919,
             "sources": 1,
             "clones": 0,
             "duplicatedLines": 0,
@@ -1326,8 +1446,8 @@
           }
         },
         "total": {
-          "lines": 129,
-          "tokens": 1434,
+          "lines": 120,
+          "tokens": 919,
           "sources": 1,
           "clones": 0,
           "duplicatedLines": 0,
@@ -1340,14 +1460,14 @@
       }
     },
     "total": {
-      "lines": 9707,
-      "tokens": 80215,
-      "sources": 106,
-      "clones": 8,
-      "duplicatedLines": 77,
-      "duplicatedTokens": 779,
-      "percentage": 0.79,
-      "percentageTokens": 0.97,
+      "lines": 12449,
+      "tokens": 103314,
+      "sources": 116,
+      "clones": 11,
+      "duplicatedLines": 108,
+      "duplicatedTokens": 1050,
+      "percentage": 0.87,
+      "percentageTokens": 1.02,
       "newDuplicatedLines": 0,
       "newClones": 0
     }
@@ -1355,37 +1475,109 @@
   "duplicates": [
     {
       "format": "typescript",
+      "lines": 14,
+      "fragment": ",\n    });\n  } catch (error) {\n    if (error instanceof ZodError) {\n      return invalidPayloadResponse(error);\n    }\n\n    if (error instanceof YnabRequestError && error.status === 429) {\n      const body = buildSyncErrorBody(\n        error,\n        \"YNAB rate limit reached. Wait a few minutes, then try again.\",\n        error.operationId,\n      );\n      console.error(\"[YNAB] push failed with rate limit\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/app/api/plan/push/route.ts",
+        "start": 529,
+        "end": 542,
+        "startLoc": {
+          "line": 529,
+          "column": 10,
+          "position": 4403
+        },
+        "endLoc": {
+          "line": 542,
+          "column": 37,
+          "position": 4503
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/ynab/sync/route.ts",
+        "start": 139,
+        "end": 152,
+        "startLoc": {
+          "line": 139,
+          "column": 13,
+          "position": 1110
+        },
+        "endLoc": {
+          "line": 152,
+          "column": 37,
+          "position": 1210
+        }
+      }
+    },
+    {
+      "format": "typescript",
       "lines": 12,
       "fragment": ": Request,\n  context: { params: Promise<{ id: string }> },\n) {\n  try {\n    const userId = await getCurrentUserId();\n\n    if (!userId) {\n      return unauthorizedResponse();\n    }\n\n    const { id } = paramsSchema.parse(await context.params);\n    const goal",
       "tokens": 0,
       "firstFile": {
         "name": "src/app/api/goals/[id]/route.ts",
-        "start": 79,
-        "end": 90,
+        "start": 80,
+        "end": 91,
         "startLoc": {
-          "line": 79,
+          "line": 80,
           "column": 9,
-          "position": 748
+          "position": 752
         },
         "endLoc": {
-          "line": 90,
+          "line": 91,
           "column": 5,
-          "position": 849
+          "position": 853
         }
       },
       "secondFile": {
         "name": "src/app/api/goals/[id]/route.ts",
-        "start": 41,
-        "end": 52,
+        "start": 42,
+        "end": 53,
         "startLoc": {
-          "line": 41,
+          "line": 42,
           "column": 8,
-          "position": 397
+          "position": 401
         },
         "endLoc": {
-          "line": 52,
+          "line": 53,
           "column": 8,
-          "position": 498
+          "position": 502
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 9,
+      "fragment": ": vi.fn(),\n  patchCachedCategories: vi.fn(),\n}));\nvi.mock(\"@/lib/ynab/push-mf\", async (importOriginal) => ({\n  ...(await importOriginal<typeof import(\"@/lib/ynab/push-mf\")>()),\n  pushMonthlyFundingGoals: vi.fn(),\n  pushAssignedMoves: vi.fn(),\n}));\nvi",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/lib/api/goals/sync-plan-targets.test.ts",
+        "start": 25,
+        "end": 33,
+        "startLoc": {
+          "line": 25,
+          "column": 12,
+          "position": 249
+        },
+        "endLoc": {
+          "line": 33,
+          "column": 3,
+          "position": 338
+        }
+      },
+      "secondFile": {
+        "name": "src/app/api/plan/push/route.test.ts",
+        "start": 45,
+        "end": 54,
+        "startLoc": {
+          "line": 45,
+          "column": 9,
+          "position": 490
+        },
+        "endLoc": {
+          "line": 54,
+          "column": 6,
+          "position": 580
         }
       }
     },
@@ -1427,37 +1619,73 @@
     },
     {
       "format": "typescript",
-      "lines": 8,
-      "fragment": ", async () => {\n    const fetchMock = vi.fn(\n      createYnabMonthsFetchMock({\n        months: [\n          { month: \"2024-01-01\", income: 1_000_000 },\n          { month: \"2024-02-01\", income: 2_000_000 },\n          { month: \"2024-03-01\", income: 3_000_000 },\n          {",
+      "lines": 12,
+      "fragment": ",\n      }),\n    ],\n  });\n  mockedCreateYnabClient.mockReturnValue(client as never);\n\n  await expectGoalCategoryLink({ goal, expectedCategoryId: \"cat-linked\" });\n  expect(client.createCategory).not.toHaveBeenCalled();\n  expect(client.patchBudgetCategoryFields).toHaveBeenCalledWith(\n    \"budget\",\n    \"cat-linked\",\n    { hidden",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src/lib/ynab/goal-category-link.test.ts",
+        "start": 194,
+        "end": 205,
+        "startLoc": {
+          "line": 194,
+          "column": 5,
+          "position": 1431
+        },
+        "endLoc": {
+          "line": 205,
+          "column": 7,
+          "position": 1517
+        }
+      },
+      "secondFile": {
+        "name": "src/lib/ynab/goal-category-link.test.ts",
+        "start": 147,
+        "end": 158,
+        "startLoc": {
+          "line": 147,
+          "column": 14,
+          "position": 1085
+        },
+        "endLoc": {
+          "line": 158,
+          "column": 18,
+          "position": 1171
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 7,
+      "fragment": ", async () => {\n    const fetchMock = vi.fn(\n      createYnabMonthsFetchMock({\n        months: [\n          { month: \"2024-01-01\", income: 1_000_000 },\n          { month: \"2024-02-01\", income: 2_000_000 },\n          { month: \"2024-03-01\", income: 3_000_000 }",
       "tokens": 0,
       "firstFile": {
         "name": "src/lib/ynab/client-months.test.ts",
-        "start": 56,
-        "end": 63,
+        "start": 63,
+        "end": 69,
         "startLoc": {
-          "line": 56,
+          "line": 63,
           "column": 53,
-          "position": 445
+          "position": 479
         },
         "endLoc": {
-          "line": 63,
+          "line": 69,
           "column": 2,
-          "position": 534
+          "position": 564
         }
       },
       "secondFile": {
         "name": "src/lib/ynab/client-months.test.ts",
         "start": 15,
-        "end": 22,
+        "end": 23,
         "startLoc": {
           "line": 15,
           "column": 78,
           "position": 100
         },
         "endLoc": {
-          "line": 22,
+          "line": 23,
           "column": 2,
-          "position": 189
+          "position": 186
         }
       }
     },
@@ -1468,17 +1696,17 @@
       "tokens": 0,
       "firstFile": {
         "name": "src/lib/repositories/ynab-cache-repo.ts",
-        "start": 17,
-        "end": 28,
+        "start": 18,
+        "end": 29,
         "startLoc": {
-          "line": 17,
+          "line": 18,
           "column": 2,
-          "position": 161
+          "position": 180
         },
         "endLoc": {
-          "line": 28,
+          "line": 29,
           "column": 22,
-          "position": 268
+          "position": 287
         }
       },
       "secondFile": {
@@ -1591,17 +1819,17 @@
       },
       "secondFile": {
         "name": "src/components/plan/plan-timeline.tsx",
-        "start": 37,
-        "end": 44,
+        "start": 36,
+        "end": 43,
         "startLoc": {
-          "line": 37,
+          "line": 36,
           "column": 2,
-          "position": 352
+          "position": 351
         },
         "endLoc": {
-          "line": 44,
+          "line": 43,
           "column": 10,
-          "position": 438
+          "position": 437
         }
       }
     },
@@ -1627,17 +1855,17 @@
       },
       "secondFile": {
         "name": "src/components/plan/plan-timeline.tsx",
-        "start": 45,
-        "end": 55,
+        "start": 44,
+        "end": 54,
         "startLoc": {
-          "line": 45,
+          "line": 44,
           "column": 2,
-          "position": 490
+          "position": 489
         },
         "endLoc": {
-          "line": 55,
+          "line": 54,
           "column": 17,
-          "position": 599
+          "position": 598
         }
       }
     }

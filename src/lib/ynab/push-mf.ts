@@ -110,6 +110,7 @@ export const pushAssignedMoves = async ({
   budgetId,
   month,
   moves,
+  onMoveApplied,
   fetchImpl,
 }: {
   token: string;
@@ -117,6 +118,7 @@ export const pushAssignedMoves = async ({
   /** `YYYY-MM` of the budget month. */
   month: string;
   moves: MonthlyFundingDiffItem[];
+  onMoveApplied?: (move: MonthlyFundingDiffItem) => Promise<void>;
   fetchImpl?: typeof fetch;
 }): Promise<void> => {
   const apis = createOfficialYnabApis(token, fetchImpl);
@@ -132,5 +134,6 @@ export const pushAssignedMoves = async ({
         { category: { budgeted: move.next } },
       ),
     );
+    await onMoveApplied?.(move);
   }
 };

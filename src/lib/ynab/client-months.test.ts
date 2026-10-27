@@ -18,7 +18,11 @@ describe("createYnabClient.getMonths", () => {
         months: [
           { month: "2024-01-01", income: 1_000_000 },
           { month: "2024-02-01", income: 2_000_000 },
-          { month: "2024-03-01", income: 3_000_000 },
+          {
+            month: "2024-03-01",
+            income: 3_000_000,
+            to_be_budgeted: 395_800_000,
+          },
         ],
         detailMonthMatcher: (url) => url.endsWith("/months/2024-03-01"),
       }),
@@ -34,16 +38,19 @@ describe("createYnabClient.getMonths", () => {
       {
         month: "2024-03-01",
         income: 3_000_000,
+        readyToAssign: 395_800_000,
         categories: [{ id: "cat-1", budgeted: 100, activity: -50 }],
       },
       {
         month: "2024-02-01",
         income: 2_000_000,
+        readyToAssign: undefined,
         categories: undefined,
       },
       {
         month: "2024-01-01",
         income: 1_000_000,
+        readyToAssign: undefined,
         categories: undefined,
       },
     ]);

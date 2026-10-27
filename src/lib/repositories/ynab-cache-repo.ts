@@ -10,6 +10,7 @@ const userIdSchema = z.uuid();
 const cachePayloadSchema = z.object({
   categories: z.custom<Json>(),
   incomeHistory: z.custom<Json>(),
+  readyToAssign: z.number().int().nonnegative(),
   syncedAt: z.string().datetime().optional(),
 });
 
@@ -75,7 +76,13 @@ export const isCacheStale = (
     return true;
   }
 
-  return now - syncedAtMs > CACHE_STALE_AFTER_MS;
+  const syncedAt = new Date(syncedAtMs);
+  const current = new Date(now);
+  const isPreviousCalendarMonth =
+    syncedAt.getUTCFullYear() !== current.getUTCFullYear() ||
+    syncedAt.getUTCMonth() !== current.getUTCMonth();
+
+  return isPreviousCalendarMonth || now - syncedAtMs > CACHE_STALE_AFTER_MS;
 };
 
 export const parseCachedCategories = (value: Json): CachedYnabCategory[] => {
@@ -148,6 +155,7 @@ export const upsertCache = async (
         user_id: parsedUserId,
         categories: parsedInput.categories,
         income_history: parsedInput.incomeHistory,
+        ready_to_assign: parsedInput.readyToAssign,
         synced_at: parsedInput.syncedAt ?? new Date().toISOString(),
       },
       { onConflict: "user_id" },
@@ -173,8 +181,10 @@ export type CachedCategoryPatch = Partial<
 export const patchCachedCategories = async (
   userId: string,
   patches: Map<string, CachedCategoryPatch>,
+  options: { readyToAssignDelta?: number } = {},
 ): Promise<void> => {
-  if (patches.size === 0) {
+  const readyToAssignDelta = options.readyToAssignDelta ?? 0;
+  if (patches.size === 0 && readyToAssignDelta === 0) {
     return;
   }
 
@@ -189,6 +199,10 @@ export const patchCachedCategories = async (
   await upsertCache(userId, {
     categories: categories as unknown as Json,
     incomeHistory: cache.income_history,
+    readyToAssign: Math.max(
+      0,
+      (cache.ready_to_assign ?? 0) + readyToAssignDelta,
+    ),
     syncedAt: new Date(cache.synced_at).toISOString(),
   });
 };

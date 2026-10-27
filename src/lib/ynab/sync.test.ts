@@ -200,6 +200,27 @@ describe("syncYnabData", () => {
     ]);
   });
 
+  it("returns positive Ready to Assign from the current calendar month", async () => {
+    const currentMonth = `${new Date().toISOString().slice(0, 7)}-01`;
+    const client: YnabDataClient = {
+      ...buildClient(),
+      getMonths: () =>
+        Promise.resolve([
+          { month: "1999-01-01", income: 0, readyToAssign: 999 },
+          { month: currentMonth, income: 0, readyToAssign: 395_800_000 },
+        ]),
+    };
+
+    const result = await syncYnabData({
+      token: TEST_TOKEN,
+      budgetId: TEST_BUDGET_ID,
+      baselineMonths: BASELINE_MONTHS,
+      client,
+    });
+
+    expect(result.readyToAssign).toBe(395_800_000);
+  });
+
   it("returns budget currency code", async () => {
     const result = await syncYnabData({
       token: TEST_TOKEN,
@@ -282,9 +303,14 @@ describe("syncYnabData", () => {
       }
 
       const month = url.split("/").at(-1) ?? "";
-      const budgeted = month === "2026-09-01" ? 174_531_000 : 0;
-      const balance = month === "2026-09-01" ? 36_656_000 : 0;
-      const activity = month === "2026-09-01" ? -166_000_000 : 0;
+      const monthAmounts =
+        month === "2026-09-01"
+          ? {
+              budgeted: 174_531_000,
+              balance: 36_656_000,
+              activity: -166_000_000,
+            }
+          : { budgeted: 0, balance: 0, activity: 0 };
       return new Response(
         JSON.stringify({
           data: {
@@ -294,9 +320,7 @@ describe("syncYnabData", () => {
               categories: [
                 {
                   ...category,
-                  budgeted,
-                  activity,
-                  balance,
+                  ...monthAmounts,
                 },
               ],
             },

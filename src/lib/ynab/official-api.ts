@@ -47,8 +47,8 @@ export const runOfficialYnabCall = async <T>(
       throw new YnabRequestError(error.response.status, {
         retryAfterSeconds:
           Number.isFinite(retryAfterSeconds) &&
-            retryAfterSeconds !== null &&
-            retryAfterSeconds > 0
+          retryAfterSeconds !== null &&
+          retryAfterSeconds > 0
             ? retryAfterSeconds
             : null,
       });

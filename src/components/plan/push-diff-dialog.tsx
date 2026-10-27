@@ -18,6 +18,12 @@ export type PushPreview = {
   targets: PushDiffRow[];
   /** Current-month assigned changes between goal categories. */
   assignedMoves: PushDiffRow[];
+  /** Current-month assignments funded by Ready to Assign. */
+  readyToAssignMoves: PushDiffRow[];
+  readyToAssign: {
+    available: number;
+    remaining: number;
+  };
 };
 
 type PushDiffDialogProps = {
@@ -78,8 +84,8 @@ const NoChangesState = () => (
       No changes to apply
     </div>
     <p className="mt-1 text-muted-foreground">
-      Current YNAB monthly funding already matches calculated plan for this
-      month.
+      Current YNAB targets and assigned money already match the calculated plan
+      for this month.
     </p>
   </div>
 );
@@ -106,62 +112,92 @@ const PushDiffDialogBody = ({
   isApplying: boolean;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
-}) => (
-  <Card className="max-h-[85vh] w-full max-w-3xl overflow-hidden">
-    <CardHeader className="space-y-1">
-      <CardTitle>Confirm YNAB goal updates</CardTitle>
-      <p className="text-sm text-muted-foreground">
-        Review current versus next monthly funding targets before applying.
-      </p>
-    </CardHeader>
+}) => {
+  const hasNoChanges =
+    preview.targets.length === 0 &&
+    preview.assignedMoves.length === 0 &&
+    preview.readyToAssignMoves.length === 0;
+  const readyToAssignTotal = preview.readyToAssignMoves.reduce(
+    (total, move) => total + move.next - move.current,
+    0,
+  );
 
-    <CardContent className="space-y-4">
-      {preview.targets.length === 0 && preview.assignedMoves.length === 0 ? (
-        <NoChangesState />
-      ) : null}
-      {preview.assignedMoves.length > 0 ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Money assigned above plan this month moves to goals that are short.
-          </p>
+  return (
+    <Card className="max-h-[85vh] w-full max-w-3xl overflow-hidden">
+      <CardHeader className="space-y-1">
+        <CardTitle>Confirm YNAB goal updates</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Review targets and assigned money before applying.
+        </p>
+      </CardHeader>
+
+      <CardContent className="min-h-0 space-y-4 overflow-y-auto">
+        {hasNoChanges ? <NoChangesState /> : null}
+        {preview.assignedMoves.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Money assigned above plan this month moves to goals that are
+              short.
+            </p>
+            <PushDiffTable
+              diffRows={preview.assignedMoves}
+              currentLabel="Assigned now"
+              nextLabel="Assigned after"
+            />
+          </div>
+        ) : null}
+        {preview.readyToAssignMoves.length > 0 ? (
+          <div className="space-y-2">
+            <div className="rounded-md bg-muted/50 p-3 text-sm">
+              <p className="font-medium">
+                Ready to Assign:{" "}
+                {formatAmount(preview.readyToAssign.available / 1000)}
+              </p>
+              <p className="text-muted-foreground">
+                Assigning to goals: {formatAmount(readyToAssignTotal / 1000)}.
+                Remaining Ready to Assign:{" "}
+                {formatAmount(preview.readyToAssign.remaining / 1000)}.
+              </p>
+            </div>
+            <PushDiffTable
+              diffRows={preview.readyToAssignMoves}
+              currentLabel="Assigned now"
+              nextLabel="Assigned after"
+            />
+          </div>
+        ) : null}
+        {preview.targets.length > 0 ? (
           <PushDiffTable
-            diffRows={preview.assignedMoves}
-            currentLabel="Assigned now"
-            nextLabel="Assigned after"
+            diffRows={preview.targets}
+            currentLabel="Current target"
+            nextLabel="Next target"
           />
-        </div>
-      ) : null}
-      {preview.targets.length > 0 ? (
-        <PushDiffTable
-          diffRows={preview.targets}
-          currentLabel="Current target"
-          nextLabel="Next target"
-        />
-      ) : null}
-      <PushWarning />
+        ) : null}
+        <PushWarning />
 
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isApplying}
-          aria-label="Cancel YNAB push"
-          onClick={onCancel}
-        >
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          disabled={isApplying}
-          aria-label="Apply YNAB push changes"
-          onClick={() => void onConfirm()}
-        >
-          {isApplying ? "Applying..." : "Apply changes"}
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
-);
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isApplying}
+            aria-label="Cancel YNAB push"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            disabled={isApplying || hasNoChanges}
+            aria-label="Apply YNAB push changes"
+            onClick={() => void onConfirm()}
+          >
+            {isApplying ? "Applying..." : "Apply changes"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const PushDiffDialog = ({
   isOpen,

@@ -165,18 +165,21 @@ export type Database = {
         Row: {
           categories: Json;
           income_history: Json;
+          ready_to_assign: number | null;
           synced_at: string;
           user_id: string;
         };
         Insert: {
           categories?: Json;
           income_history?: Json;
+          ready_to_assign?: number | null;
           synced_at?: string;
           user_id: string;
         };
         Update: {
           categories?: Json;
           income_history?: Json;
+          ready_to_assign?: number | null;
           synced_at?: string;
           user_id?: string;
         };

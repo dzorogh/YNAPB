@@ -5,6 +5,8 @@
 export type RebalanceGoalCategory = {
   categoryId: string;
   assigned: number;
+  /** Current available balance; negative balances are overspending. */
+  balance?: number;
   /** Planner amount for this month, not raised to assigned. */
   planned: number;
   /** Monthly target that YNAPB pushes; may be below assigned. */
@@ -30,6 +32,7 @@ export const rebalanceAssignedToTargets = (
 
   const surpluses = [...goals]
     .reverse()
+    .filter((goal) => (goal.balance ?? 0) >= 0)
     .map((goal) => ({
       categoryId: goal.categoryId,
       amount: Math.max(0, goal.assigned - Math.max(0, goal.planned)),
@@ -37,6 +40,7 @@ export const rebalanceAssignedToTargets = (
     .filter((item) => item.amount > 0);
 
   for (const goal of goals) {
+    if (goal.assigned < 0 || (goal.balance ?? 0) < 0) continue;
     let deficit = Math.max(0, goal.target - goal.assigned);
     for (const surplus of surpluses) {
       if (deficit <= 0) break;

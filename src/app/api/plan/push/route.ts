@@ -48,6 +48,7 @@ import {
   sortMonthlyFundingDiff,
   type MonthlyFundingDiffItem,
 } from "@/lib/ynab/push-mf";
+import { allocateReadyToAssign } from "@/lib/ynab/ready-to-assign";
 
 const monthStringSchema = z.string().regex(/^\d{4}-\d{2}$/);
 const previewPayloadSchema = z.object({
@@ -64,18 +65,25 @@ const pushPayloadSchema = z.union([previewPayloadSchema, applyPayloadSchema]);
 const hashValue = (value: unknown): string =>
   createHash("sha256").update(JSON.stringify(value)).digest("hex");
 
-const buildDiffHash = (
-  month: string,
-  diff: MonthlyFundingDiffItem[],
-  assignedMoves: AssignedMove[],
-): string =>
-  assignedMoves.length === 0
-    ? hashValue({ month, diff: sortMonthlyFundingDiff(diff) })
-    : hashValue({
-        month,
-        diff: sortMonthlyFundingDiff(diff),
-        assignedMoves: sortMonthlyFundingDiff(assignedMoves),
-      });
+type ReadyToAssignSummary = {
+  available: number;
+  remaining: number;
+};
+
+const buildDiffHash = (params: {
+  month: string;
+  diff: MonthlyFundingDiffItem[];
+  assignedMoves: AssignedMove[];
+  readyToAssignMoves: AssignedMove[];
+  readyToAssign: ReadyToAssignSummary;
+}): string =>
+  hashValue({
+    month: params.month,
+    diff: sortMonthlyFundingDiff(params.diff),
+    assignedMoves: sortMonthlyFundingDiff(params.assignedMoves),
+    readyToAssignMoves: sortMonthlyFundingDiff(params.readyToAssignMoves),
+    readyToAssign: params.readyToAssign,
+  });
 
 const toMilliunits = (amount: number): number => Math.round(amount * 1000);
 
@@ -109,7 +117,8 @@ const toRebalanceGoals = (monthTargets: MonthTargets) => {
       return [
         {
           categoryId: category.id,
-          assigned: toMilliunits(Math.max(0, category.assigned ?? 0)),
+          assigned: toMilliunits(category.assigned ?? 0),
+          balance: toMilliunits(category.balance ?? 0),
           planned: toMilliunits(monthTargets.targets[goal.id] ?? 0),
           target: toMilliunits(monthTargets.targets[goal.id] ?? 0),
         },
@@ -123,7 +132,7 @@ const withAssigned = (
 ): CachedYnabCategory[] =>
   categories.map((category) => {
     const next = nextAssigned.get(category.id);
-    const current = Math.max(0, category.assigned ?? 0);
+    const current = category.assigned ?? 0;
     if (next === undefined || toMilliunits(current) === next) {
       return category;
     }
@@ -189,6 +198,25 @@ const buildAssignedMoves = (
   );
 };
 
+const combineAssignedMoves = (
+  assignedMoves: AssignedMove[],
+  readyToAssignMoves: AssignedMove[],
+): AssignedMove[] => {
+  const combined = new Map(
+    assignedMoves.map((move) => [move.categoryId, { ...move }]),
+  );
+  for (const move of readyToAssignMoves) {
+    const existing = combined.get(move.categoryId);
+    combined.set(move.categoryId, {
+      ...move,
+      current: existing?.current ?? move.current,
+    });
+  }
+  return sortMonthlyFundingDiff(
+    [...combined.values()].filter((move) => move.current !== move.next),
+  );
+};
+
 const buildInputsHash = (params: {
   month: string;
   goals: Awaited<ReturnType<typeof listGoals>>;
@@ -230,11 +258,11 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
 
   const inputs: PlanInputs = { goals, cache, incomeSettings };
   const syncedCategories = buildPlanComputation(inputs).categories;
-  const categories =
-    month === monthKeyFromDate(new Date())
-      ? rebalanceCurrentMonth(inputs, syncedCategories, month)
-      : syncedCategories;
-  const monthTargets = computeMonthTargets(inputs, categories, month);
+  const isCurrentMonth = month === monthKeyFromDate(new Date());
+  const rebalancedCategories = isCurrentMonth
+    ? rebalanceCurrentMonth(inputs, syncedCategories, month)
+    : syncedCategories;
+  const monthTargets = computeMonthTargets(inputs, rebalancedCategories, month);
   if (!monthTargets) {
     return {
       errorResponse: NextResponse.json(
@@ -246,7 +274,35 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
 
   const { computation } = monthTargets;
   const monthlyFundingTargets = monthTargets.targets;
-  const assignedMoves = buildAssignedMoves(syncedCategories, categories);
+  const assignedMoves = buildAssignedMoves(
+    syncedCategories,
+    rebalancedCategories,
+  );
+  const availableReadyToAssign = isCurrentMonth
+    ? Math.max(0, Math.trunc(cache.ready_to_assign ?? 0))
+    : 0;
+  const categories = isCurrentMonth
+    ? withAssigned(
+        rebalancedCategories,
+        allocateReadyToAssign(
+          toRebalanceGoals(monthTargets),
+          availableReadyToAssign,
+        ),
+      )
+    : rebalancedCategories;
+  const readyToAssignMoves = buildAssignedMoves(
+    rebalancedCategories,
+    categories,
+  );
+  const allocatedReadyToAssign = readyToAssignMoves.reduce(
+    (total, move) => total + move.next - move.current,
+    0,
+  );
+  const readyToAssign = {
+    available: availableReadyToAssign,
+    remaining: availableReadyToAssign - allocatedReadyToAssign,
+  };
+  const appliedMoves = combineAssignedMoves(assignedMoves, readyToAssignMoves);
 
   const diff = buildPushDiff({
     goals: goals.map((goal) => ({
@@ -270,7 +326,16 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     categories,
     diff,
     assignedMoves,
-    diffHash: buildDiffHash(month, diff, assignedMoves),
+    readyToAssignMoves,
+    readyToAssign,
+    appliedMoves,
+    diffHash: buildDiffHash({
+      month,
+      diff,
+      assignedMoves,
+      readyToAssignMoves,
+      readyToAssign,
+    }),
   } as const;
 };
 
@@ -370,12 +435,24 @@ const applyDiffAndPersistSnapshot = async (params: {
         { status: 409 },
       );
     }
-    if (effectiveCanonical.assignedMoves.length > 0) {
+    const assignedPatches = buildCachePatches(
+      effectiveCanonical.appliedMoves,
+      [],
+      effectiveCanonical.categories,
+    );
+    if (effectiveCanonical.appliedMoves.length > 0) {
       await pushAssignedMoves({
         token,
         budgetId: profile.ynab_budget_id,
         month,
-        moves: effectiveCanonical.assignedMoves,
+        moves: effectiveCanonical.appliedMoves,
+        onMoveApplied: async (move) => {
+          await patchCachedCategories(
+            userId,
+            new Map([[move.categoryId, assignedPatches.get(move.categoryId)!]]),
+            { readyToAssignDelta: move.current - move.next },
+          );
+        },
       });
     }
     if (effectiveCanonical.diff.length > 0) {
@@ -384,15 +461,15 @@ const applyDiffAndPersistSnapshot = async (params: {
         budgetId: profile.ynab_budget_id,
         updates: effectiveCanonical.diff,
       });
+      await patchCachedCategories(
+        userId,
+        buildCachePatches(
+          [],
+          effectiveCanonical.diff,
+          effectiveCanonical.categories,
+        ),
+      );
     }
-    await patchCachedCategories(
-      userId,
-      buildCachePatches(
-        effectiveCanonical.assignedMoves,
-        effectiveCanonical.diff,
-        effectiveCanonical.categories,
-      ),
-    );
 
     await createAndTrimPlanSnapshot(
       userId,
@@ -412,8 +489,7 @@ const applyDiffAndPersistSnapshot = async (params: {
 
     return NextResponse.json({
       applied:
-        effectiveCanonical.diff.length +
-        effectiveCanonical.assignedMoves.length,
+        effectiveCanonical.diff.length + effectiveCanonical.appliedMoves.length,
       diffHash: effectiveCanonical.diffHash,
     });
   } catch (error) {
@@ -441,6 +517,8 @@ export async function POST(request: Request) {
       return NextResponse.json({
         diff: canonical.diff,
         assignedMoves: canonical.assignedMoves,
+        readyToAssignMoves: canonical.readyToAssignMoves,
+        readyToAssign: canonical.readyToAssign,
         diffHash: canonical.diffHash,
       });
     }

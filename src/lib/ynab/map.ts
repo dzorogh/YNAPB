@@ -46,6 +46,7 @@ type YnabCategorySource = {
 type YnabMonthIncomeSource = {
   month: string;
   income?: number | null;
+  readyToAssign?: number | null;
   categories?: Array<{
     id: string;
     budgeted?: number | null;
@@ -88,6 +89,18 @@ export const mapYnabCategory = (
 /** YNAB month key for the calendar month containing `date` (`YYYY-MM-01`). */
 export const currentBudgetMonthFromDate = (date: Date = new Date()): string =>
   `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-01`;
+
+export const mapReadyToAssign = (
+  months: YnabMonthIncomeSource[],
+  referenceMonth: string = currentBudgetMonthFromDate(),
+): number => {
+  const value = months.find(
+    (month) => month.month === referenceMonth,
+  )?.readyToAssign;
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.round(value))
+    : 0;
+};
 
 /**
  * Prior budget month ending available per category (cash left over into the

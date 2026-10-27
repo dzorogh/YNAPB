@@ -29,6 +29,7 @@ export const syncPlanTargets = async (
   const cache = await upsertCache(userId, {
     categories: synced.categories,
     incomeHistory: synced.incomeHistory,
+    readyToAssign: synced.readyToAssign,
     syncedAt: synced.syncedAt,
   });
   const categories = parseCachedCategories(cache.categories);

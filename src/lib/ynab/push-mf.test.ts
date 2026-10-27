@@ -1,6 +1,6 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 
-import { buildPushDiff } from "./push-mf";
+import { buildPushDiff, pushAssignedMoves } from "./push-mf";
 
 const ACTIVE = "active" as const;
 const FROZEN = "frozen" as const;
@@ -132,4 +132,38 @@ it("includes categories with a YNAB target date to clear it", () => {
       clearsTargetDate: true,
     },
   ]);
+});
+
+it("runs recovery after each successful absolute assigned write", async () => {
+  const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
+    Response.json({ data: { category: { id: "cat" } } }),
+  );
+  const onMoveApplied = vi.fn(async () => {});
+  const decrease = {
+    categoryId: "decrease",
+    categoryName: "Decrease",
+    current: 100,
+    next: 0,
+  };
+  const increase = {
+    categoryId: "increase",
+    categoryName: "Increase",
+    current: 0,
+    next: 100,
+  };
+
+  await pushAssignedMoves({
+    token: "token",
+    budgetId: "budget",
+    month: "2026-10",
+    moves: [increase, decrease],
+    onMoveApplied,
+    fetchImpl: fetchMock,
+  });
+
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+    "/categories/decrease",
+  );
+  expect(onMoveApplied.mock.calls).toEqual([[decrease], [increase]]);
 });

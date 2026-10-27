@@ -83,6 +83,8 @@ export type YnabClient = {
     Array<{
       month: string;
       income: number | null;
+      /** Ready to Assign for this month, milliunits. */
+      readyToAssign?: number | null;
       categories?: Array<{
         id: string;
         budgeted?: number | null;
@@ -249,6 +251,7 @@ export const createYnabClient = (
       return sortedMonths.map((month) => ({
         month: month.month,
         income: month.income,
+        readyToAssign: month.to_be_budgeted,
         categories: categoriesByMonth.get(month.month),
       }));
     },

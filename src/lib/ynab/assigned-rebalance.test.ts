@@ -50,6 +50,35 @@ describe("rebalanceAssignedToTargets", () => {
     });
   });
 
+  it("does not rebalance into a category with negative assigned", () => {
+    const result = rebalanceAssignedToTargets([
+      { categoryId: "negative", assigned: -50, planned: 100, target: 100 },
+      { categoryId: "rich", assigned: 100, planned: 0, target: 100 },
+    ]);
+
+    expect(Object.fromEntries(result)).toEqual({ negative: -50, rich: 100 });
+  });
+
+  it("excludes overspent categories as sources and recipients", () => {
+    const result = rebalanceAssignedToTargets([
+      { categoryId: "early", assigned: 0, planned: 50, target: 50 },
+      {
+        categoryId: "overspent",
+        assigned: 100,
+        balance: -1,
+        planned: 0,
+        target: 100,
+      },
+      { categoryId: "rich", assigned: 100, planned: 0, target: 100 },
+    ]);
+
+    expect(Object.fromEntries(result)).toEqual({
+      early: 50,
+      overspent: 100,
+      rich: 50,
+    });
+  });
+
   it("keeps assigned when nothing is short", () => {
     const result = rebalanceAssignedToTargets([
       { categoryId: "a", assigned: 100, planned: 50, target: 100 },

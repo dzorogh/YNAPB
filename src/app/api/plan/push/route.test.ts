@@ -8,7 +8,7 @@ import {
 import { listGoals } from "@/lib/repositories/goals-repo";
 import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
 import { pushAssignedMoves, pushMonthlyFundingGoals } from "@/lib/ynab/push-mf";
-import type { Json } from "@/types/supabase";
+import type { Json, Tables } from "@/types/supabase";
 
 import { POST } from "./route";
 
@@ -66,6 +66,8 @@ const callPush = async (input: Request) => {
 };
 
 describe("Push after automatic target updates", () => {
+  let cache: Tables<"ynab_cache">;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
@@ -93,9 +95,10 @@ describe("Push after automatic target updates", () => {
       baseline_months: 6,
       updated_at: NOW,
     });
-    const cache = {
+    cache = {
       user_id: "user",
       income_history: [],
+      ready_to_assign: 0,
       synced_at: NOW,
       categories: [
         {
@@ -116,15 +119,42 @@ describe("Push after automatic target updates", () => {
     };
     vi.mocked(getCache).mockImplementation(async () => cache);
     vi.mocked(patchCachedCategories).mockImplementation(
-      async (_userId, patches) => {
+      async (_userId, patches, options) => {
         cache.categories = parseCachedCategories(cache.categories).map(
           (category) => ({ ...category, ...patches.get(category.id) }),
         ) as unknown as Json;
+        cache.ready_to_assign = Math.max(
+          0,
+          (cache.ready_to_assign ?? 0) + (options?.readyToAssignDelta ?? 0),
+        );
+      },
+    );
+    vi.mocked(pushAssignedMoves).mockImplementation(
+      async ({ moves, onMoveApplied }) => {
+        for (const move of moves) {
+          await onMoveApplied?.(move);
+        }
       },
     );
   });
 
   afterEach(() => vi.useRealTimers());
+
+  const setAssigned = (categoryId: string, assigned: number) => {
+    cache.categories = parseCachedCategories(cache.categories).map(
+      (category) =>
+        category.id === categoryId
+          ? { ...category, assigned, balance: assigned }
+          : category,
+    ) as unknown as Json;
+  };
+
+  const setBalance = (categoryId: string, balance: number) => {
+    cache.categories = parseCachedCategories(cache.categories).map(
+      (category) =>
+        category.id === categoryId ? { ...category, balance } : category,
+    ) as unknown as Json;
+  };
 
   it("only previews moves, then applies them once with the accepted diff", async () => {
     const response = await callPush(
@@ -184,5 +214,212 @@ describe("Push after automatic target updates", () => {
     expect(response.status).toBe(409);
     expect(pushAssignedMoves).not.toHaveBeenCalled();
     expect(pushMonthlyFundingGoals).not.toHaveBeenCalled();
+  });
+
+  it("separates RTA preview moves and combines them only for apply", async () => {
+    setAssigned("house", 250_000);
+    cache.ready_to_assign = 50_000_000;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.assignedMoves).toEqual([
+      {
+        categoryId: "house",
+        categoryName: "house",
+        current: 250_000_000,
+        next: 171_428_571,
+      },
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 0,
+        next: 78_571_429,
+      },
+    ]);
+    expect(preview.readyToAssignMoves).toEqual([
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 78_571_429,
+        next: 100_000_000,
+      },
+    ]);
+
+    await callPush(
+      request({
+        mode: "apply",
+        month: "2026-10",
+        acceptedDiffHash: preview.diffHash,
+      }),
+    );
+    expect(pushAssignedMoves).toHaveBeenCalledWith(
+      expect.objectContaining({
+        moves: [
+          {
+            categoryId: "house",
+            categoryName: "house",
+            current: 250_000_000,
+            next: 171_428_571,
+          },
+          {
+            categoryId: "vacation",
+            categoryName: "vacation",
+            current: 0,
+            next: 100_000_000,
+          },
+        ],
+      }),
+    );
+
+    const repeated = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    expect(await repeated.json()).toMatchObject({
+      assignedMoves: [],
+      readyToAssignMoves: [],
+      readyToAssign: { available: 28_571_429, remaining: 28_571_429 },
+    });
+  });
+
+  it("uses partial RTA in deadline priority order without overspending", async () => {
+    setAssigned("house", 0);
+    cache.ready_to_assign = 150_000_000;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.readyToAssignMoves).toEqual([
+      {
+        categoryId: "house",
+        categoryName: "house",
+        current: 0,
+        next: 50_000_000,
+      },
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 0,
+        next: 100_000_000,
+      },
+    ]);
+    expect(preview.readyToAssign).toEqual({
+      available: 150_000_000,
+      remaining: 0,
+    });
+  });
+
+  it("leaves excess RTA unassigned and rejects apply when only it changes", async () => {
+    setAssigned("house", 171_428.571);
+    cache.ready_to_assign = 395_800_000;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.readyToAssignMoves).toEqual([
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 0,
+        next: 100_000_000,
+      },
+    ]);
+    expect(preview.readyToAssign).toEqual({
+      available: 395_800_000,
+      remaining: 295_800_000,
+    });
+
+    cache.ready_to_assign += 1_000;
+    const stale = await callPush(
+      request({
+        mode: "apply",
+        month: "2026-10",
+        acceptedDiffHash: preview.diffHash,
+      }),
+    );
+    expect(stale.status).toBe(409);
+    expect(pushAssignedMoves).not.toHaveBeenCalled();
+  });
+
+  it("does not use RTA to fund negative assigned or replace existing rebalancing", async () => {
+    cache.ready_to_assign = -1;
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.readyToAssignMoves).toEqual([]);
+    expect(preview.assignedMoves).toHaveLength(2);
+
+    setAssigned("house", 200_000);
+    setAssigned("vacation", -10_000);
+    cache.ready_to_assign = 100_000_000;
+    const negative = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    expect(await negative.json()).toMatchObject({
+      assignedMoves: [],
+      readyToAssignMoves: [],
+    });
+
+    setAssigned("house", 171_428.571);
+    setAssigned("vacation", 0);
+    setBalance("vacation", -1);
+    const overspent = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    expect(await overspent.json()).toMatchObject({
+      assignedMoves: [],
+      readyToAssignMoves: [],
+    });
+  });
+
+  it("recovers cache and RTA after a successful rebalance decrease", async () => {
+    vi.mocked(pushAssignedMoves).mockImplementation(
+      async ({ onMoveApplied }) => {
+        await onMoveApplied?.({
+          categoryId: "house",
+          categoryName: "house",
+          current: 700_000_000,
+          next: 600_000_000,
+        });
+        throw new Error("YNAB unavailable");
+      },
+    );
+
+    const response = await callPush(
+      request({
+        mode: "apply",
+        month: "2026-10",
+        acceptedDiffHash: (
+          await (
+            await callPush(request({ mode: "preview", month: "2026-10" }))
+          ).json()
+        ).diffHash,
+      }),
+    );
+    expect(response.status).toBe(500);
+    const categories = parseCachedCategories(cache.categories);
+    expect(
+      categories.find((category) => category.id === "house")?.assigned,
+    ).toBe(600_000);
+    expect(
+      categories.find((category) => category.id === "vacation")?.assigned,
+    ).toBe(0);
+    expect(cache.ready_to_assign).toBe(100_000_000);
+  });
+
+  it("rejects cache synced in the previous calendar month", async () => {
+    vi.setSystemTime(new Date("2026-10-01T00:00:00.000Z"));
+    cache.synced_at = "2026-09-30T23:59:30.000Z";
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ needsSync: true });
+    expect(pushAssignedMoves).not.toHaveBeenCalled();
   });
 });

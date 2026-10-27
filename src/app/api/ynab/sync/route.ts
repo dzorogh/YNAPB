@@ -128,6 +128,7 @@ export async function POST(request: Request) {
     await upsertCache(user.id, {
       categories: synced.categories,
       incomeHistory: synced.incomeHistory,
+      readyToAssign: synced.readyToAssign,
       syncedAt: synced.syncedAt,
     });
 

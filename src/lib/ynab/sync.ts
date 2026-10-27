@@ -6,6 +6,7 @@ import {
   currentBudgetMonthFromDate,
   mapCategoryPriorMonthAvailable,
   mapIncomeHistory,
+  mapReadyToAssign,
   mapYnabCategory,
   type YnabCategory,
   type YnabMonthIncome,
@@ -38,6 +39,8 @@ type SyncYnabDataInput = {
 type SyncYnabDataResult = {
   categories: YnabCategory[];
   incomeHistory: YnabMonthIncome[];
+  /** Current calendar month's positive Ready to Assign, milliunits. */
+  readyToAssign: number;
   syncedAt: string;
   currencyCode: string | null;
   operationId: string;
@@ -108,6 +111,7 @@ export const syncYnabData = async ({
         };
       }),
       incomeHistory: mapIncomeHistory(rawMonths, baselineMonths),
+      readyToAssign: mapReadyToAssign(rawMonths),
       syncedAt: new Date().toISOString(),
       currencyCode,
       operationId,

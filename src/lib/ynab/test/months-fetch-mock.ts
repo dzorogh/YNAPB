@@ -1,4 +1,8 @@
-type MonthListEntry = { month: string; income: number };
+type MonthListEntry = {
+  month: string;
+  income: number;
+  to_be_budgeted?: number;
+};
 
 export const countMonthDetailCalls = (
   fetchMock: { mock: { calls: Array<[RequestInfo]> } },

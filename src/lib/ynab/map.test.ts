@@ -3,7 +3,32 @@ import { describe, expect, it } from "vitest";
 import {
   mapCategoryCashSpentTotal,
   mapCategoryPriorMonthAvailable,
+  mapReadyToAssign,
 } from "./map";
+
+describe("mapReadyToAssign", () => {
+  it("reads the requested month instead of the first response", () => {
+    expect(
+      mapReadyToAssign(
+        [
+          { month: "2026-11-01", readyToAssign: 900_000 },
+          { month: "2026-10-01", readyToAssign: 395_800_000 },
+        ],
+        "2026-10-01",
+      ),
+    ).toBe(395_800_000);
+  });
+
+  it("uses zero for a missing or negative Ready to Assign", () => {
+    expect(mapReadyToAssign([], "2026-10-01")).toBe(0);
+    expect(
+      mapReadyToAssign(
+        [{ month: "2026-10-01", readyToAssign: -100 }],
+        "2026-10-01",
+      ),
+    ).toBe(0);
+  });
+});
 
 describe("mapCategoryCashSpentTotal", () => {
   it("sums cash spending across all synced months per category", () => {

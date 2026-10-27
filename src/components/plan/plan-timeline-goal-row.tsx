@@ -108,9 +108,7 @@ export const buildGoalTimelineRowState = (params: {
       Boolean(earliestAchievableIso) && canApplyGoalDeadline,
     canApplyEarlierDate:
       Boolean(completedAtIso) && canBeCompletedEarlier && canApplyGoalDeadline,
-    barToneClass: isUnreachable
-      ? "bg-destructive/70"
-      : "bg-primary/70",
+    barToneClass: isUnreachable ? "bg-destructive/70" : "bg-primary/70",
   };
 };
 

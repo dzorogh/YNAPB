@@ -112,6 +112,7 @@ describe("syncPlanTargets", () => {
     vi.mocked(syncYnabData).mockImplementation(async () => ({
       categories,
       incomeHistory: [],
+      readyToAssign: 0,
       syncedAt: NOW,
       currencyCode: null,
       operationId: "sync",
@@ -121,6 +122,7 @@ describe("syncPlanTargets", () => {
         user_id: "user",
         categories: input.categories,
         income_history: input.incomeHistory,
+        ready_to_assign: input.readyToAssign,
         synced_at: input.syncedAt ?? NOW,
       };
       return cache;
@@ -159,9 +161,7 @@ describe("syncPlanTargets", () => {
     });
     expect(pushAssignedMoves).not.toHaveBeenCalled();
     expect(categories.map((item) => item.assigned)).toEqual(beforeAssigned);
-    expect(categories.find((item) => item.id === "move")?.goal_target).toBe(
-      0,
-    );
+    expect(categories.find((item) => item.id === "move")?.goal_target).toBe(0);
     expect(categories.find((item) => item.id === "frozen")?.goal_target).toBe(
       50,
     );

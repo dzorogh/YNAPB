@@ -94,6 +94,8 @@ type YnabSyncErrorDetails = {
 type PushPreviewResponse = {
   diff: PushPreview["targets"];
   assignedMoves?: PushPreview["assignedMoves"];
+  readyToAssignMoves?: PushPreview["readyToAssignMoves"];
+  readyToAssign?: PushPreview["readyToAssign"];
   diffHash: string;
 };
 
@@ -762,6 +764,8 @@ const usePushPreview = ({
       setPushPreview({
         targets: payload.diff,
         assignedMoves: payload.assignedMoves ?? [],
+        readyToAssignMoves: payload.readyToAssignMoves ?? [],
+        readyToAssign: payload.readyToAssign ?? { available: 0, remaining: 0 },
       });
       setPreviewDiffHash(payload.diffHash);
       setIsPushDialogOpen(true);
@@ -900,6 +904,8 @@ export default function PlanPage() {
   const [pushPreview, setPushPreview] = useState<PushPreview>({
     targets: [],
     assignedMoves: [],
+    readyToAssignMoves: [],
+    readyToAssign: { available: 0, remaining: 0 },
   });
   const [previewDiffHash, setPreviewDiffHash] = useState<string | null>(null);
   const goalsCrudStatus = goalsCrud.status;
