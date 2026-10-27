@@ -38,18 +38,25 @@ const PushDiffTable = ({
   diffRows,
   currentLabel,
   nextLabel,
+  allocationLabel,
 }: {
   diffRows: PushDiffRow[];
   currentLabel: string;
   nextLabel: string;
+  allocationLabel?: string;
 }) => (
   <div className="max-h-[55vh] overflow-auto rounded-md border">
-    <table className="w-full min-w-[560px] text-sm">
+    <table
+      className={`w-full text-sm ${allocationLabel ? "min-w-[720px]" : "min-w-[560px]"}`}
+    >
       <thead className="sticky top-0 bg-muted/80 backdrop-blur">
         <tr className="border-b text-left">
           <th className="px-3 py-2 font-medium">Category</th>
           <th className="px-3 py-2 font-medium">{currentLabel}</th>
           <th className="px-3 py-2 font-medium">{nextLabel}</th>
+          {allocationLabel ? (
+            <th className="px-3 py-2 font-medium">{allocationLabel}</th>
+          ) : null}
         </tr>
       </thead>
       <tbody>
@@ -70,6 +77,11 @@ const PushDiffTable = ({
                 </div>
               ) : null}
             </td>
+            {allocationLabel ? (
+              <td className="px-3 py-2 font-medium text-primary">
+                +{formatAmount((row.next - row.current) / 1000)}
+              </td>
+            ) : null}
           </tr>
         ))}
       </tbody>
@@ -148,6 +160,12 @@ const PushDiffDialogBody = ({
         ) : null}
         {preview.readyToAssignMoves.length > 0 ? (
           <div className="space-y-2">
+            <div>
+              <h3 className="text-sm font-medium">Free money distribution</h3>
+              <p className="text-sm text-muted-foreground">
+                Ready to Assign will be distributed to these categories:
+              </p>
+            </div>
             <div className="rounded-md bg-muted/50 p-3 text-sm">
               <p className="font-medium">
                 Ready to Assign:{" "}
@@ -163,6 +181,7 @@ const PushDiffDialogBody = ({
               diffRows={preview.readyToAssignMoves}
               currentLabel="Assigned now"
               nextLabel="Assigned after"
+              allocationLabel="From Ready to Assign"
             />
           </div>
         ) : null}

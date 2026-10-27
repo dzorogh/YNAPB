@@ -76,6 +76,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       budget: computation.budget,
+      readyToAssign:
+        Math.max(0, Math.trunc(cache?.ready_to_assign ?? 0)) / 1000,
       planResult: computation.planResult,
       goals: goalsView,
       startMonth: computation.startMonth.toISOString(),

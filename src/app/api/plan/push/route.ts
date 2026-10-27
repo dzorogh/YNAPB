@@ -92,7 +92,10 @@ const MAX_REBALANCE_PASSES = 5;
 type MonthTargets = NonNullable<ReturnType<typeof computeMonthTargets>>;
 
 /** Goal categories in planner priority order (earliest deadline first). */
-const toRebalanceGoals = (monthTargets: MonthTargets) => {
+const toRebalanceGoals = (
+  monthTargets: MonthTargets,
+  useFullGoalDeficit = false,
+) => {
   const categoriesById = new Map(
     monthTargets.computation.categories.map((category) => [
       category.id,
@@ -107,6 +110,12 @@ const toRebalanceGoals = (monthTargets: MonthTargets) => {
         left.createdAt.getTime() - right.createdAt.getTime(),
     )
     .flatMap((goal) => {
+      if (
+        useFullGoalDeficit &&
+        monthTargets.computation.planResult.autoFrozenGoalIds.includes(goal.id)
+      ) {
+        return [];
+      }
       const category = goal.ynabCategoryId
         ? categoriesById.get(goal.ynabCategoryId)
         : undefined;
@@ -114,13 +123,17 @@ const toRebalanceGoals = (monthTargets: MonthTargets) => {
         return [];
       }
 
+      const assigned = toMilliunits(category.assigned ?? 0);
+      const balance = toMilliunits(category.balance ?? 0);
       return [
         {
           categoryId: category.id,
-          assigned: toMilliunits(category.assigned ?? 0),
-          balance: toMilliunits(category.balance ?? 0),
+          assigned,
+          balance,
           planned: toMilliunits(monthTargets.targets[goal.id] ?? 0),
-          target: toMilliunits(monthTargets.targets[goal.id] ?? 0),
+          target: useFullGoalDeficit
+            ? assigned + toMilliunits(goal.targetAmount) - balance
+            : toMilliunits(monthTargets.targets[goal.id] ?? 0),
         },
       ];
     });
@@ -285,7 +298,7 @@ const buildCanonicalPlanAndDiff = async (userId: string, month: string) => {
     ? withAssigned(
         rebalancedCategories,
         allocateReadyToAssign(
-          toRebalanceGoals(monthTargets),
+          toRebalanceGoals(monthTargets, true),
           availableReadyToAssign,
         ),
       )

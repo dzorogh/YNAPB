@@ -62,6 +62,7 @@ type ApiPlanResponse = {
       amount: number;
     }>;
   };
+  readyToAssign: number;
   planResult: {
     allocations: Array<{
       month: string;
@@ -337,6 +338,7 @@ const MainPlanView = ({
     </header>
     <PlanHeader
       budget={planData.budget}
+      readyToAssign={planData.readyToAssign}
       needsSync={planData.needsSync}
       isRefreshing={isRefreshing}
       isSyncingYnab={isSyncingYnab}

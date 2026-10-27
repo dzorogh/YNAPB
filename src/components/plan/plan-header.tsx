@@ -27,6 +27,7 @@ type BudgetSummary = {
 
 type PlanHeaderProps = {
   budget: BudgetSummary;
+  readyToAssign: number;
   needsSync: boolean;
   isRefreshing: boolean;
   isSyncingYnab: boolean;
@@ -132,6 +133,7 @@ const ObligationBreakdownDialog = ({
 
 export const PlanHeader = ({
   budget,
+  readyToAssign,
   needsSync,
   isRefreshing,
   isSyncingYnab,
@@ -219,7 +221,7 @@ export const PlanHeader = ({
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-5">
-        <dl className="grid gap-3 sm:grid-cols-3">
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-[10px] bg-background/60 px-4 py-4">
             <dt className="text-xs font-medium text-muted-foreground">
               Planned income
@@ -253,6 +255,17 @@ export const PlanHeader = ({
             </dt>
             <dd className="mt-2 font-mono text-xl font-medium tracking-[-0.025em] text-primary tabular-nums">
               {formatAmount(budget.available)}
+            </dd>
+          </div>
+          <div className="rounded-[10px] bg-background/60 px-4 py-4">
+            <dt className="text-xs font-medium text-muted-foreground">
+              Ready to Assign
+            </dt>
+            <dd className="mt-2 font-mono text-xl font-medium tracking-[-0.025em] tabular-nums">
+              {formatAmount(readyToAssign)}
+            </dd>
+            <dd className="mt-1 text-xs text-muted-foreground">
+              Free YNAB money this month
             </dd>
           </div>
         </dl>

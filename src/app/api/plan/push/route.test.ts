@@ -243,7 +243,7 @@ describe("Push after automatic target updates", () => {
         categoryId: "vacation",
         categoryName: "vacation",
         current: 78_571_429,
-        next: 100_000_000,
+        next: 128_571_429,
       },
     ]);
 
@@ -267,7 +267,7 @@ describe("Push after automatic target updates", () => {
             categoryId: "vacation",
             categoryName: "vacation",
             current: 0,
-            next: 100_000_000,
+            next: 128_571_429,
           },
         ],
       }),
@@ -279,7 +279,7 @@ describe("Push after automatic target updates", () => {
     expect(await repeated.json()).toMatchObject({
       assignedMoves: [],
       readyToAssignMoves: [],
-      readyToAssign: { available: 28_571_429, remaining: 28_571_429 },
+      readyToAssign: { available: 0, remaining: 0 },
     });
   });
 
@@ -293,16 +293,10 @@ describe("Push after automatic target updates", () => {
     const preview = await response.json();
     expect(preview.readyToAssignMoves).toEqual([
       {
-        categoryId: "house",
-        categoryName: "house",
-        current: 0,
-        next: 50_000_000,
-      },
-      {
         categoryId: "vacation",
         categoryName: "vacation",
         current: 0,
-        next: 100_000_000,
+        next: 150_000_000,
       },
     ]);
     expect(preview.readyToAssign).toEqual({
@@ -311,7 +305,31 @@ describe("Push after automatic target updates", () => {
     });
   });
 
-  it("leaves excess RTA unassigned and rejects apply when only it changes", async () => {
+  it("does not assign RTA to auto-frozen overdue goals", async () => {
+    const goals = await listGoals("user");
+    vi.mocked(listGoals).mockResolvedValue(
+      goals.map((goal) =>
+        goal.id === "vacation" ? { ...goal, deadline: "2026-09-01" } : goal,
+      ),
+    );
+    setAssigned("house", 171_428.571);
+    cache.ready_to_assign = 100_000_000;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.readyToAssignMoves).toEqual([
+      {
+        categoryId: "house",
+        categoryName: "house",
+        current: 171_428_571,
+        next: 271_428_571,
+      },
+    ]);
+  });
+
+  it("uses RTA toward full goal deficits and rejects apply when only it changes", async () => {
     setAssigned("house", 171_428.571);
     cache.ready_to_assign = 395_800_000;
 
@@ -321,15 +339,21 @@ describe("Push after automatic target updates", () => {
     const preview = await response.json();
     expect(preview.readyToAssignMoves).toEqual([
       {
+        categoryId: "house",
+        categoryName: "house",
+        current: 171_428_571,
+        next: 267_228_571,
+      },
+      {
         categoryId: "vacation",
         categoryName: "vacation",
         current: 0,
-        next: 100_000_000,
+        next: 300_000_000,
       },
     ]);
     expect(preview.readyToAssign).toEqual({
       available: 395_800_000,
-      remaining: 295_800_000,
+      remaining: 0,
     });
 
     cache.ready_to_assign += 1_000;
@@ -344,7 +368,7 @@ describe("Push after automatic target updates", () => {
     expect(pushAssignedMoves).not.toHaveBeenCalled();
   });
 
-  it("does not use RTA to fund negative assigned or replace existing rebalancing", async () => {
+  it("excludes negative categories from RTA without replacing rebalancing", async () => {
     cache.ready_to_assign = -1;
     const response = await callPush(
       request({ mode: "preview", month: "2026-10" }),
@@ -361,7 +385,13 @@ describe("Push after automatic target updates", () => {
     );
     expect(await negative.json()).toMatchObject({
       assignedMoves: [],
-      readyToAssignMoves: [],
+      readyToAssignMoves: [
+        {
+          categoryId: "house",
+          current: 200_000_000,
+          next: 300_000_000,
+        },
+      ],
     });
 
     setAssigned("house", 171_428.571);
@@ -372,7 +402,13 @@ describe("Push after automatic target updates", () => {
     );
     expect(await overspent.json()).toMatchObject({
       assignedMoves: [],
-      readyToAssignMoves: [],
+      readyToAssignMoves: [
+        {
+          categoryId: "house",
+          current: 171_428_571,
+          next: 271_428_571,
+        },
+      ],
     });
   });
 

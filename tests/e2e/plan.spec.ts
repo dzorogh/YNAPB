@@ -26,6 +26,7 @@ type PlanCalculateResponse = {
       amount: number;
     }>;
   };
+  readyToAssign: number;
   planResult: {
     allocations: Array<{
       month: string;
@@ -78,6 +79,7 @@ const buildConnectState = (): PlanCalculateResponse => ({
     available: 0,
     obligationBreakdown: [],
   },
+  readyToAssign: 0,
   planResult: {
     allocations: [],
     conflicts: [],
@@ -99,6 +101,7 @@ const buildEmptyGoalsState = (): PlanCalculateResponse => ({
     available: 3800,
     obligationBreakdown: [],
   },
+  readyToAssign: 0,
   planResult: {
     allocations: [],
     conflicts: [],
@@ -145,6 +148,7 @@ const buildCalculatedState = (): PlanCalculateResponse => ({
     available: 4500,
     obligationBreakdown: [],
   },
+  readyToAssign: 395_800,
   planResult: {
     allocations: [
       {
@@ -316,6 +320,9 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
     await page.goto(PLAN_PATH);
 
     await expect(page).toHaveURL(/\/plan$/);
+    await expect(
+      page.getByText("Ready to Assign", { exact: true }).locator(".."),
+    ).toContainText("395");
     await expect(page.getByText("Monthly allocation")).toBeVisible();
     await expect(
       page.getByRole("columnheader", { name: /vacation/i }),
@@ -420,6 +427,13 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
     await expect(dialog.getByText("cat-vacation")).toBeVisible();
     await expect(dialog.getByText("cat-emergency")).toBeVisible();
     await expect(dialog.getByText("cat-buffer")).toBeVisible();
+    await expect(dialog.getByText("Free money distribution")).toBeVisible();
+    await expect(
+      dialog.getByRole("columnheader", { name: "From Ready to Assign" }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("row").filter({ hasText: "cat-buffer" }),
+    ).toContainText("+100");
     await expect(dialog.getByText("Current target")).toBeVisible();
     await expect(dialog.getByText("Next target")).toBeVisible();
     await expect(dialog.getByText(/^Ready to Assign:/)).toContainText("395");
