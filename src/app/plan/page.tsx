@@ -26,6 +26,7 @@ import {
 } from "@/components/plan/push-diff-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatMonthLabel } from "@/lib/formatting/month-label";
 import { computePlan, findEarlierDeadlines } from "@/lib/planner/planner";
 import type { PlanResult as DomainPlanResult } from "@/lib/planner/types";
 import { toUserFacingYnabError } from "@/lib/ynab/ynab-request";
@@ -227,6 +228,7 @@ type MainPlanViewProps = {
   allocations: ApiPlanResponse["planResult"]["allocations"];
   activeGoals: ApiPlanResponse["goals"];
   deadlineDrafts: DeadlineDraftMap;
+  savingDeadlineGoalId: string | null;
   isRefreshing: boolean;
   isSyncingYnab: boolean;
   ynabImportBlockedUntil: number | null;
@@ -256,6 +258,7 @@ const MainPlanView = ({
   allocations,
   activeGoals,
   deadlineDrafts,
+  savingDeadlineGoalId,
   isRefreshing,
   isSyncingYnab,
   ynabImportBlockedUntil,
@@ -313,6 +316,7 @@ const MainPlanView = ({
             unreachableByGoalId,
             earlierDeadlineByGoalId,
             draftDeadlines: deadlineDrafts,
+            savingDeadlineGoalId,
             isRecalculating: isRefreshing,
             areGoalActionsDisabled,
             onOpenCreateGoal,
@@ -327,6 +331,7 @@ const MainPlanView = ({
             unreachableByGoalId,
             earlierDeadlineByGoalId,
             draftDeadlines: deadlineDrafts,
+            savingDeadlineGoalId,
             isRecalculating: isRefreshing,
             onOpenCreateGoal,
             onOpenEditGoal,
@@ -441,6 +446,9 @@ const usePlanData = () => {
   const [planData, setPlanData] = useState<ApiPlanResponse | null>(null);
   const [deadlineDrafts, setDeadlineDrafts] = useState<DeadlineDraftMap>({});
   const snapshotDeadlinesRef = useRef<DeadlineDraftMap | null>(null);
+  const [savingDeadlineGoalId, setSavingDeadlineGoalId] = useState<
+    string | null
+  >(null);
   const planDataRef = useRef(planData);
   planDataRef.current = planData;
 
@@ -645,6 +653,31 @@ const usePlanData = () => {
   const handleCommitDeadline = useCallback(
     async (goalId: string, nextDeadline: string) => {
       const deadlineIso = toMonthStartIso(nextDeadline);
+      const goalName =
+        planData?.goals.find((goal) => goal.id === goalId)?.name ?? "Goal";
+      const rollbackDrafts = snapshotDeadlinesRef.current;
+      let previousDraft: string | undefined;
+      // Optimistic: show the new deadline immediately; roll back on failure.
+      setDeadlineDrafts((current) => {
+        previousDraft = current[goalId];
+        return { ...current, [goalId]: deadlineIso };
+      });
+      setSavingDeadlineGoalId(goalId);
+      const rollback = () => {
+        snapshotDeadlinesRef.current = null;
+        setDeadlineDrafts((current) => {
+          if (rollbackDrafts) {
+            return rollbackDrafts;
+          }
+          const next = { ...current };
+          if (previousDraft === undefined) {
+            delete next[goalId];
+          } else {
+            next[goalId] = previousDraft;
+          }
+          return next;
+        });
+      };
       try {
         const response = await fetch("/api/plan/deadlines", {
           method: "POST",
@@ -658,35 +691,43 @@ const usePlanData = () => {
             response,
             "Failed to save deadline.",
           );
+          rollback();
           toast.error("Could not save deadline", {
+            id: `deadline-${goalId}`,
             description: message,
           });
           return;
         }
 
         const data = (await response.json()) as { sync?: GoalSyncResponse };
+        snapshotDeadlinesRef.current = null;
         if (data.sync?.status === "error") {
           toast.error("Deadline saved, YNAB update failed", {
+            id: `deadline-${goalId}`,
             description:
               data.sync.message ??
               "Monthly targets could not be updated. Try Push to YNAB again.",
           });
+        } else {
+          toast.success(`Deadline moved to ${formatMonthLabel(deadlineIso)}`, {
+            id: `deadline-${goalId}`,
+            description: goalName,
+          });
         }
-        snapshotDeadlinesRef.current = null;
-        // Keep draft in sync with what we persisted; otherwise stale drag
-        // previews override server deadlines and conflicts never clear.
-        setDeadlineDrafts((current) => ({
-          ...current,
-          [goalId]: deadlineIso,
-        }));
         await loadPlan(true);
       } catch {
+        rollback();
         toast.error("Could not save deadline", {
+          id: `deadline-${goalId}`,
           description: "Unexpected network error.",
         });
+      } finally {
+        setSavingDeadlineGoalId((current) =>
+          current === goalId ? null : current,
+        );
       }
     },
-    [loadPlan],
+    [loadPlan, planData],
   );
 
   return {
@@ -701,6 +742,7 @@ const usePlanData = () => {
     unreachableByGoalId,
     earlierDeadlineByGoalId,
     deadlineDrafts,
+    savingDeadlineGoalId,
     previewPlanResult,
     loadPlan,
     handleRefresh,
@@ -869,6 +911,7 @@ export default function PlanPage() {
     unreachableByGoalId,
     earlierDeadlineByGoalId,
     deadlineDrafts,
+    savingDeadlineGoalId,
     previewPlanResult,
     loadPlan,
     handleRefresh,
@@ -979,6 +1022,7 @@ export default function PlanPage() {
         earlierDeadlineByGoalId={earlierDeadlineByGoalId}
         allocations={allocations}
         deadlineDrafts={deadlineDrafts}
+        savingDeadlineGoalId={savingDeadlineGoalId}
         isRefreshing={isRefreshing}
         isSyncingYnab={isSyncingYnab}
         ynabImportBlockedUntil={ynabImportBlockedUntil}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
 
 import { GoalActions } from "@/components/plan/goal-actions";
 
@@ -13,6 +13,7 @@ import {
   toDeadlineFromIso,
 } from "@/components/plan/goal-status";
 import type { TimelineGoal } from "@/components/plan/plan-timeline-goal-row";
+import { useFlashAfter } from "@/components/plan/use-flash-after";
 import { Button } from "@/components/ui/button";
 import { formatAmount } from "@/lib/formatting/currency";
 import { formatMonthLabel } from "@/lib/formatting/month-label";
@@ -25,6 +26,7 @@ type PlanGoalCardsProps = {
   unreachableByGoalId: Record<string, string | null>;
   earlierDeadlineByGoalId: Record<string, string | null>;
   draftDeadlines: Record<string, string>;
+  savingDeadlineGoalId: string | null;
   isRecalculating: boolean;
   areGoalActionsDisabled: boolean;
   onOpenCreateGoal: () => void;
@@ -65,10 +67,12 @@ const pluralizeMonths = (count: number): string =>
 const GoalCardAction = ({
   goal,
   status,
+  isSaving,
   onDeadlineCommit,
 }: {
   goal: TimelineGoal;
   status: GoalPlanStatus;
+  isSaving: boolean;
   onDeadlineCommit: (goalId: string, nextDeadline: string) => void;
 }) => {
   const actionClassName = "mt-4 h-10 w-full rounded-[12px] font-semibold";
@@ -88,7 +92,7 @@ const GoalCardAction = ({
         variant="destructive"
         className={actionClassName}
         onClick={() => onDeadlineCommit(goal.id, toDeadlineFromIso(earliest))}
-        disabled={!status.canApplyAchievableDate}
+        disabled={!status.canApplyAchievableDate || isSaving}
         aria-label={`Apply earliest reachable date for ${goal.name}`}
       >
         Move deadline to {formatMonthLabel(earliest)}
@@ -109,7 +113,7 @@ const GoalCardAction = ({
         onClick={() =>
           onDeadlineCommit(goal.id, toDeadlineFromIso(completedAt))
         }
-        disabled={!status.canApplyEarlierDate}
+        disabled={!status.canApplyEarlierDate || isSaving}
         aria-label={`Apply earlier deadline for ${goal.name}`}
       >
         Finish by {formatMonthLabel(completedAt)}
@@ -125,6 +129,7 @@ const GoalCard = ({
   status,
   startMonth,
   monthlyContribution,
+  isSaving,
   areGoalActionsDisabled,
   onOpenEditGoal,
   onOpenDeleteGoal,
@@ -134,6 +139,7 @@ const GoalCard = ({
   status: GoalPlanStatus;
   startMonth: Date;
   monthlyContribution: number;
+  isSaving: boolean;
   areGoalActionsDisabled: boolean;
   onOpenEditGoal: (goalId: string) => void;
   onOpenDeleteGoal: (goalId: string) => void;
@@ -147,15 +153,18 @@ const GoalCard = ({
     0,
   );
   const remaining = Math.max(goal.targetAmount - goal.currentBalance, 0);
+  const isFlashing = useFlashAfter(isSaving);
 
   return (
     <article
       aria-label={goal.name}
+      aria-busy={isSaving}
       className={cn(
-        "flex flex-col rounded-[20px] border bg-card p-5 transition-colors",
+        "flex flex-col rounded-[20px] border bg-card p-5 transition-[border-color,box-shadow] duration-500",
         tone === "risk"
           ? "border-destructive/25"
           : "border-border/70 hover:border-border",
+        isFlashing && "border-primary/60 shadow-[0_0_0_4px] shadow-primary/15",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -171,14 +180,27 @@ const GoalCard = ({
           {goal.name.trim().charAt(0).toUpperCase() || "•"}
         </span>
         <div className="flex items-center gap-1">
-          <span
-            className={cn(
-              "mr-1 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-              badge.className,
-            )}
-          >
-            {badge.label}
-          </span>
+          {isSaving ? (
+            <span
+              role="status"
+              className="mr-1 inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+            >
+              <LoaderCircle
+                className="size-3 animate-spin"
+                aria-hidden="true"
+              />
+              Saving…
+            </span>
+          ) : (
+            <span
+              className={cn(
+                "mr-1 rounded-full px-2.5 py-1 text-[11px] font-semibold animate-in fade-in",
+                badge.className,
+              )}
+            >
+              {badge.label}
+            </span>
+          )}
           <GoalActions
             goal={goal}
             disabled={areGoalActionsDisabled}
@@ -238,6 +260,7 @@ const GoalCard = ({
         <GoalCardAction
           goal={goal}
           status={status}
+          isSaving={isSaving}
           onDeadlineCommit={onDeadlineCommit}
         />
       </div>
@@ -252,6 +275,7 @@ export const PlanGoalCards = ({
   unreachableByGoalId,
   earlierDeadlineByGoalId,
   draftDeadlines,
+  savingDeadlineGoalId,
   isRecalculating,
   areGoalActionsDisabled,
   onOpenCreateGoal,
@@ -277,6 +301,7 @@ export const PlanGoalCards = ({
           })}
           startMonth={startMonth}
           monthlyContribution={monthlyContributionByGoalId[goal.id] ?? 0}
+          isSaving={savingDeadlineGoalId === goal.id}
           areGoalActionsDisabled={areGoalActionsDisabled}
           onOpenEditGoal={onOpenEditGoal}
           onOpenDeleteGoal={onOpenDeleteGoal}

@@ -1,5 +1,7 @@
 import type { KeyboardEvent, PointerEvent } from "react";
 
+import { LoaderCircle } from "lucide-react";
+
 import { GoalActions } from "@/components/plan/goal-actions";
 import {
   addMonths,
@@ -10,6 +12,7 @@ import {
   toDeadlineFromIso,
   toDeadlineString,
 } from "@/components/plan/goal-status";
+import { useFlashAfter } from "@/components/plan/use-flash-after";
 import { formatAmount } from "@/lib/formatting/currency";
 import { formatMonthLabel } from "@/lib/formatting/month-label";
 import { cn } from "@/lib/utils";
@@ -67,6 +70,7 @@ type PlanTimelineGoalRowProps = {
   rowState: GoalTimelineRowState;
   gridTemplateColumns: string;
   startMonthIso: string;
+  isSaving: boolean;
   isRecalculating: boolean;
   areGoalActionsDisabled: boolean;
   onOpenEditGoal: (goalId: string) => void;
@@ -80,10 +84,12 @@ type PlanTimelineGoalRowProps = {
 const SuggestionButton = ({
   goal,
   rowState,
+  isSaving,
   onDeadlineCommit,
 }: {
   goal: TimelineGoal;
   rowState: GoalTimelineRowState;
+  isSaving: boolean;
   onDeadlineCommit: (goalId: string, nextDeadline: string) => void;
 }) => {
   const buttonClassName =
@@ -106,7 +112,7 @@ const SuggestionButton = ({
           "-ml-1.5 text-destructive hover:bg-destructive/10",
         )}
         onClick={() => onDeadlineCommit(goal.id, toDeadlineFromIso(earliest))}
-        disabled={!rowState.canApplyAchievableDate}
+        disabled={!rowState.canApplyAchievableDate || isSaving}
         aria-label={`Apply earliest reachable date for ${goal.name}`}
       >
         Move to {formatMonthLabel(earliest)} →
@@ -126,7 +132,7 @@ const SuggestionButton = ({
         onClick={() =>
           onDeadlineCommit(goal.id, toDeadlineFromIso(completedAt))
         }
-        disabled={!rowState.canApplyEarlierDate}
+        disabled={!rowState.canApplyEarlierDate || isSaving}
         aria-label={`Apply earlier deadline for ${goal.name}`}
       >
         Finish by {formatMonthLabel(completedAt)} →
@@ -142,6 +148,7 @@ export const PlanTimelineGoalRow = ({
   rowState,
   gridTemplateColumns,
   startMonthIso,
+  isSaving,
   isRecalculating,
   areGoalActionsDisabled,
   onOpenEditGoal,
@@ -156,7 +163,9 @@ export const PlanTimelineGoalRow = ({
     deadlineBoundaryPercent,
     suggestionBoundaryPercent,
   } = rowState;
-  const isHandleDisabled = isRecalculating || goal.status !== "active";
+  const isHandleDisabled =
+    isRecalculating || isSaving || goal.status !== "active";
+  const isFlashing = useFlashAfter(isSaving);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     const step =
@@ -174,7 +183,11 @@ export const PlanTimelineGoalRow = ({
 
   return (
     <div
-      className="group/row grid border-b border-border/60 last:border-b-0 max-lg:grid-cols-1! lg:hover:bg-muted/20"
+      aria-busy={isSaving}
+      className={cn(
+        "group/row grid border-b border-border/60 transition-colors duration-500 last:border-b-0 max-lg:grid-cols-1! lg:hover:bg-muted/20",
+        isFlashing && "bg-primary/10 lg:hover:bg-primary/10",
+      )}
       style={{ gridTemplateColumns }}
     >
       <div className="min-w-0 bg-card px-4 py-3.5 lg:sticky lg:left-0 lg:z-10 lg:border-r lg:border-border/60 lg:group-hover/row:bg-[color-mix(in_oklab,var(--card),var(--muted)_20%)]">
@@ -194,6 +207,12 @@ export const PlanTimelineGoalRow = ({
             <div className="flex items-start justify-between gap-2">
               <p className="line-clamp-2 min-w-0 text-sm font-semibold leading-tight">
                 {goal.name}
+                {isSaving ? (
+                  <LoaderCircle
+                    className="ml-1.5 inline size-3.5 animate-spin text-muted-foreground"
+                    aria-label="Saving deadline"
+                  />
+                ) : null}
               </p>
               <div className="lg:opacity-0 lg:transition-opacity lg:group-focus-within/row:opacity-100 lg:group-hover/row:opacity-100">
                 <GoalActions
@@ -218,6 +237,7 @@ export const PlanTimelineGoalRow = ({
               <SuggestionButton
                 goal={goal}
                 rowState={rowState}
+                isSaving={isSaving}
                 onDeadlineCommit={onDeadlineCommit}
               />
             </div>

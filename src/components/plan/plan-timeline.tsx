@@ -25,6 +25,7 @@ type PlanTimelineProps = {
   unreachableByGoalId: Record<string, string | null>;
   earlierDeadlineByGoalId: Record<string, string | null>;
   draftDeadlines: Record<string, string>;
+  savingDeadlineGoalId: string | null;
   isRecalculating: boolean;
   onOpenCreateGoal: () => void;
   onOpenEditGoal: (goalId: string) => void;
@@ -55,6 +56,7 @@ export const PlanTimeline = ({
   unreachableByGoalId,
   earlierDeadlineByGoalId,
   draftDeadlines,
+  savingDeadlineGoalId,
   isRecalculating,
   onOpenCreateGoal,
   onOpenEditGoal,
@@ -284,6 +286,7 @@ export const PlanTimeline = ({
               })}
               gridTemplateColumns={gridTemplateColumns}
               startMonthIso={startMonthIso}
+              isSaving={savingDeadlineGoalId === goal.id}
               isRecalculating={isRecalculating}
               areGoalActionsDisabled={areGoalActionsDisabled}
               onOpenEditGoal={onOpenEditGoal}

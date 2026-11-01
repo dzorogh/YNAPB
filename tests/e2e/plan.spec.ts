@@ -347,6 +347,43 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
     await expect(page.getByText(/Tied deadline conflict/)).toBeVisible();
   });
 
+  test("moving a deadline from a goal card gives feedback", async ({
+    page,
+  }) => {
+    let savedDeadline: string | null = null;
+    await page.route(PLAN_CALCULATE_API_PATTERN, (route) =>
+      route.fulfill({ json: buildCalculatedState() }),
+    );
+    await page.route("**/api/goals", (route) =>
+      route.fulfill({ json: { goals: [] } }),
+    );
+    await page.route("**/api/plan/deadlines", async (route) => {
+      const payload = route.request().postDataJSON() as {
+        deadlines: Array<{ goalId: string; deadline: string }>;
+      };
+      savedDeadline = payload.deadlines[0]?.deadline ?? null;
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await route.fulfill({ json: { sync: { status: "synced" } } });
+    });
+
+    await page.goto(PLAN_PATH);
+    await page
+      .getByRole("button", {
+        name: "Apply earliest reachable date for Vacation",
+      })
+      .click();
+
+    await expect(
+      page.getByRole("article", { name: "Vacation" }).getByText("Saving…"),
+    ).toBeVisible();
+    await expect(
+      page
+        .locator("[data-sonner-toast]")
+        .filter({ hasText: "Deadline moved to" }),
+    ).toContainText("Vacation");
+    expect(savedDeadline).not.toBeNull();
+  });
+
   test("push preview separates RTA and applies only after confirmation", async ({
     page,
   }) => {
