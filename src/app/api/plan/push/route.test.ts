@@ -351,6 +351,30 @@ describe("Push after automatic target updates", () => {
     ]);
   });
 
+  it("replaces a front-loaded target when current assigned is zero", async () => {
+    setAssigned("house", 171_428.571);
+    setAssigned("vacation", 0);
+    cache.categories = parseCachedCategories(cache.categories).map(
+      (category) =>
+        category.id === "vacation"
+          ? { ...category, goal_target: 300_000 }
+          : category,
+    ) as Json;
+
+    const response = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    const preview = await response.json();
+    expect(preview.diff).toEqual([
+      {
+        categoryId: "vacation",
+        categoryName: "vacation",
+        current: 300_000_000,
+        next: 100_000_000,
+      },
+    ]);
+  });
+
   it("does not preserve a date-based target as a monthly target", async () => {
     setAssigned("house", 171_428.571);
     setAssigned("vacation", 100_000);

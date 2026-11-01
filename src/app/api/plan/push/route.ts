@@ -100,6 +100,7 @@ const resolveMonthlyTarget = (
 ): number => {
   const currentTarget = category.goal_target ?? 0;
   return category.goal_target_month === null &&
+    (category.assigned ?? 0) > 0 &&
     currentTarget >= (category.assigned ?? 0)
     ? Math.max(planned, currentTarget)
     : planned;
