@@ -3,6 +3,11 @@
 
 import { type PointerEvent, useEffect, useMemo, useRef } from "react";
 import {
+  monthDiff,
+  parseMonthStart,
+  toDeadlineString,
+} from "@/components/plan/goal-status";
+import {
   buildGoalTimelineRowState,
   PlanTimelineGoalRow,
   type TimelineGoal,
@@ -35,21 +40,8 @@ const MIN_VISIBLE_MONTHS = 60;
 const MAX_VISIBLE_MONTHS = 240;
 const EXTRA_VISIBLE_MONTHS_BUFFER = 6;
 
-const parseMonthStart = (value: string): Date => {
-  const date = new Date(`${value.slice(0, 7)}-01T00:00:00.000Z`);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-};
-
 const addMonths = (date: Date, months: number): Date =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1));
-
-const monthDiff = (left: Date, right: Date): number =>
-  (left.getUTCFullYear() - right.getUTCFullYear()) * 12 +
-  left.getUTCMonth() -
-  right.getUTCMonth();
-
-const toDeadlineString = (date: Date): string =>
-  `${date.toISOString().slice(0, 7)}-01`;
 
 const formatMonthLabel = (value: Date): string =>
   new Intl.DateTimeFormat("en-US", {

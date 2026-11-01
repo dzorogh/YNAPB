@@ -1,8 +1,15 @@
-import { Pencil, Trash2 } from "lucide-react";
 import type { PointerEvent } from "react";
 
+import { GoalActions } from "@/components/plan/goal-actions";
+import {
+  type GoalPlanStatus,
+  goalProgressPercent,
+  resolveGoalPlanStatus,
+  toDeadlineFromIso,
+} from "@/components/plan/goal-status";
 import { Button } from "@/components/ui/button";
 import { formatAmount } from "@/lib/formatting/currency";
+import { formatMonthLabel } from "@/lib/formatting/month-label";
 
 export type TimelineGoal = {
   id: string;
@@ -16,54 +23,13 @@ export type TimelineGoal = {
 const INFO_COLUMN_WIDTH = 300;
 const MONTH_WIDTH = 48;
 
-const parseMonthStart = (value: string): Date => {
-  const date = new Date(`${value.slice(0, 7)}-01T00:00:00.000Z`);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
-};
-
-const monthDiff = (left: Date, right: Date): number =>
-  (left.getUTCFullYear() - right.getUTCFullYear()) * 12 +
-  left.getUTCMonth() -
-  right.getUTCMonth();
-
-const toDeadlineString = (date: Date): string =>
-  `${date.toISOString().slice(0, 7)}-01`;
-
-const formatAchievableMonth = (value: string): string =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
-
-const formatDeadlineLabel = (value: string): string =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(parseMonthStart(value));
-
 const formatGoalProgressPercent = (
   currentBalance: number,
   targetAmount: number,
-): string => {
-  if (targetAmount <= 0) {
-    return "0%";
-  }
+): string => `${goalProgressPercent(currentBalance, targetAmount)}%`;
 
-  const percent = Math.min(100, (currentBalance / targetAmount) * 100);
-  return `${Math.round(percent)}%`;
-};
-
-export type GoalTimelineRowState = {
-  effectiveDeadline: string;
+export type GoalTimelineRowState = GoalPlanStatus & {
   deadlineBoundaryPercent: number;
-  earliestAchievableIso: string | null | undefined;
-  isUnreachable: boolean;
-  completedAtIso: string | null | undefined;
-  canBeCompletedEarlier: boolean;
-  canApplyAchievableDate: boolean;
-  canApplyEarlierDate: boolean;
   barToneClass: string;
 };
 
@@ -77,38 +43,16 @@ export const buildGoalTimelineRowState = (params: {
   visibleHorizonMonths: number;
   resolveDeadlineBoundaryIndex: (deadline: string) => number;
 }): GoalTimelineRowState => {
-  const effectiveDeadline =
-    params.draftDeadlines[params.goal.id] ?? params.goal.deadline;
-  const deadlineBoundaryIndex =
-    params.resolveDeadlineBoundaryIndex(effectiveDeadline);
-  const earliestAchievableIso = params.unreachableByGoalId[params.goal.id];
-  const isUnreachable = typeof earliestAchievableIso !== "undefined";
-  const completedAtIso = params.earlierDeadlineByGoalId[params.goal.id];
-  const canBeCompletedEarlier =
-    !isUnreachable &&
-    typeof completedAtIso === "string" &&
-    monthDiff(
-      parseMonthStart(effectiveDeadline),
-      parseMonthStart(completedAtIso),
-    ) > 0;
-  const canApplyGoalDeadline =
-    !params.isRecalculating &&
-    !params.areGoalActionsDisabled &&
-    params.goal.status === "active";
+  const status = resolveGoalPlanStatus(params);
+  const deadlineBoundaryIndex = params.resolveDeadlineBoundaryIndex(
+    status.effectiveDeadline,
+  );
 
   return {
-    effectiveDeadline,
+    ...status,
     deadlineBoundaryPercent:
       (deadlineBoundaryIndex / params.visibleHorizonMonths) * 100,
-    earliestAchievableIso,
-    isUnreachable,
-    completedAtIso,
-    canBeCompletedEarlier,
-    canApplyAchievableDate:
-      Boolean(earliestAchievableIso) && canApplyGoalDeadline,
-    canApplyEarlierDate:
-      Boolean(completedAtIso) && canBeCompletedEarlier && canApplyGoalDeadline,
-    barToneClass: isUnreachable ? "bg-destructive/70" : "bg-primary/70",
+    barToneClass: status.isUnreachable ? "bg-destructive/70" : "bg-primary/70",
   };
 };
 
@@ -162,33 +106,17 @@ export const PlanTimelineGoalRow = ({
             <p className="min-w-0 truncate text-[15px] font-semibold leading-tight lg:text-sm">
               {goal.name}
             </p>
-            <div className="flex shrink-0 gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                className="size-11 text-muted-foreground hover:text-foreground lg:size-7"
-                onClick={() => onOpenEditGoal(goal.id)}
-                disabled={areGoalActionsDisabled}
-                aria-label={`Edit goal ${goal.name}`}
-              >
-                <Pencil className="size-4 lg:size-3.5" aria-hidden="true" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                className="size-11 text-muted-foreground hover:bg-destructive/10 hover:text-destructive lg:size-7"
-                onClick={() => onOpenDeleteGoal(goal.id)}
-                disabled={areGoalActionsDisabled}
-                aria-label={`Delete goal ${goal.name}`}
-              >
-                <Trash2 className="size-4 lg:size-3.5" aria-hidden="true" />
-              </Button>
-            </div>
+            <GoalActions
+              goal={goal}
+              disabled={areGoalActionsDisabled}
+              buttonClassName="size-11 lg:size-7"
+              iconClassName="size-4 lg:size-3.5"
+              onOpenEditGoal={onOpenEditGoal}
+              onOpenDeleteGoal={onOpenDeleteGoal}
+            />
           </div>
           <div className="flex items-center justify-between gap-3">
-            <p className="truncate font-mono text-xs text-muted-foreground tabular-nums lg:text-[11px]">
+            <p className="truncate text-xs text-muted-foreground tabular-nums lg:text-[11px]">
               {formatAmount(goal.currentBalance)} /{" "}
               {formatAmount(goal.targetAmount)} ·{" "}
               {formatGoalProgressPercent(
@@ -197,7 +125,7 @@ export const PlanTimelineGoalRow = ({
               )}
             </p>
             <p className="shrink-0 text-xs text-muted-foreground lg:text-[11px]">
-              {formatDeadlineLabel(effectiveDeadline)}
+              {formatMonthLabel(effectiveDeadline)}
             </p>
           </div>
           <div
@@ -226,7 +154,7 @@ export const PlanTimelineGoalRow = ({
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2 lg:mt-2 lg:py-1.5">
             <p className="text-xs text-destructive">
               {earliestAchievableIso
-                ? `Move deadline to ${formatAchievableMonth(earliestAchievableIso)}`
+                ? `Move deadline to ${formatMonthLabel(earliestAchievableIso)}`
                 : "Deadline needs to move"}
             </p>
             {earliestAchievableIso ? (
@@ -238,7 +166,7 @@ export const PlanTimelineGoalRow = ({
                 onClick={() =>
                   void onDeadlineCommit(
                     goal.id,
-                    toDeadlineString(parseMonthStart(earliestAchievableIso)),
+                    toDeadlineFromIso(earliestAchievableIso),
                   )
                 }
                 disabled={!canApplyAchievableDate}
@@ -252,7 +180,7 @@ export const PlanTimelineGoalRow = ({
         {canBeCompletedEarlier && typeof completedAtIso === "string" ? (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-primary/10 px-3 py-2 lg:mt-2 lg:py-1.5">
             <p className="text-xs text-primary">
-              Possible earlier: {formatAchievableMonth(completedAtIso)}
+              Possible earlier: {formatMonthLabel(completedAtIso)}
             </p>
             <Button
               type="button"
@@ -262,7 +190,7 @@ export const PlanTimelineGoalRow = ({
               onClick={() =>
                 void onDeadlineCommit(
                   goal.id,
-                  toDeadlineString(parseMonthStart(completedAtIso)),
+                  toDeadlineFromIso(completedAtIso),
                 )
               }
               disabled={!canApplyEarlierDate}

@@ -9,9 +9,13 @@ import { GoalDialog } from "@/components/goals/goal-dialog";
 import type { GoalFormValues } from "@/components/goals/goal-form";
 import type { GoalRecord } from "@/components/goals/goal-record";
 import { PlanConflicts } from "@/components/plan/plan-conflicts";
-import { PlanHeader } from "@/components/plan/plan-header";
-import { PlanTable } from "@/components/plan/plan-table";
-import { PlanTimeline } from "@/components/plan/plan-timeline";
+import { monthDiff, parseMonthStart } from "@/components/plan/goal-status";
+import { PlanGoalsSection } from "@/components/plan/plan-goals-section";
+import { PlanHero } from "@/components/plan/plan-hero";
+import {
+  type HorizonGoal,
+  PlanSidePanel,
+} from "@/components/plan/plan-side-panel";
 import {
   PushDiffDialog,
   type PushPreview,
@@ -326,71 +330,104 @@ const MainPlanView = ({
   isApplyingPush,
   onClosePushDialog,
   onApplyPushDiff,
-}: MainPlanViewProps) => (
-  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 p-4 sm:p-6 md:p-8">
-    <header className="space-y-2">
-      <p className="text-xs font-medium text-primary">Financial workspace</p>
-      <h1 className="text-3xl font-semibold tracking-[-0.03em]">Your plan</h1>
-      <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-        See what your budget can support, adjust goal deadlines, and review
-        changes before sending them to YNAB.
-      </p>
-    </header>
-    <PlanHeader
-      budget={planData.budget}
-      readyToAssign={planData.readyToAssign}
-      needsSync={planData.needsSync}
-      isRefreshing={isRefreshing}
-      isSyncingYnab={isSyncingYnab}
-      ynabImportBlockedUntil={ynabImportBlockedUntil}
-      isPreviewLoading={isPreviewLoading}
-      isApplyingPush={isApplyingPush}
-      onRefresh={onRefresh}
-      onSyncYnab={onSyncYnab}
-      onOpenPushPreview={onOpenPushPreview}
-    />
-    <div className="space-y-4">
-      <PlanTimeline
-        goals={activeGoals}
-        startMonthIso={planData.startMonth}
-        horizonMonths={planData.horizonMonths}
-        unreachableByGoalId={unreachableByGoalId}
-        earlierDeadlineByGoalId={earlierDeadlineByGoalId}
-        draftDeadlines={deadlineDrafts}
-        isRecalculating={isRefreshing}
-        onOpenCreateGoal={onOpenCreateGoal}
-        onOpenEditGoal={onOpenEditGoal}
-        onOpenDeleteGoal={onOpenDeleteGoal}
-        areGoalActionsDisabled={areGoalActionsDisabled}
-        onDragStartSnapshot={onDragStartSnapshot}
-        onDeadlinePreview={onDeadlinePreview}
-        onDeadlineCommit={(goalId, nextDeadline) =>
-          void onDeadlineCommit(goalId, nextDeadline)
-        }
-        onCancelPreview={onCancelPreview}
+}: MainPlanViewProps) => {
+  const startMonth = parseMonthStart(planData.startMonth);
+  const horizonGoals: HorizonGoal[] = activeGoals.map((goal) => ({
+    id: goal.id,
+    name: goal.name,
+    monthsToDeadline: Math.max(
+      monthDiff(
+        parseMonthStart(deadlineDrafts[goal.id] ?? goal.deadline),
+        startMonth,
+      ) + 1,
+      1,
+    ),
+    isUnreachable: goal.id in unreachableByGoalId,
+  }));
+  const commitDeadline = (goalId: string, nextDeadline: string) =>
+    void onDeadlineCommit(goalId, nextDeadline);
+
+  return (
+    <main className="mx-auto grid w-full max-w-[1280px] items-start gap-6 p-4 pb-28 sm:p-6 sm:pb-28 md:p-8 md:pb-28 lg:grid-cols-[minmax(0,1fr)_340px] lg:pb-8">
+      <div className="flex min-w-0 flex-col gap-6">
+        <PlanHero
+          startMonth={planData.startMonth}
+          plannedIncome={planData.budget.plannedIncome}
+          obligations={planData.budget.obligations}
+          available={planData.budget.available}
+          readyToAssign={planData.readyToAssign}
+          goalsCount={activeGoals.length}
+          atRiskCount={horizonGoals.filter((goal) => goal.isUnreachable).length}
+        />
+        <PlanGoalsSection
+          cards={{
+            goals: activeGoals,
+            startMonthIso: planData.startMonth,
+            monthlyContributionByGoalId: allocations[0]?.perGoal ?? {},
+            unreachableByGoalId,
+            earlierDeadlineByGoalId,
+            draftDeadlines: deadlineDrafts,
+            isRecalculating: isRefreshing,
+            areGoalActionsDisabled,
+            onOpenCreateGoal,
+            onOpenEditGoal,
+            onOpenDeleteGoal,
+            onDeadlineCommit: commitDeadline,
+          }}
+          timeline={{
+            goals: activeGoals,
+            startMonthIso: planData.startMonth,
+            horizonMonths: planData.horizonMonths,
+            unreachableByGoalId,
+            earlierDeadlineByGoalId,
+            draftDeadlines: deadlineDrafts,
+            isRecalculating: isRefreshing,
+            onOpenCreateGoal,
+            onOpenEditGoal,
+            onOpenDeleteGoal,
+            areGoalActionsDisabled,
+            onDragStartSnapshot,
+            onDeadlinePreview,
+            onDeadlineCommit: commitDeadline,
+            onCancelPreview,
+          }}
+          table={{
+            allocations,
+            goals: activeGoals.map((goal) => ({
+              id: goal.id,
+              name: goal.name,
+              deadline: goal.deadline,
+            })),
+          }}
+        />
+        <PlanConflicts
+          conflicts={planData.planResult.conflicts}
+          tbdWarnings={planData.tbdWarnings}
+        />
+      </div>
+      <PlanSidePanel
+        budget={planData.budget}
+        horizonGoals={horizonGoals}
+        needsSync={planData.needsSync}
+        isRefreshing={isRefreshing}
+        isSyncingYnab={isSyncingYnab}
+        ynabImportBlockedUntil={ynabImportBlockedUntil}
+        isPreviewLoading={isPreviewLoading}
+        isApplyingPush={isApplyingPush}
+        onRefresh={onRefresh}
+        onSyncYnab={onSyncYnab}
+        onOpenPushPreview={onOpenPushPreview}
       />
-      <PlanTable
-        allocations={allocations}
-        goals={activeGoals.map((goal) => ({
-          id: goal.id,
-          name: goal.name,
-          deadline: goal.deadline,
-        }))}
+      <PushDiffDialog
+        isOpen={isPushDialogOpen}
+        preview={pushPreview}
+        onCancel={onClosePushDialog}
+        onConfirm={onApplyPushDiff}
+        isApplying={isApplyingPush}
       />
-    </div>
-    <PlanConflicts
-      conflicts={planData.planResult.conflicts}
-      tbdWarnings={planData.tbdWarnings}
-    />
-    <PushDiffDialog
-      isOpen={isPushDialogOpen}
-      preview={pushPreview}
-      onCancel={onClosePushDialog}
-      onConfirm={onApplyPushDiff}
-      isApplying={isApplyingPush}
-    />
-  </main>
-);
+    </main>
+  );
+};
 
 const toPlannerResult = (
   result: DomainPlanResult,

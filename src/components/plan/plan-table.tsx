@@ -97,12 +97,12 @@ export const PlanTable = ({ allocations, goals }: PlanTableProps) => {
                   {goalIds.map((goalId) => (
                     <td
                       key={`${row.month}-${goalId}`}
-                      className="h-11 px-4 text-right font-mono text-[13px] tabular-nums"
+                      className="h-11 px-4 text-right text-[13px] tabular-nums"
                     >
                       {formatAmount(row.perGoal[goalId] ?? 0)}
                     </td>
                   ))}
-                  <td className="h-11 px-4 text-right font-mono text-[13px] text-primary tabular-nums">
+                  <td className="h-11 px-4 text-right text-[13px] text-primary tabular-nums">
                     {formatAmount(row.unallocated)}
                   </td>
                 </tr>

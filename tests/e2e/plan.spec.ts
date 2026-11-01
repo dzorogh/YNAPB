@@ -323,14 +323,24 @@ test.describe("plan calculated and push preview with e2e auth bypass", () => {
     await expect(
       page.getByText("Ready to Assign", { exact: true }).locator(".."),
     ).toContainText("395");
-    await expect(page.getByText("Monthly allocation")).toBeVisible();
     await expect(
-      page.getByRole("columnheader", { name: /vacation/i }),
+      page.getByRole("article", { name: "Vacation" }).getByText("At risk"),
     ).toBeVisible();
     await expect(
       page.getByRole("button", {
         name: "Apply earliest reachable date for Vacation",
       }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Timeline", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Resize deadline for Vacation" }),
+    ).toBeAttached();
+
+    await page.getByRole("button", { name: "Monthly", exact: true }).click();
+    await expect(page.getByText("Monthly allocation")).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: /vacation/i }),
     ).toBeVisible();
     await expect(page.getByText("Conflicts and warnings")).toBeVisible();
     await expect(page.getByText(/Unreachable goal: vacation/)).toBeVisible();
