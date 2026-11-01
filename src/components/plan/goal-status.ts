@@ -8,6 +8,9 @@ export const monthDiff = (left: Date, right: Date): number =>
   left.getUTCMonth() -
   right.getUTCMonth();
 
+export const addMonths = (date: Date, months: number): Date =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1));
+
 export const toDeadlineString = (date: Date): string =>
   `${date.toISOString().slice(0, 7)}-01`;
 

@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable max-lines-per-function */
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +15,11 @@ import {
   type HorizonGoal,
   PlanSidePanel,
 } from "@/components/plan/plan-side-panel";
+import {
+  PlanConnectState,
+  PlanLoadingState,
+  PlanUnavailableState,
+} from "@/components/plan/plan-states";
 import {
   PushDiffDialog,
   type PushPreview,
@@ -215,64 +219,6 @@ const isLikelyMissingYnabConnection = (payload: ApiPlanResponse): boolean => {
 
   return payload.budget.plannedIncome === 0 && payload.budget.obligations === 0;
 };
-
-const LoadingPlanState = () => (
-  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 md:p-8">
-    <Card>
-      <CardHeader>
-        <CardTitle>Plan</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground">Loading plan...</p>
-      </CardContent>
-    </Card>
-  </main>
-);
-
-const EmptyPlanState = ({ onRetry }: { onRetry: RefreshHandler }) => (
-  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 md:p-8">
-    <Card>
-      <CardHeader>
-        <CardTitle>Plan</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-muted-foreground">
-          Plan data is not available yet.
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void onRetry()}
-          aria-label="Retry loading plan"
-        >
-          Retry
-        </Button>
-        <Button render={<Link href="/settings" />} aria-label="Go to settings">
-          Open settings
-        </Button>
-      </CardContent>
-    </Card>
-  </main>
-);
-
-const MissingConnectionPlanState = () => (
-  <main className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-4 sm:p-6 md:p-8">
-    <Card>
-      <CardHeader>
-        <CardTitle>Connect YNAB first</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Plan requires YNAB connection and synced data before calculation can
-          start.
-        </p>
-        <Button render={<Link href="/settings" />} aria-label="Go to settings">
-          Open settings
-        </Button>
-      </CardContent>
-    </Card>
-  </main>
-);
 
 type MainPlanViewProps = {
   planData: ApiPlanResponse;
@@ -1012,15 +958,15 @@ export default function PlanPage() {
   }, [clearGoalsCrudStatus, goalsCrudStatus]);
 
   if (state === "loading" && !planData) {
-    return <LoadingPlanState />;
+    return <PlanLoadingState />;
   }
 
   if (!planData || !previewPlanResult) {
-    return <EmptyPlanState onRetry={handleRetry} />;
+    return <PlanUnavailableState onRetry={handleRetry} />;
   }
 
   if (isLikelyMissingYnabConnection(planData)) {
-    return <MissingConnectionPlanState />;
+    return <PlanConnectState />;
   }
 
   const allocations = previewPlanResult.allocations;

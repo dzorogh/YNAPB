@@ -1,8 +1,11 @@
 "use client";
 /* eslint-disable max-lines-per-function */
 
+import { Keyboard, Plus } from "lucide-react";
 import { type PointerEvent, useEffect, useMemo, useRef } from "react";
+
 import {
+  addMonths,
   monthDiff,
   parseMonthStart,
   toDeadlineString,
@@ -13,7 +16,7 @@ import {
   type TimelineGoal,
 } from "@/components/plan/plan-timeline-goal-row";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type PlanTimelineProps = {
   goals: TimelineGoal[];
@@ -34,19 +37,14 @@ type PlanTimelineProps = {
 };
 
 const MONTH_WIDTH = 48;
-const INFO_COLUMN_WIDTH = 300;
-const GRID_GAP_PX = 12;
+const INFO_COLUMN_WIDTH = 280;
 const MIN_VISIBLE_MONTHS = 60;
 const MAX_VISIBLE_MONTHS = 240;
 const EXTRA_VISIBLE_MONTHS_BUFFER = 6;
 
-const addMonths = (date: Date, months: number): Date =>
-  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1));
-
-const formatMonthLabel = (value: Date): string =>
+const formatMonthTick = (value: Date): string =>
   new Intl.DateTimeFormat("en-US", {
     month: "short",
-    year: "2-digit",
     timeZone: "UTC",
   }).format(value);
 
@@ -126,7 +124,7 @@ export const PlanTimeline = ({
       return 1;
     }
     const rect = rail.getBoundingClientRect();
-    const timelineStartX = rect.left + INFO_COLUMN_WIDTH + GRID_GAP_PX;
+    const timelineStartX = rect.left + INFO_COLUMN_WIDTH;
     const relativeX = clientX - timelineStartX;
     const boundaryIndex = Math.round(relativeX / MONTH_WIDTH);
     return Math.min(Math.max(boundaryIndex, 1), visibleHorizonMonths);
@@ -166,120 +164,147 @@ export const PlanTimeline = ({
     dragStateRef.current = null;
   };
 
+  const createGoalButton = (
+    <Button
+      type="button"
+      size="sm"
+      variant="secondary"
+      className="rounded-full"
+      onClick={onOpenCreateGoal}
+      disabled={areGoalActionsDisabled}
+      aria-label="Create goal"
+    >
+      <Plus aria-hidden="true" />
+      New goal
+    </Button>
+  );
+
   if (goals.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Timeline</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-start gap-4 py-4">
-          <div>
-            <p className="text-sm font-medium">No goals to display.</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Create your first goal to see deadlines and monthly contributions.
-            </p>
-          </div>
-          <Button
-            type="button"
-            onClick={onOpenCreateGoal}
-            disabled={areGoalActionsDisabled}
-            aria-label="Create goal"
-          >
-            Create goal
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center gap-3 rounded-[20px] border-2 border-dashed border-border/80 px-6 py-10 text-center">
+        <p className="text-sm font-semibold">No goals to display.</p>
+        <p className="text-sm text-muted-foreground">
+          Create your first goal to see deadlines and monthly contributions.
+        </p>
+        {createGoalButton}
+      </div>
     );
   }
 
+  const gridTemplateColumns = `${INFO_COLUMN_WIDTH}px ${visibleHorizonMonths * MONTH_WIDTH}px`;
+  const yearStartIndexes = monthTicks
+    .map((tick, index) => (tick.getUTCMonth() === 0 && index > 0 ? index : -1))
+    .filter((index) => index > 0);
+
   return (
-    <Card className="min-w-0">
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <CardTitle className="text-base font-semibold">Timeline</CardTitle>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Goal balances and deadlines across your planning horizon.
-            </p>
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onOpenCreateGoal}
-            disabled={areGoalActionsDisabled}
-            aria-label="Create goal"
-          >
-            + Create goal
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="min-w-0 space-y-3 overflow-hidden">
-        <div className="w-full max-w-full lg:overflow-x-auto lg:overscroll-x-none lg:overscroll-y-none">
+    <div className="min-w-0 overflow-hidden rounded-[20px] border bg-card">
+      <div className="overflow-x-auto overscroll-x-none">
+        <div
+          ref={railRef}
+          className="relative max-lg:min-w-0!"
+          style={{
+            minWidth: `${INFO_COLUMN_WIDTH + visibleHorizonMonths * MONTH_WIDTH}px`,
+          }}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+        >
           <div
-            className="rounded-md max-lg:min-w-0! lg:space-y-1.5 lg:border lg:bg-card lg:py-2"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 hidden lg:block"
             style={{
-              minWidth: `${Math.max(900, INFO_COLUMN_WIDTH + visibleHorizonMonths * MONTH_WIDTH + GRID_GAP_PX)}px`,
+              left: INFO_COLUMN_WIDTH,
+              width: visibleHorizonMonths * MONTH_WIDTH,
             }}
-            ref={railRef}
-            onPointerMove={handleDragMove}
-            onPointerUp={handleDragEnd}
           >
             <div
-              className="hidden items-end gap-3 lg:grid"
-              style={{
-                gridTemplateColumns: `${INFO_COLUMN_WIDTH}px ${visibleHorizonMonths * MONTH_WIDTH}px`,
-              }}
-            >
-              <div className="sticky left-0 z-20 min-h-full self-stretch border-b bg-card" />
+              className="absolute inset-y-0 left-0 bg-primary/[0.06]"
+              style={{ width: MONTH_WIDTH }}
+            />
+            {yearStartIndexes.map((index) => (
               <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `repeat(${visibleHorizonMonths}, ${MONTH_WIDTH}px)`,
-                }}
-              >
-                {monthTicks.map((tick) => (
-                  <div
-                    key={tick.toISOString()}
-                    className="border-b py-1 text-center text-[11px] font-medium text-muted-foreground/90"
-                  >
-                    {formatMonthLabel(tick)}
-                  </div>
-                ))}
-              </div>
-            </div>
-            {goals.map((goal) => (
-              <PlanTimelineGoalRow
-                key={goal.id}
-                goal={goal}
-                rowState={buildGoalTimelineRowState({
-                  goal,
-                  draftDeadlines,
-                  unreachableByGoalId,
-                  earlierDeadlineByGoalId,
-                  isRecalculating,
-                  areGoalActionsDisabled,
-                  visibleHorizonMonths,
-                  resolveDeadlineBoundaryIndex,
-                })}
-                visibleHorizonMonths={visibleHorizonMonths}
-                isRecalculating={isRecalculating}
-                areGoalActionsDisabled={areGoalActionsDisabled}
-                onOpenEditGoal={onOpenEditGoal}
-                onOpenDeleteGoal={onOpenDeleteGoal}
-                onDeadlineCommit={onDeadlineCommit}
-                onDragStart={handleDragStart}
+                key={index}
+                className="absolute inset-y-0 border-l border-border/70"
+                style={{ left: index * MONTH_WIDTH }}
               />
             ))}
           </div>
+          <div
+            className="sticky top-0 z-20 hidden border-b bg-card lg:grid"
+            style={{ gridTemplateColumns }}
+          >
+            <div className="sticky left-0 z-10 flex items-end border-r border-border/60 bg-card px-4 pb-2 text-[11px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+              Goal
+            </div>
+            <div
+              className="grid pt-2"
+              style={{
+                gridTemplateColumns: `repeat(${visibleHorizonMonths}, ${MONTH_WIDTH}px)`,
+              }}
+            >
+              {monthTicks.map((tick, index) => {
+                const isYearStart = index === 0 || tick.getUTCMonth() === 0;
+                return (
+                  <div key={tick.toISOString()} className="relative pb-2">
+                    <span
+                      className={cn(
+                        "block h-4 px-1.5 text-[11px] font-semibold text-foreground",
+                        !isYearStart && "invisible",
+                      )}
+                    >
+                      {tick.getUTCFullYear()}
+                    </span>
+                    <span
+                      className={cn(
+                        "block text-center text-[11px]",
+                        index === 0
+                          ? "font-semibold text-primary"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {index === 0 ? "Now" : formatMonthTick(tick)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {goals.map((goal) => (
+            <PlanTimelineGoalRow
+              key={goal.id}
+              goal={goal}
+              rowState={buildGoalTimelineRowState({
+                goal,
+                draftDeadlines,
+                unreachableByGoalId,
+                earlierDeadlineByGoalId,
+                isRecalculating,
+                areGoalActionsDisabled,
+                visibleHorizonMonths,
+                resolveDeadlineBoundaryIndex,
+              })}
+              gridTemplateColumns={gridTemplateColumns}
+              startMonthIso={startMonthIso}
+              isRecalculating={isRecalculating}
+              areGoalActionsDisabled={areGoalActionsDisabled}
+              onOpenEditGoal={onOpenEditGoal}
+              onOpenDeleteGoal={onOpenDeleteGoal}
+              onDeadlineCommit={onDeadlineCommit}
+              onDragStart={handleDragStart}
+            />
+          ))}
         </div>
-        <p className="text-xs text-muted-foreground lg:hidden">
-          Open a goal to change its deadline.
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-3">
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Keyboard className="hidden size-3.5 lg:block" aria-hidden="true" />
+          <span className="lg:hidden">Open a goal to change its deadline.</span>
+          <span className="hidden lg:inline">
+            Drag a deadline handle or focus it and use ← →. Esc cancels a drag.
+            Dashed line marks the suggested date.
+          </span>
         </p>
-        <p className="hidden text-xs text-muted-foreground lg:block">
-          Drag the handle at the end of each goal bar. Press Esc to rollback
-          drag preview.
-        </p>
-      </CardContent>
-    </Card>
+        {createGoalButton}
+      </div>
+    </div>
   );
 };

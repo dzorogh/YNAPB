@@ -90,6 +90,15 @@
   color-scheme: dark;
 }
 
+@utility bg-hero-glow {
+  background-image: radial-gradient(
+    120% 140% at 0% 0%,
+    color-mix(in oklab, var(--primary) 32%, transparent) 0%,
+    color-mix(in oklab, var(--accent) 70%, transparent) 45%,
+    transparent 100%
+  );
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

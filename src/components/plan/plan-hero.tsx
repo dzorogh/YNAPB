@@ -29,7 +29,7 @@ export const PlanHero = ({
   >
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_140%_at_0%_0%,color-mix(in_oklab,var(--primary)_32%,transparent)_0%,color-mix(in_oklab,var(--accent)_70%,transparent)_45%,transparent_100%)]"
+      className="pointer-events-none absolute inset-0 bg-hero-glow"
     />
     <div className="relative">
       <p className="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold tracking-[0.06em] text-accent-foreground/80 uppercase">
