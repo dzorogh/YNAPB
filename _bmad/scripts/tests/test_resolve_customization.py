@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+
 SCRIPT = Path(__file__).resolve().parents[1] / "resolve_customization.py"
 
 
@@ -24,7 +25,8 @@ class ResolveCustomizationStdoutTests(unittest.TestCase):
             result = subprocess.run(
                 [sys.executable, str(scripts / SCRIPT.name), "--help"],
                 text=True,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 check=False,
             )
 
@@ -55,7 +57,8 @@ class ResolveCustomizationStdoutTests(unittest.TestCase):
                     "--key",
                     "agent",
                 ],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 cwd=temp_dir,
                 env=env,
                 check=False,
@@ -84,7 +87,8 @@ def resolve(skill_dir: Path, cwd: Path, *extra: str):
     return subprocess.run(
         [sys.executable, str(SCRIPT), "--skill", str(skill_dir), "--key", "workflow", *extra],
         text=True,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         cwd=str(cwd),
         check=False,
     )
