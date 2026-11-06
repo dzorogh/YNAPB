@@ -20,6 +20,7 @@ export type CachedYnabCategory = {
   name: string;
   goal_type: string | null;
   goal_cadence: number | null;
+  goal_cadence_frequency: number | null;
   goal_target: number | null;
   goal_target_month: string | null;
   goal_under_funded: number | null;
@@ -43,21 +44,22 @@ export type CachedIncomeHistoryItem = {
 const cachedYnabCategorySchema = z.object({
   id: z.string().min(1),
   name: z.string(),
-  goal_type: z.string().nullable().optional(),
-  goal_cadence: z.number().int().nullable().optional(),
-  goal_target: z.number().finite().nullable().optional(),
-  goal_target_month: z.string().nullable().optional(),
-  goal_under_funded: z.number().finite().nullable().optional(),
-  goal_needs_whole_amount: z.boolean().nullable().optional(),
-  balance: z.number().finite().nullable().optional(),
-  activity: z.number().finite().nullable().optional(),
-  assigned: z.number().finite().nullable().optional(),
-  prior_month_available: z.number().finite().nullable().optional(),
-  prior_month_assigned: z.number().finite().nullable().optional(),
-  spent_before_month: z.number().finite().nonnegative().optional(),
-  hidden: z.boolean().optional(),
-  deleted: z.boolean().optional(),
-  assigned_history: z.array(z.number().finite()).optional(),
+  goal_type: z.string().nullable().default(null),
+  goal_cadence: z.number().int().nullable().default(null),
+  goal_cadence_frequency: z.number().int().nullable().default(null),
+  goal_target: z.number().finite().nullable().default(null),
+  goal_target_month: z.string().nullable().default(null),
+  goal_under_funded: z.number().finite().nullable().default(null),
+  goal_needs_whole_amount: z.boolean().nullable().default(null),
+  balance: z.number().finite().nullable().default(null),
+  activity: z.number().finite().nullable().default(null),
+  assigned: z.number().finite().nullable().default(null),
+  prior_month_available: z.number().finite().nullable().default(null),
+  prior_month_assigned: z.number().finite().nullable().default(null),
+  spent_before_month: z.number().finite().nonnegative().default(0),
+  hidden: z.boolean().default(false),
+  deleted: z.boolean().default(false),
+  assigned_history: z.array(z.number().finite()).default([]),
 });
 const cachedIncomeHistoryItemSchema = z.object({
   month: z.string().min(1),
@@ -97,23 +99,8 @@ export const parseCachedCategories = (value: Json): CachedYnabCategory[] => {
   }
 
   return parsed.data.map((category) => ({
-    id: category.id,
-    name: category.name,
-    goal_type: category.goal_type ?? null,
-    goal_cadence: category.goal_cadence ?? null,
-    goal_target: category.goal_target ?? null,
-    goal_target_month: category.goal_target_month ?? null,
-    goal_under_funded: category.goal_under_funded ?? null,
-    goal_needs_whole_amount: category.goal_needs_whole_amount ?? null,
-    balance: category.balance ?? null,
-    activity: category.activity ?? null,
-    assigned: category.assigned ?? category.assigned_history?.[0] ?? null,
-    prior_month_available: category.prior_month_available ?? null,
-    prior_month_assigned: category.prior_month_assigned ?? null,
-    spent_before_month: category.spent_before_month ?? 0,
-    hidden: category.hidden ?? false,
-    deleted: category.deleted ?? false,
-    assigned_history: category.assigned_history ?? [],
+    ...category,
+    assigned: category.assigned ?? category.assigned_history[0] ?? null,
   }));
 };
 

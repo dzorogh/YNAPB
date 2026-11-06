@@ -7,7 +7,7 @@ import {
 
 import { createYnabClient } from "./client";
 
-const currentMonth = vi.hoisted(() => ({ value: "2023-12-01" }));
+const currentMonth = vi.hoisted(() => ({ value: "2024-12-01" }));
 vi.mock("@/lib/ynab/map", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/ynab/map")>()),
   currentBudgetMonthFromDate: () => currentMonth.value,
@@ -34,8 +34,7 @@ describe("createYnabClient.getMonths", () => {
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
-    // Before any listed month, so only the lookback month needs details.
-    currentMonth.value = "2023-12-01";
+    currentMonth.value = "2024-12-01";
 
     const client = createYnabClient("token");
     const months = await client.getMonths("budget-1", {
@@ -84,13 +83,14 @@ describe("createYnabClient.getMonths", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
+    currentMonth.value = "2024-12-01";
     const client = createYnabClient("token");
     await client.getMonths("budget-1", { monthDetailsLookback: 3 });
 
     expect(countMonthDetailCalls(fetchMock)).toBe(3);
   });
 
-  it("also fetches the current and prior calendar months behind future months", async () => {
+  it("fetches details only for completed months, skipping current and future", async () => {
     const fetchMock = vi.fn(
       createYnabMonthsFetchMock({
         months: [
@@ -111,7 +111,7 @@ describe("createYnabClient.getMonths", () => {
 
     expect(
       months.filter((month) => month.categories).map((month) => month.month),
-    ).toEqual(["2027-01-01", "2026-12-01", "2026-11-01", "2026-10-01"]);
+    ).toEqual(["2026-10-01", "2026-09-01"]);
   });
 });
 

@@ -3,6 +3,7 @@ export type YnabCategory = {
   name: string;
   goal_type: string | null;
   goal_cadence: number | null;
+  goal_cadence_frequency: number | null;
   goal_target: number | null;
   goal_target_month: string | null;
   goal_under_funded: number | null;
@@ -41,6 +42,7 @@ type YnabCategorySource = {
   name: string;
   goal_type?: string | null;
   goal_cadence?: number | null;
+  goal_cadence_frequency?: number | null;
   goal_target?: number | null;
   goal_target_month?: string | null;
   goal_under_funded?: number | null;
@@ -81,6 +83,11 @@ export const mapYnabCategory = (
     typeof category.goal_cadence === "number" &&
     Number.isFinite(category.goal_cadence)
       ? category.goal_cadence
+      : null,
+  goal_cadence_frequency:
+    typeof category.goal_cadence_frequency === "number" &&
+    Number.isFinite(category.goal_cadence_frequency)
+      ? category.goal_cadence_frequency
       : null,
   goal_target: toCurrencyUnits(category.goal_target),
   goal_target_month: category.goal_target_month ?? null,

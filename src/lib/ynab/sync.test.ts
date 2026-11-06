@@ -101,6 +101,7 @@ describe("syncYnabData", () => {
         goal_target_month: "2026-12-01",
         goal_under_funded: 30_000,
         goal_needs_whole_amount: null,
+        goal_cadence_frequency: null,
         balance: null,
         activity: null,
         assigned: 13_000,
@@ -109,7 +110,7 @@ describe("syncYnabData", () => {
         prior_month_assigned: null,
         hidden: false,
         deleted: false,
-        assigned_history: [13_000, 12_000, 11_000],
+        assigned_history: [13_000, 12_000, 11_000, 10_000],
       },
       {
         id: "cat-fun",
@@ -120,6 +121,7 @@ describe("syncYnabData", () => {
         goal_target_month: null,
         goal_under_funded: null,
         goal_needs_whole_amount: null,
+        goal_cadence_frequency: null,
         balance: null,
         activity: null,
         assigned: 5_000,
@@ -128,7 +130,7 @@ describe("syncYnabData", () => {
         prior_month_assigned: null,
         hidden: false,
         deleted: false,
-        assigned_history: [5_000, 4_000, 3_000],
+        assigned_history: [5_000, 4_000, 3_000, 2_000],
       },
     ]);
   });
@@ -353,7 +355,7 @@ describe("syncYnabData", () => {
 });
 
 describe("syncYnabData goal progress inputs", () => {
-  it("loads prior-month assigned and goal spending before this month", async () => {
+  it("uses completed months for history and loads goal spending", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-06T12:00:00Z"));
     try {
@@ -408,7 +410,11 @@ describe("syncYnabData goal progress inputs", () => {
         spent_before_month: 120_000,
         prior_month_assigned: 367_229,
         prior_month_available: 367_229,
+        assigned_history: [367_229],
       });
+      expect(result.incomeHistory.map((month) => month.month)).toEqual([
+        "2026-10-01",
+      ]);
     } finally {
       vi.useRealTimers();
     }

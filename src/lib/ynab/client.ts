@@ -26,6 +26,7 @@ type YnabCategory = {
   deleted?: boolean;
   goal_type: string | null;
   goal_cadence?: number | null;
+  goal_cadence_frequency?: number | null;
   goal_target: number | null;
   goal_target_month?: string | null;
   goal_under_funded: number | null;
@@ -119,6 +120,7 @@ const toClientCategory = (category: Category): YnabCategory => ({
   deleted: category.deleted,
   goal_type: category.goal_type ?? null,
   goal_cadence: category.goal_cadence,
+  goal_cadence_frequency: category.goal_cadence_frequency,
   goal_target: category.goal_target ?? null,
   goal_target_month: category.goal_target_month,
   goal_under_funded: category.goal_under_funded ?? null,
@@ -229,20 +231,12 @@ export const createYnabClient = (
       const sortedMonths = [...data.data.months].sort((left, right) =>
         right.month.localeCompare(left.month),
       );
-      // Latest months (may include open future months) plus the current and
-      // prior calendar months, which carry goal carryover and withdrawals.
+      // Details for the last completed months: YNAB also lists open future
+      // months, and the current month comes from the categories endpoint.
       const currentMonth = currentBudgetMonthFromDate();
-      const latestMonths = sortedMonths.slice(
-        0,
-        Math.max(1, monthDetailsLookback),
-      );
-      const currentAndPrior = sortedMonths
-        .filter((month) => month.month <= currentMonth)
-        .slice(0, 2);
-      const monthsForDetail = [
-        ...latestMonths,
-        ...currentAndPrior.filter((month) => !latestMonths.includes(month)),
-      ];
+      const monthsForDetail = sortedMonths
+        .filter((month) => month.month < currentMonth)
+        .slice(0, Math.max(1, monthDetailsLookback));
       const categoriesByMonth = new Map<
         string,
         Array<{

@@ -97,7 +97,7 @@ export const toGoalCategorySpendingSources = (
   );
 
 const hasToken = (token: string): boolean => token.trim().length > 0;
-const OBLIGATIONS_AVERAGE_ASSIGNED_MONTHS = 3;
+const OBLIGATIONS_AVERAGE_ASSIGNED_MONTHS = 6;
 
 export const syncYnabData = async ({
   token,
@@ -119,11 +119,16 @@ export const syncYnabData = async ({
     const rawMonths = await ynabClient.getMonths(budgetId, {
       monthDetailsLookback: OBLIGATIONS_AVERAGE_ASSIGNED_MONTHS,
     });
+    // History averages use completed months only: YNAB also lists open future
+    // months, and the current month is partial until it ends.
+    const completedMonths = rawMonths.filter(
+      (month) => month.month < currentMonth,
+    );
     const currencyCode = skipCurrencyLookup
       ? null
       : await ynabClient.getBudgetCurrencyCode(budgetId);
     const assignedHistory = mapCategoryAssignedHistory(
-      rawMonths,
+      completedMonths,
       OBLIGATIONS_AVERAGE_ASSIGNED_MONTHS,
     );
     const assignedByCategoryId = assignedHistory.reduce<Map<string, number[]>>(
@@ -166,7 +171,7 @@ export const syncYnabData = async ({
             priorMonthAssignedByCategoryId.get(mapped.id) ?? null,
         };
       }),
-      incomeHistory: mapIncomeHistory(rawMonths, baselineMonths),
+      incomeHistory: mapIncomeHistory(completedMonths, baselineMonths),
       readyToAssign: mapReadyToAssign(rawMonths),
       syncedAt: new Date().toISOString(),
       currencyCode,

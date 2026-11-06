@@ -76,6 +76,7 @@ const category = (
   prior_month_available: 0,
   spent_before_month: 0,
   goal_needs_whole_amount: null,
+  goal_cadence_frequency: null,
   prior_month_assigned: null,
   hidden: false,
   deleted: false,
