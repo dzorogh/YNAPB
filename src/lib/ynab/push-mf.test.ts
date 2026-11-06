@@ -20,6 +20,7 @@ const buildInput = (overrides?: {
     name: string;
     goalTarget: number | null;
     goalTargetMonth?: string | null;
+    goalNeedsWholeAmount?: boolean | null;
   }>;
 }) => ({
   goals: overrides?.goals ?? [],
@@ -166,4 +167,31 @@ it("runs recovery after each successful absolute assigned write", async () => {
     "/categories/decrease",
   );
   expect(onMoveApplied.mock.calls).toEqual([[decrease], [increase]]);
+});
+
+it("switches a «Refill up to» target to «Set aside another» even when unchanged", () => {
+  const result = buildPushDiff(
+    buildInput({
+      goals: [{ id: GOAL_ONE, status: ACTIVE, ynabCategoryId: CAT_ONE }],
+      allocationForMonth: { [GOAL_ONE]: 100 },
+      categories: [
+        {
+          id: CAT_ONE,
+          name: "Dentist",
+          goalTarget: 100,
+          goalNeedsWholeAmount: false,
+        },
+      ],
+    }),
+  );
+
+  expect(result).toEqual([
+    {
+      categoryId: CAT_ONE,
+      categoryName: "Dentist",
+      current: 100_000,
+      next: 100_000,
+      setsSetAside: true,
+    },
+  ]);
 });

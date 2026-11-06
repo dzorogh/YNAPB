@@ -10,6 +10,10 @@ import type {
 import type { Json } from "@/types/supabase";
 import { toYnabGoalProgressInput } from "@/lib/ynab/category-progress-input";
 import {
+  activeGoalCategoryIds,
+  shiftWithdrawalsToPriorMonth,
+} from "@/lib/ynab/withdrawal-shift";
+import {
   buildMonthlyFundingTargetsForPush,
   resolveGoalAmountsFromCategory,
 } from "@/lib/ynab/goal-progress";
@@ -22,9 +26,19 @@ export type PlanInputs = {
 
 export const computeMonthTargets = (
   inputs: PlanInputs,
-  categories: CachedYnabCategory[],
+  syncedCategories: CachedYnabCategory[],
   month: string,
 ) => {
+  // Money moved out of a goal this month starts the month from what was left,
+  // whether or not Push has booked the withdrawal against the prior month yet.
+  const categories =
+    month === monthKeyFromDate(new Date())
+      ? shiftWithdrawalsToPriorMonth(
+          syncedCategories,
+          activeGoalCategoryIds(inputs.goals),
+          month,
+        ).categories
+      : syncedCategories;
   const computation = buildPlanComputation({
     goals: inputs.goals,
     cache: { ...inputs.cache, categories: categories as unknown as Json },
@@ -47,7 +61,11 @@ export const computeMonthTargets = (
             const amounts = resolveGoalAmountsFromCategory(
               toYnabGoalProgressInput(category ?? null),
             );
-            return { ...goal, savedProgress: amounts.carryoverFromLastMonth };
+            return {
+              ...goal,
+              savedProgress:
+                amounts.carryoverFromLastMonth + amounts.spentBeforeMonth,
+            };
           }),
           budget: computation.budget,
           startMonth: computation.startMonth,

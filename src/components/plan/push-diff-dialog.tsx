@@ -12,10 +12,18 @@ export type PushDiffRow = {
   current: number;
   next: number;
   clearsTargetDate?: boolean;
+  setsSetAside?: boolean;
+};
+
+export type WithdrawalShiftRow = PushDiffRow & {
+  /** `YYYY-MM` of the prior month that absorbs the withdrawal. */
+  priorMonth: string;
 };
 
 export type PushPreview = {
   targets: PushDiffRow[];
+  /** Money moved out of goals this month, booked against the prior month. */
+  withdrawalShifts: WithdrawalShiftRow[];
   /** Current-month assigned changes between goal categories. */
   assignedMoves: PushDiffRow[];
   /** Current-month assignments funded by Ready to Assign. */
@@ -76,6 +84,11 @@ const PushDiffTable = ({
                   Removes target date
                 </div>
               ) : null}
+              {row.setsSetAside ? (
+                <div className="text-xs text-muted-foreground">
+                  Refill up to → Set aside another
+                </div>
+              ) : null}
             </td>
             {allocationLabel ? (
               <td className="px-3 py-2 font-medium text-primary">
@@ -86,6 +99,43 @@ const PushDiffTable = ({
         ))}
       </tbody>
     </table>
+  </div>
+);
+
+const WithdrawalShiftsSection = ({ rows }: { rows: WithdrawalShiftRow[] }) => (
+  <div className="space-y-2">
+    <div>
+      <h3 className="text-sm font-medium">Withdrawals moved to last month</h3>
+      <p className="text-sm text-muted-foreground">
+        Money moved out of these goals this month is booked against last month
+        instead, and this month&apos;s assigned rises by the same amount.
+        Balances and Ready to Assign stay the same; this month starts from what
+        was left, so YNAB targets and Auto-Assign ask only for this month&apos;s
+        part.
+      </p>
+    </div>
+    <div className="overflow-auto rounded-md border">
+      <table className="w-full min-w-[560px] text-sm">
+        <thead className="bg-muted/80">
+          <tr className="border-b text-left">
+            <th className="px-3 py-2 font-medium">Category</th>
+            <th className="px-3 py-2 font-medium">Month</th>
+            <th className="px-3 py-2 font-medium">Assigned now</th>
+            <th className="px-3 py-2 font-medium">Assigned after</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.categoryId} className="border-b last:border-b-0">
+              <td className="px-3 py-2 font-medium">{row.categoryName}</td>
+              <td className="px-3 py-2">{row.priorMonth}</td>
+              <td className="px-3 py-2">{formatAmount(row.current / 1000)}</td>
+              <td className="px-3 py-2">{formatAmount(row.next / 1000)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   </div>
 );
 
@@ -127,6 +177,7 @@ const PushDiffDialogBody = ({
 }) => {
   const hasNoChanges =
     preview.targets.length === 0 &&
+    preview.withdrawalShifts.length === 0 &&
     preview.assignedMoves.length === 0 &&
     preview.readyToAssignMoves.length === 0;
   const readyToAssignTotal = preview.readyToAssignMoves.reduce(
@@ -145,6 +196,9 @@ const PushDiffDialogBody = ({
 
       <CardContent className="min-h-0 space-y-4 overflow-y-auto">
         {hasNoChanges ? <NoChangesState /> : null}
+        {preview.withdrawalShifts.length > 0 ? (
+          <WithdrawalShiftsSection rows={preview.withdrawalShifts} />
+        ) : null}
         {preview.assignedMoves.length > 0 ? (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">

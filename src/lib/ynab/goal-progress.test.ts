@@ -184,6 +184,62 @@ describe("resolveGoalAmountsFromCategory", () => {
     expect(amounts.currentBalance).toBe(202_656);
     expect(amounts.assignedThisMonth).toBe(174_531);
   });
+
+  it("counts past goal spending as progress, not as available money", () => {
+    const amounts = resolveGoalAmountsFromCategory({
+      balance: 50_000,
+      assigned: 0,
+      prior_month_available: 50_000,
+      activity: 0,
+      spent_before_month: 120_000,
+    });
+
+    expect(amounts.savedProgress).toBe(170_000);
+    expect(amounts.carryoverFromLastMonth).toBe(50_000);
+    expect(amounts.availableBalance).toBe(50_000);
+  });
+
+  it("does not count money moved out of the goal as progress", () => {
+    const amounts = resolveGoalAmountsFromCategory({
+      balance: 0,
+      assigned: -367_229,
+      prior_month_available: 0,
+      activity: 0,
+    });
+
+    expect(amounts.savedProgress).toBe(0);
+  });
+});
+
+describe("buildMonthlyFundingTargetsForPush with goal spending", () => {
+  it("subtracts past spending in the deadline month", () => {
+    const targets = buildMonthlyFundingTargetsForPush({
+      goals: [
+        {
+          id: "dentist",
+          targetAmount: 500_000,
+          deadline: "2026-05-01",
+          ynabCategoryId: "cat-dentist",
+        },
+      ],
+      categoriesById: new Map([
+        [
+          "cat-dentist",
+          {
+            balance: 100_000,
+            assigned: 0,
+            prior_month_available: 100_000,
+            activity: 0,
+            spent_before_month: 150_000,
+          },
+        ],
+      ]),
+      pushMonth: "2026-05",
+      plannerAllocationForMonth: {},
+    });
+
+    expect(targets.dentist).toBe(250_000);
+  });
 });
 
 describe("buildMonthlyFundingTargetsForPush overfunding", () => {

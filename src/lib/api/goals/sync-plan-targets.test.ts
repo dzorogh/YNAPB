@@ -30,7 +30,10 @@ vi.mock("@/lib/ynab/push-mf", async (importOriginal) => ({
   pushMonthlyFundingGoals: vi.fn(),
   pushAssignedMoves: vi.fn(),
 }));
-vi.mock("@/lib/ynab/sync", () => ({ syncYnabData: vi.fn() }));
+vi.mock("@/lib/ynab/sync", () => ({
+  syncYnabData: vi.fn(),
+  toGoalCategorySpendingSources: () => [],
+}));
 
 const NOW = "2026-10-25T12:00:00.000Z";
 const connection = { token: "fixture", budgetId: "budget" };
@@ -71,7 +74,9 @@ const category = (
   goal_under_funded: 0,
   activity: 0,
   prior_month_available: 0,
-  cash_spent_total: 0,
+  spent_before_month: 0,
+  goal_needs_whole_amount: null,
+  prior_month_assigned: null,
   hidden: false,
   deleted: false,
   assigned_history: [],

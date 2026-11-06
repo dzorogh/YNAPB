@@ -41,13 +41,17 @@ describe("allocateReadyToAssign", () => {
     }
   });
 
-  it("does not fund a category with negative assigned", () => {
+  it("funds a goal whose money was moved out this month", () => {
     const result = allocateReadyToAssign(
-      [goal("negative", -50, 100), goal("next", 0, 100)],
-      100,
+      [
+        // Route targets are assigned + remaining goal amount - balance.
+        { ...goal("withdrawn", -50, 50), balance: 0 },
+        goal("next", 0, 100),
+      ],
+      150,
     );
 
-    expect(Object.fromEntries(result)).toEqual({ negative: -50, next: 100 });
+    expect(Object.fromEntries(result)).toEqual({ withdrawn: 50, next: 50 });
   });
 
   it("does not fund an overspent category", () => {

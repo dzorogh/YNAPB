@@ -103,6 +103,7 @@ type YnabSyncErrorDetails = {
 
 type PushPreviewResponse = {
   diff: PushPreview["targets"];
+  withdrawalShifts?: PushPreview["withdrawalShifts"];
   assignedMoves?: PushPreview["assignedMoves"];
   readyToAssignMoves?: PushPreview["readyToAssignMoves"];
   readyToAssign?: PushPreview["readyToAssign"];
@@ -790,6 +791,7 @@ const usePushPreview = ({
       const payload = (await response.json()) as PushPreviewResponse;
       setPushPreview({
         targets: payload.diff,
+        withdrawalShifts: payload.withdrawalShifts ?? [],
         assignedMoves: payload.assignedMoves ?? [],
         readyToAssignMoves: payload.readyToAssignMoves ?? [],
         readyToAssign: payload.readyToAssign ?? { available: 0, remaining: 0 },
@@ -931,6 +933,7 @@ export default function PlanPage() {
   const [isPushDialogOpen, setIsPushDialogOpen] = useState(false);
   const [pushPreview, setPushPreview] = useState<PushPreview>({
     targets: [],
+    withdrawalShifts: [],
     assignedMoves: [],
     readyToAssignMoves: [],
     readyToAssign: { available: 0, remaining: 0 },

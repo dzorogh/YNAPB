@@ -23,11 +23,14 @@ export type CachedYnabCategory = {
   goal_target: number | null;
   goal_target_month: string | null;
   goal_under_funded: number | null;
+  goal_needs_whole_amount: boolean | null;
   balance: number | null;
   activity: number | null;
   assigned: number | null;
   prior_month_available: number | null;
-  cash_spent_total: number;
+  prior_month_assigned: number | null;
+  /** Net goal spending from goal creation to the end of the prior month. */
+  spent_before_month: number;
   hidden: boolean;
   deleted: boolean;
   assigned_history: number[];
@@ -45,11 +48,13 @@ const cachedYnabCategorySchema = z.object({
   goal_target: z.number().finite().nullable().optional(),
   goal_target_month: z.string().nullable().optional(),
   goal_under_funded: z.number().finite().nullable().optional(),
+  goal_needs_whole_amount: z.boolean().nullable().optional(),
   balance: z.number().finite().nullable().optional(),
   activity: z.number().finite().nullable().optional(),
   assigned: z.number().finite().nullable().optional(),
   prior_month_available: z.number().finite().nullable().optional(),
-  cash_spent_total: z.number().finite().nonnegative().optional(),
+  prior_month_assigned: z.number().finite().nullable().optional(),
+  spent_before_month: z.number().finite().nonnegative().optional(),
   hidden: z.boolean().optional(),
   deleted: z.boolean().optional(),
   assigned_history: z.array(z.number().finite()).optional(),
@@ -99,11 +104,13 @@ export const parseCachedCategories = (value: Json): CachedYnabCategory[] => {
     goal_target: category.goal_target ?? null,
     goal_target_month: category.goal_target_month ?? null,
     goal_under_funded: category.goal_under_funded ?? null,
+    goal_needs_whole_amount: category.goal_needs_whole_amount ?? null,
     balance: category.balance ?? null,
     activity: category.activity ?? null,
     assigned: category.assigned ?? category.assigned_history?.[0] ?? null,
     prior_month_available: category.prior_month_available ?? null,
-    cash_spent_total: category.cash_spent_total ?? 0,
+    prior_month_assigned: category.prior_month_assigned ?? null,
+    spent_before_month: category.spent_before_month ?? 0,
     hidden: category.hidden ?? false,
     deleted: category.deleted ?? false,
     assigned_history: category.assigned_history ?? [],
@@ -173,7 +180,13 @@ export const upsertCache = async (
 export type CachedCategoryPatch = Partial<
   Pick<
     CachedYnabCategory,
-    "assigned" | "balance" | "goal_target" | "goal_target_month"
+    | "assigned"
+    | "balance"
+    | "goal_target"
+    | "goal_target_month"
+    | "goal_needs_whole_amount"
+    | "prior_month_available"
+    | "prior_month_assigned"
   >
 >;
 

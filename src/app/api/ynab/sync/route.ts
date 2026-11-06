@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError, z } from "zod";
 
 import { decryptToken } from "@/lib/crypto";
+import { listGoals } from "@/lib/repositories/goals-repo";
 import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
 import {
   getProfile,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/api/http";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { buildSyncErrorBody } from "@/lib/ynab/sync-error-response";
-import { syncYnabData } from "@/lib/ynab/sync";
+import { syncYnabData, toGoalCategorySpendingSources } from "@/lib/ynab/sync";
 import { YnabRequestError } from "@/lib/ynab/ynab-request";
 
 const syncPayloadSchema = z
@@ -109,6 +110,7 @@ export async function POST(request: Request) {
       budgetId: profile.ynab_budget_id,
       baselineMonths,
       skipCurrencyLookup: hasStoredCurrency,
+      goalCategories: toGoalCategorySpendingSources(await listGoals(user.id)),
     });
 
     try {

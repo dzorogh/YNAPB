@@ -19,6 +19,8 @@ type YnabCategoryForPush = {
   goalTarget: number | null;
   /** YNAB target date; YNAPB targets are plain monthly, so push clears it. */
   goalTargetMonth?: string | null;
+  /** `false` is YNAB «Refill up to»; YNAPB targets are «Set aside another». */
+  goalNeedsWholeAmount?: boolean | null;
 };
 
 export type MonthlyFundingDiffItem = {
@@ -27,6 +29,8 @@ export type MonthlyFundingDiffItem = {
   current: number;
   next: number;
   clearsTargetDate?: true;
+  /** Switches a «Refill up to» target to «Set aside another». */
+  setsSetAside?: true;
 };
 
 type BuildPushDiffInput = {
@@ -77,9 +81,17 @@ export const buildPushDiff = ({
         ...(category.goalTargetMonth
           ? { clearsTargetDate: true as const }
           : {}),
+        ...(category.goalNeedsWholeAmount === false
+          ? { setsSetAside: true as const }
+          : {}),
       };
     })
-    .filter((item) => item.current !== item.next || item.clearsTargetDate);
+    .filter(
+      (item) =>
+        item.current !== item.next ||
+        item.clearsTargetDate ||
+        item.setsSetAside,
+    );
 
   return sortMonthlyFundingDiff(diff);
 };
@@ -96,6 +108,9 @@ export const pushMonthlyFundingGoals = async ({
       apis.categories.updateCategory(budgetId, update.categoryId, {
         category: {
           goal_target: update.next,
+          // A monthly contribution is «Set aside another», not «Refill up to»:
+          // refill would count leftover money and stop asking for it.
+          goal_needs_whole_amount: true,
           // SDK types omit null, but YNAB clears the date when it is sent.
           goal_target_date: null as unknown as string,
         },

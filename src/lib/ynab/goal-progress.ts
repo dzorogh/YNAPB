@@ -23,7 +23,18 @@ export type YnabGoalProgressInput = {
    * (category did not exist in the prior synced month).
    */
   activity?: number | null;
+  /**
+   * Net spending on the goal before the current month. Spending on a goal is
+   * progress; money moved out of the category is not.
+   */
+  spent_before_month?: number | null;
 };
+
+const resolveSpentBeforeMonth = (input: YnabGoalProgressInput): number =>
+  typeof input.spent_before_month === "number" &&
+  Number.isFinite(input.spent_before_month)
+    ? Math.max(0, input.spent_before_month)
+    : 0;
 
 const resolveYnabAvailableBalance = (balance: number | null): number => {
   if (typeof balance === "number" && Number.isFinite(balance)) {
@@ -170,6 +181,8 @@ export const resolveGoalAmountsFromCategory = (
   savedProgress: number;
   availableBalance: number;
   carryoverFromLastMonth: number;
+  /** Goal spending before this month; progress outside the category balance. */
+  spentBeforeMonth: number;
   assignedThisMonth: number;
 } => {
   if (!input) {
@@ -178,17 +191,20 @@ export const resolveGoalAmountsFromCategory = (
       savedProgress: 0,
       availableBalance: 0,
       carryoverFromLastMonth: 0,
+      spentBeforeMonth: 0,
       assignedThisMonth: 0,
     };
   }
 
-  const totalAssigned = resolveGoalTotalAssigned(input);
+  const spentBeforeMonth = resolveSpentBeforeMonth(input);
+  const progress = resolveGoalTotalAssigned(input) + spentBeforeMonth;
 
   return {
-    currentBalance: totalAssigned,
-    savedProgress: totalAssigned,
+    currentBalance: progress,
+    savedProgress: progress,
     availableBalance: resolveYnabAvailableBalance(input.balance),
     carryoverFromLastMonth: resolveCarryoverFromLastMonth(input),
+    spentBeforeMonth,
     assignedThisMonth: resolveGoalAssignedThisMonth(input),
   };
 };
@@ -229,10 +245,13 @@ export const shouldUseFullMonthFundingForPush = ({
 export const resolveFullMonthFundingTarget = ({
   targetAmount,
   carryoverFromLastMonth,
+  spentBeforeMonth = 0,
 }: {
   targetAmount: number;
   carryoverFromLastMonth: number;
-}): number => Math.max(0, targetAmount - carryoverFromLastMonth);
+  spentBeforeMonth?: number;
+}): number =>
+  Math.max(0, targetAmount - carryoverFromLastMonth - spentBeforeMonth);
 
 /**
  * MF targets for Push to YNAB for a specific plan month.
@@ -285,6 +304,7 @@ export const buildMonthlyFundingTargetsForPush = ({
     const nextTarget = resolveFullMonthFundingTarget({
       targetAmount: goal.targetAmount,
       carryoverFromLastMonth: amounts.carryoverFromLastMonth,
+      spentBeforeMonth: amounts.spentBeforeMonth,
     });
 
     targets[goal.id] = nextTarget;

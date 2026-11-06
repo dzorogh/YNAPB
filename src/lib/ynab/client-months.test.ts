@@ -7,6 +7,12 @@ import {
 
 import { createYnabClient } from "./client";
 
+const currentMonth = vi.hoisted(() => ({ value: "2023-12-01" }));
+vi.mock("@/lib/ynab/map", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/ynab/map")>()),
+  currentBudgetMonthFromDate: () => currentMonth.value,
+}));
+
 describe("createYnabClient.getMonths", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -28,6 +34,8 @@ describe("createYnabClient.getMonths", () => {
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
+    // Before any listed month, so only the lookback month needs details.
+    currentMonth.value = "2023-12-01";
 
     const client = createYnabClient("token");
     const months = await client.getMonths("budget-1", {
@@ -80,5 +88,77 @@ describe("createYnabClient.getMonths", () => {
     await client.getMonths("budget-1", { monthDetailsLookback: 3 });
 
     expect(countMonthDetailCalls(fetchMock)).toBe(3);
+  });
+
+  it("also fetches the current and prior calendar months behind future months", async () => {
+    const fetchMock = vi.fn(
+      createYnabMonthsFetchMock({
+        months: [
+          { month: "2026-09-01", income: 1_000_000 },
+          { month: "2026-10-01", income: 2_000_000 },
+          { month: "2026-11-01", income: 3_000_000 },
+          { month: "2026-12-01", income: 0 },
+          { month: "2027-01-01", income: 0 },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    currentMonth.value = "2026-11-01";
+
+    const months = await createYnabClient("token").getMonths("budget-1", {
+      monthDetailsLookback: 3,
+    });
+
+    expect(
+      months.filter((month) => month.categories).map((month) => month.month),
+    ).toEqual(["2027-01-01", "2026-12-01", "2026-11-01", "2026-10-01"]);
+  });
+});
+
+describe("createYnabClient.getCategorySpending", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("nets refunds against spending and skips deleted transactions", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      expect(url).toContain("/categories/cat-goal/transactions");
+      expect(url).toContain("since_date=2026-04-25");
+      expect(url).toContain("until_date=2026-10-31");
+      const transaction = (id: string, amount: number, deleted = false) => ({
+        id,
+        date: "2026-06-01",
+        amount,
+        cleared: "cleared",
+        approved: true,
+        account_id: "acc",
+        account_name: "Card",
+        deleted,
+        type: "transaction",
+        subtransactions: [],
+      });
+      return new Response(
+        JSON.stringify({
+          data: {
+            transactions: [
+              transaction("pay", -150_000_000),
+              transaction("refund", 30_000_000),
+              transaction("gone", -999_000_000, true),
+            ],
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const spent = await createYnabClient("token").getCategorySpending(
+      "budget-1",
+      "cat-goal",
+      { sinceDate: "2026-04-25", untilDate: "2026-10-31" },
+    );
+
+    expect(spent).toBe(120_000_000);
   });
 });

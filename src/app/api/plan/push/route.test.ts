@@ -7,6 +7,7 @@ import {
 } from "@/lib/repositories/ynab-cache-repo";
 import { listGoals } from "@/lib/repositories/goals-repo";
 import { getIncomeSettings } from "@/lib/repositories/income-settings-repo";
+import { computeMonthTargets } from "@/lib/plan/month-targets";
 import { pushAssignedMoves, pushMonthlyFundingGoals } from "@/lib/ynab/push-mf";
 import type { Json, Tables } from "@/types/supabase";
 
@@ -467,7 +468,7 @@ describe("Push after automatic target updates", () => {
     expect(pushAssignedMoves).not.toHaveBeenCalled();
   });
 
-  it("excludes negative categories from RTA without replacing rebalancing", async () => {
+  it("excludes overspent categories from RTA but funds withdrawn goals", async () => {
     cache.ready_to_assign = -1;
     const response = await callPush(
       request({ mode: "preview", month: "2026-10" }),
@@ -493,6 +494,22 @@ describe("Push after automatic target updates", () => {
       ],
     });
 
+    // Money moved out of a goal lowers its progress; RTA keeps funding it.
+    setBalance("vacation", 0);
+    const withdrawn = await callPush(
+      request({ mode: "preview", month: "2026-10" }),
+    );
+    expect(await withdrawn.json()).toMatchObject({
+      assignedMoves: [],
+      readyToAssignMoves: [
+        {
+          categoryId: "vacation",
+          current: -10_000_000,
+          next: 90_000_000,
+        },
+      ],
+    });
+
     setAssigned("house", 171_428.571);
     setAssigned("vacation", 0);
     setBalance("vacation", -1);
@@ -509,6 +526,127 @@ describe("Push after automatic target updates", () => {
         },
       ],
     });
+  });
+
+  it("books a goal withdrawal against the prior month", async () => {
+    cache.categories = parseCachedCategories(cache.categories).map(
+      (category) =>
+        category.id === "house"
+          ? {
+              ...category,
+              assigned: -300_000,
+              balance: 400_000,
+              prior_month_available: 700_000,
+              prior_month_assigned: 200_000,
+            }
+          : category,
+    ) as unknown as Json;
+
+    const preview = await (
+      await callPush(request({ mode: "preview", month: "2026-10" }))
+    ).json();
+    expect(preview.withdrawalShifts).toEqual([
+      {
+        categoryId: "house",
+        categoryName: "house",
+        priorMonth: "2026-09",
+        current: 200_000_000,
+        next: -100_000_000,
+      },
+    ]);
+    expect(preview.assignedMoves).toEqual([]);
+
+    const applied = await callPush(
+      request({
+        mode: "apply",
+        month: "2026-10",
+        acceptedDiffHash: preview.diffHash,
+      }),
+    );
+    expect(applied.status).toBe(200);
+    const calls = vi.mocked(pushAssignedMoves).mock.calls;
+    expect(calls[0]?.[0]).toMatchObject({
+      month: "2026-09",
+      moves: [{ categoryId: "house", next: -100_000_000 }],
+    });
+    expect(calls[1]?.[0]).toMatchObject({
+      month: "2026-10",
+      moves: [{ categoryId: "house", current: -300_000_000, next: 0 }],
+    });
+    expect(cache.ready_to_assign).toBe(0);
+    const house = parseCachedCategories(cache.categories).find(
+      (category) => category.id === "house",
+    );
+    expect(house).toMatchObject({
+      assigned: 0,
+      balance: 400_000,
+      prior_month_assigned: -100_000,
+      prior_month_available: 400_000,
+    });
+
+    const after = await (
+      await callPush(request({ mode: "preview", month: "2026-10" }))
+    ).json();
+    expect(after.withdrawalShifts).toEqual([]);
+    expect(after.assignedMoves).toEqual([]);
+  });
+
+  it("plans a withdrawn goal from what was left, before and after Push", async () => {
+    const withdrawn = {
+      assigned: -300_000,
+      balance: 0,
+      prior_month_available: 300_000,
+      prior_month_assigned: 300_000,
+    };
+    const synced = parseCachedCategories(cache.categories).map((category) =>
+      category.id === "house" ? { ...category, ...withdrawn } : category,
+    );
+    const booked = synced.map((category) =>
+      category.id === "house"
+        ? {
+            ...category,
+            assigned: 0,
+            prior_month_available: 0,
+            prior_month_assigned: 0,
+          }
+        : category,
+    );
+    const inputs = {
+      goals: await listGoals("user"),
+      cache,
+      incomeSettings: await getIncomeSettings("user"),
+    };
+
+    const before = computeMonthTargets(inputs, synced, "2026-10");
+    const after = computeMonthTargets(inputs, booked, "2026-10");
+    expect(before?.targets.house).toBeCloseTo(after?.targets.house ?? 0, 6);
+    // Nothing left in the goal: the whole target spreads over the months.
+    expect(after?.targets.house).toBeGreaterThan(0);
+    expect(
+      after?.computation.plannerGoals.find((goal) => goal.id === "house"),
+    ).toMatchObject({ savedProgress: 0 });
+  });
+
+  it("does not raise the RTA deficit when the goal spends money", async () => {
+    cache.ready_to_assign = 100_000_000;
+    const preview = async () =>
+      (
+        await (
+          await callPush(request({ mode: "preview", month: "2026-10" }))
+        ).json()
+      ).readyToAssignMoves;
+    setAssigned("house", 200_000);
+    setAssigned("vacation", 250_000);
+    const before = await preview();
+
+    // Paying for the vacation is progress: balance drops, activity records it.
+    cache.categories = parseCachedCategories(cache.categories).map(
+      (category) =>
+        category.id === "vacation"
+          ? { ...category, balance: 50_000, activity: -200_000 }
+          : category,
+    ) as unknown as Json;
+    expect(await preview()).toEqual(before);
   });
 
   it("recovers cache and RTA after a successful rebalance decrease", async () => {

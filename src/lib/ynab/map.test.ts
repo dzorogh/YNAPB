@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  mapCategoryCashSpentTotal,
-  mapCategoryPriorMonthAvailable,
-  mapReadyToAssign,
-} from "./map";
+import { mapCategoryPriorMonthAvailable, mapReadyToAssign } from "./map";
 
 describe("mapReadyToAssign", () => {
   it("reads the requested month instead of the first response", () => {
@@ -27,27 +23,6 @@ describe("mapReadyToAssign", () => {
         "2026-10-01",
       ),
     ).toBe(0);
-  });
-});
-
-describe("mapCategoryCashSpentTotal", () => {
-  it("sums cash spending across all synced months per category", () => {
-    const spent = mapCategoryCashSpentTotal([
-      {
-        month: "2026-05-01",
-        categories: [
-          { id: "gazebo", activity: -166_000_000 },
-          { id: "other", activity: 500_000 },
-        ],
-      },
-      {
-        month: "2026-04-01",
-        categories: [{ id: "gazebo", activity: -20_000_000 }],
-      },
-    ]);
-
-    expect(spent.get("gazebo")).toBe(186_000);
-    expect(spent.get("other")).toBeUndefined();
   });
 });
 

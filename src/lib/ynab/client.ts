@@ -1,5 +1,6 @@
 import type { Category, ExistingCategory } from "ynab";
 
+import { currentBudgetMonthFromDate } from "@/lib/ynab/map";
 import {
   createOfficialYnabApis,
   runOfficialYnabCall,
@@ -28,6 +29,8 @@ type YnabCategory = {
   goal_target: number | null;
   goal_target_month?: string | null;
   goal_under_funded: number | null;
+  /** NEED targets: true = «Set aside another», false = «Refill up to». */
+  goal_needs_whole_amount?: boolean | null;
   /** Assigned in the current plan month, milliunits. */
   budgeted?: number | null;
   /** Activity in the current plan month, milliunits. */
@@ -94,6 +97,15 @@ export type YnabClient = {
     }>
   >;
   getBudgetCurrencyCode: (budgetId: string) => Promise<string | null>;
+  /**
+   * Net spending (outflows minus refunds) in one category between two dates,
+   * inclusive, milliunits. Deleted transactions are ignored.
+   */
+  getCategorySpending: (
+    budgetId: string,
+    categoryId: string,
+    range: { sinceDate: string; untilDate: string },
+  ) => Promise<number>;
 };
 
 const DEFAULT_MONTH_DETAILS_LOOKBACK = 3;
@@ -110,6 +122,7 @@ const toClientCategory = (category: Category): YnabCategory => ({
   goal_target: category.goal_target ?? null,
   goal_target_month: category.goal_target_month,
   goal_under_funded: category.goal_under_funded ?? null,
+  goal_needs_whole_amount: category.goal_needs_whole_amount ?? null,
   budgeted: category.budgeted ?? null,
   activity: category.activity ?? null,
   balance: category.balance ?? null,
@@ -216,10 +229,20 @@ export const createYnabClient = (
       const sortedMonths = [...data.data.months].sort((left, right) =>
         right.month.localeCompare(left.month),
       );
-      const monthsForDetail = sortedMonths.slice(
+      // Latest months (may include open future months) plus the current and
+      // prior calendar months, which carry goal carryover and withdrawals.
+      const currentMonth = currentBudgetMonthFromDate();
+      const latestMonths = sortedMonths.slice(
         0,
         Math.max(1, monthDetailsLookback),
       );
+      const currentAndPrior = sortedMonths
+        .filter((month) => month.month <= currentMonth)
+        .slice(0, 2);
+      const monthsForDetail = [
+        ...latestMonths,
+        ...currentAndPrior.filter((month) => !latestMonths.includes(month)),
+      ];
       const categoriesByMonth = new Map<
         string,
         Array<{
@@ -254,6 +277,25 @@ export const createYnabClient = (
         readyToAssign: month.to_be_budgeted,
         categories: categoriesByMonth.get(month.month),
       }));
+    },
+    getCategorySpending: async (budgetId, categoryId, range) => {
+      const data = await runOfficialYnabCall(() =>
+        apis.transactions.getTransactionsByCategory(
+          budgetId,
+          categoryId,
+          range.sinceDate,
+          range.untilDate,
+        ),
+      );
+      const net = data.data.transactions
+        .filter(
+          (transaction) =>
+            !transaction.deleted &&
+            transaction.date >= range.sinceDate &&
+            transaction.date <= range.untilDate,
+        )
+        .reduce((total, transaction) => total + transaction.amount, 0);
+      return Math.max(0, -net);
     },
     getBudgetCurrencyCode: async (budgetId: string) => {
       const data = await runOfficialYnabCall(() =>

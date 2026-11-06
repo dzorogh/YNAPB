@@ -13,5 +13,6 @@ export const toYnabGoalProgressInput = (
     assigned: category.assigned,
     prior_month_available: category.prior_month_available,
     activity: category.activity,
+    spent_before_month: category.spent_before_month,
   };
 };

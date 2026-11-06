@@ -8,7 +8,7 @@ import {
   upsertCache,
 } from "@/lib/repositories/ynab-cache-repo";
 import { buildPushDiff, pushMonthlyFundingGoals } from "@/lib/ynab/push-mf";
-import { syncYnabData } from "@/lib/ynab/sync";
+import { syncYnabData, toGoalCategorySpendingSources } from "@/lib/ynab/sync";
 
 /** Refresh all monthly targets after a goal mutation, without moving money. */
 export const syncPlanTargets = async (
@@ -25,6 +25,7 @@ export const syncPlanTargets = async (
     ...connection,
     baselineMonths: incomeSettings?.baseline_months ?? 6,
     skipCurrencyLookup: true,
+    goalCategories: toGoalCategorySpendingSources(goals),
   });
   const cache = await upsertCache(userId, {
     categories: synced.categories,
@@ -53,6 +54,7 @@ export const syncPlanTargets = async (
       name: category.name,
       goalTarget: category.goal_target,
       goalTargetMonth: category.goal_target_month,
+      goalNeedsWholeAmount: category.goal_needs_whole_amount,
     })),
   });
 
@@ -67,6 +69,7 @@ export const syncPlanTargets = async (
           {
             goal_target: update.next / 1000,
             goal_target_month: null,
+            goal_needs_whole_amount: true,
           },
         ],
       ]),

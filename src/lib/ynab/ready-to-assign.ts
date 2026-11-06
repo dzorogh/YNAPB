@@ -10,7 +10,10 @@ export const allocateReadyToAssign = (
 
   for (const goal of goals) {
     if (remaining <= 0) break;
-    if (goal.assigned < 0 || (goal.balance ?? 0) < 0) continue;
+    // Negative assigned means money was moved out of the goal. That lowers
+    // saved progress, so the goal stays eligible and continues from what is
+    // left; `target` measures the deficit from saved progress.
+    if ((goal.balance ?? 0) < 0) continue;
 
     const deficit = Math.max(0, goal.target - goal.assigned);
     const assigned = Math.min(deficit, remaining);

@@ -4,6 +4,7 @@ import {
   MonthsApi,
   PlansApi,
   ResponseError,
+  TransactionsApi,
 } from "ynab";
 
 import {
@@ -15,6 +16,7 @@ export type OfficialYnabApis = {
   categories: CategoriesApi;
   months: MonthsApi;
   plans: PlansApi;
+  transactions: TransactionsApi;
 };
 
 export const createOfficialYnabApis = (
@@ -29,6 +31,7 @@ export const createOfficialYnabApis = (
     categories: new CategoriesApi(configuration),
     months: new MonthsApi(configuration),
     plans: new PlansApi(configuration),
+    transactions: new TransactionsApi(configuration),
   };
 };
 

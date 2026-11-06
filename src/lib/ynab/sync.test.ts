@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createYnabClient } from "./client";
 import { syncYnabData, type YnabDataClient } from "./sync";
@@ -8,6 +8,7 @@ const TEST_TOKEN = "ynab-token";
 const TEST_BUDGET_ID = "budget-1";
 
 const buildClient = (): YnabDataClient => ({
+  getCategorySpending: () => Promise.resolve(0),
   getCategories: () =>
     Promise.resolve([
       {
@@ -99,11 +100,13 @@ describe("syncYnabData", () => {
         goal_target: 120_000,
         goal_target_month: "2026-12-01",
         goal_under_funded: 30_000,
+        goal_needs_whole_amount: null,
         balance: null,
         activity: null,
         assigned: 13_000,
         prior_month_available: null,
-        cash_spent_total: 1_000,
+        spent_before_month: 0,
+        prior_month_assigned: null,
         hidden: false,
         deleted: false,
         assigned_history: [13_000, 12_000, 11_000],
@@ -116,11 +119,13 @@ describe("syncYnabData", () => {
         goal_target: null,
         goal_target_month: null,
         goal_under_funded: null,
+        goal_needs_whole_amount: null,
         balance: null,
         activity: null,
         assigned: 5_000,
         prior_month_available: null,
-        cash_spent_total: 0,
+        spent_before_month: 0,
+        prior_month_assigned: null,
         hidden: false,
         deleted: false,
         assigned_history: [5_000, 4_000, 3_000],
@@ -344,5 +349,68 @@ describe("syncYnabData", () => {
       activity: -166_000,
       assigned: 174_531,
     });
+  });
+});
+
+describe("syncYnabData goal progress inputs", () => {
+  it("loads prior-month assigned and goal spending before this month", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-06T12:00:00Z"));
+    try {
+      const getCategorySpending = vi.fn(async () => 120_000_000);
+      const result = await syncYnabData({
+        token: TEST_TOKEN,
+        budgetId: TEST_BUDGET_ID,
+        baselineMonths: 2,
+        skipCurrencyLookup: true,
+        goalCategories: [
+          { categoryId: "cat-goal", since: "2026-04-25T18:05:46Z" },
+        ],
+        client: {
+          getCategories: async () => [
+            {
+              id: "cat-goal",
+              name: "Goal",
+              goal_type: "NEED",
+              goal_target: null,
+              goal_under_funded: null,
+              budgeted: -367_229_000,
+              balance: 0,
+            },
+          ],
+          getMonths: async () => [
+            { month: "2027-01-01", income: 0, categories: [] },
+            { month: "2026-12-01", income: 0, categories: [] },
+            {
+              month: "2026-11-01",
+              income: 50_000_000,
+              categories: [{ id: "cat-goal", budgeted: -367_229_000 }],
+            },
+            {
+              month: "2026-10-01",
+              income: 500_000_000,
+              categories: [
+                { id: "cat-goal", budgeted: 367_229_000, balance: 367_229_000 },
+              ],
+            },
+          ],
+          getBudgetCurrencyCode: async () => null,
+          getCategorySpending,
+        },
+      });
+
+      expect(getCategorySpending).toHaveBeenCalledWith(
+        TEST_BUDGET_ID,
+        "cat-goal",
+        { sinceDate: "2026-04-25", untilDate: "2026-10-31" },
+      );
+      expect(result.categories[0]).toMatchObject({
+        spent_before_month: 120_000,
+        prior_month_assigned: 367_229,
+        prior_month_available: 367_229,
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
